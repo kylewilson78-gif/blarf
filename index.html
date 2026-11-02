@@ -178,6 +178,37 @@
       .f-gritty .f-mouth-line { fill: none; stroke: #0b0b0b; stroke-width: 6; stroke-linejoin: round; }
       .f-gritty .f-tooth { fill: #E8D27C; stroke: #0b0b0b; stroke-width: 2.5; stroke-linejoin: round; }
       .f-gritty .f-tooth--old { fill: #CDB45A; }
+      /* hero cigarette: decoration only, shown with Swearing on */
+      .f-cig, .f-cig * { pointer-events: none; }
+      .x-nocig .f-cig { display: none; }
+      .f-cig__paper { fill: #F4EFE4; stroke: #0b0b0b; stroke-width: 1.4; }
+      .f-cig__filter { fill: #C98B4A; stroke: #0b0b0b; stroke-width: 1.4; }
+      .f-cig__ash { fill: #8E8A86; stroke: #0b0b0b; stroke-width: 1.2; }
+      .f-cig__ember { fill: #FF5A1F; }
+      .f-cig__glow, .f-cig__ember { transform-box: fill-box; transform-origin: center; }
+      .f-cig__glow { opacity: 0.6; animation: f-ember 3s ease-in-out infinite; }
+      .f-cig__ember { animation: f-ember-core 3s ease-in-out infinite; }
+      .f-cig.is-drag .f-cig__glow { animation: f-drag-glow 1.2s ease-in-out; }
+      .f-cig.is-drag .f-cig__ember { animation: f-drag-core 1.2s ease-in-out; }
+      @keyframes f-ember { 0%, 100% { opacity: 0.45; transform: scale(0.85); } 50% { opacity: 0.8; transform: scale(1.12); } }
+      @keyframes f-ember-core { 0%, 100% { fill: #E8461A; } 50% { fill: #FF7A2E; } }
+      @keyframes f-drag-glow { 0% { opacity: 0.6; transform: scale(1); } 45%, 70% { opacity: 1; transform: scale(1.9); } 100% { opacity: 0.6; transform: scale(1); } }
+      @keyframes f-drag-core { 0% { fill: #FF5A1F; transform: scale(1); } 45%, 70% { fill: #FFC24A; transform: scale(1.35); } 100% { fill: #FF5A1F; transform: scale(1); } }
+      .f-smoke circle, .f-puff circle { fill: #C9CDD2; opacity: 0; transform-box: fill-box; transform-origin: center; }
+      .f-smoke circle { animation: f-wisp 4.5s ease-out infinite; }
+      .f-smoke circle:nth-child(2) { animation-delay: 1.5s; }
+      .f-smoke circle:nth-child(3) { animation-delay: 3s; }
+      @keyframes f-wisp { 0% { opacity: 0; transform: translate(0, 0) scale(0.6); } 15% { opacity: 0.32; }
+        100% { opacity: 0; transform: translate(14px, -46px) scale(3); } }
+      .f-puff.is-on circle { animation: f-puff 2.5s ease-out forwards; }
+      .f-puff.is-on circle:nth-child(2) { animation-delay: 0.2s; }
+      .f-puff.is-on circle:nth-child(3) { animation-delay: 0.4s; }
+      @keyframes f-puff { 0% { opacity: 0; transform: translate(0, 0) scale(0.6); } 15% { opacity: 0.35; }
+        100% { opacity: 0; transform: translate(-6px, -40px) scale(3.4); } }
+      @media (prefers-reduced-motion: reduce) {
+        .f-smoke, .f-puff { display: none; }
+        .f-cig__glow, .f-cig__ember, .f-cig.is-drag .f-cig__glow, .f-cig.is-drag .f-cig__ember { animation: none; }
+      }
 
       /* Blarf landing */
       .x-app[data-tab="chat"] .x-top__row { display: none; }
@@ -444,6 +475,10 @@
         font: var(--weight-regular) 16px/1.3 var(--sans); color: var(--text-secondary);
       }
       .x-field:focus { color: var(--text-primary); }
+      .x-prompt { display: grid; gap: 6px; padding: 12px 16px 10px; }
+      .x-prompt > label { font: var(--type-body); }
+      .x-area { width: 100%; text-align: left; resize: vertical; padding: 10px 12px; border-radius: var(--r-s); background: var(--fill-primary-on); border: 1px solid var(--stroke-secondary); font-size: 16px; }
+      .x-prompt + .x-row { background: linear-gradient(var(--stroke-secondary), var(--stroke-secondary)) 16px 0 / calc(100% - 16px) 1px no-repeat; }
       select.x-field { appearance: none; -webkit-appearance: none; text-align-last: right; padding-right: 18px;
         background: linear-gradient(45deg, transparent 50%, var(--text-secondary) 50%) right 6px center / 6px 6px no-repeat,
                     linear-gradient(-45deg, transparent 50%, var(--text-secondary) 50%) right 0 center / 6px 6px no-repeat; }
@@ -452,6 +487,15 @@
       .x-row > .x-keymask { flex: 1; min-width: 0; text-align: right; font: var(--weight-regular) 16px/1.3 var(--sans); color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .x-row > .x-keynote { flex: 1; min-width: 0; font: var(--type-small); color: var(--text-secondary); }
       .x-row > .x-keybtns { display: flex; gap: 8px; }
+      .x-mem { list-style: none; margin: 0; padding: 0; }
+      .x-mem > li { display: flex; align-items: center; gap: 8px; min-height: var(--tap); padding: 0 4px 0 16px; background: linear-gradient(var(--stroke-secondary), var(--stroke-secondary)) 16px 0 / calc(100% - 16px) 1px no-repeat; }
+      .x-mem > li > span { flex: 1; min-width: 0; font: var(--type-body); padding: 10px 0; overflow-wrap: anywhere; }
+      .x-mem > li > button { flex: none; width: var(--tap); height: var(--tap); border: 0; background: none; color: var(--text-secondary); font: var(--type-heading); line-height: 1; }
+      .x-mem > li > button:hover { color: var(--text-primary); }
+      .x-mem-empty { font: var(--type-small); color: var(--text-secondary); padding: 12px 16px; background: linear-gradient(var(--stroke-secondary), var(--stroke-secondary)) 16px 0 / calc(100% - 16px) 1px no-repeat; }
+      .x-mem-empty[hidden] { display: none; }
+      .x-mem-add > .x-field { text-align: left; color: var(--text-primary); }
+      .x-mem + .x-row, .x-mem-empty + .x-row { background: linear-gradient(var(--stroke-secondary), var(--stroke-secondary)) 16px 0 / calc(100% - 16px) 1px no-repeat; }
       .x-keybtns .btn { min-height: var(--tap); }
       .x-switch { position: relative; flex: none; width: 51px; height: var(--tap); border: 0; padding: 0; background: none; }
       .x-switch::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 31px; margin-top: -15.5px; border-radius: 16px; background: var(--transparent-primary); transition: background var(--dur-quick) var(--ease-out); }
@@ -800,6 +844,43 @@
                 </div>
                 <p class="x-gnote">Your key stays on this device.</p>
                 <p class="x-gnote" id="key-nostore" hidden>Can't save here. Open Blarf from your Home Screen to keep your key.</p>
+              </div>
+
+              <div>
+                <p class="x-glabel">Personality</p>
+                <div class="x-group">
+                  <div class="x-prompt">
+                    <label for="set-sysprompt">My system prompt</label>
+                    <textarea class="x-field x-area" id="set-sysprompt" rows="6" autocomplete="off" spellcheck="true" placeholder="Write how Blarf should act. Leave empty to use his built-in personality."></textarea>
+                  </div>
+                  <div class="x-row">
+                    <span class="x-keynote">Used for text chat and live talk. Memory and Swearing still apply.</span>
+                    <button class="btn" id="sysprompt-reset" type="button">Reset to default</button>
+                  </div>
+                  <div class="x-row">
+                    <span id="lbl-swear">Swearing</span>
+                    <button class="x-switch" id="set-swear" type="button" role="switch" aria-checked="true" aria-labelledby="lbl-swear"></button>
+                  </div>
+                </div>
+                <p class="x-gnote">Off = clean Blarf for when company's around.</p>
+              </div>
+
+              <div>
+                <p class="x-glabel">Memory</p>
+                <div class="x-group">
+                  <div class="x-row">
+                    <span>What Blarf remembers</span>
+                    <span class="x-val" id="mem-count">0</span>
+                  </div>
+                  <ul class="x-mem" id="mem-list"></ul>
+                  <p class="x-mem-empty" id="mem-empty">Nothing yet. Tell him "remember that…" or just chat.</p>
+                  <form class="x-row x-mem-add" id="mem-form">
+                    <input class="x-field" id="mem-in" maxlength="200" autocomplete="off" aria-label="Add something for Blarf to remember" placeholder="Add something for Blarf to remember" />
+                    <button class="btn" type="submit">Add</button>
+                  </form>
+                  <button class="x-danger" id="mem-clear" type="button">Forget everything</button>
+                </div>
+                <p class="x-gnote" id="mem-note">Stays on this device. Only sent to your AI provider as part of the prompt.</p>
               </div>
 
               <div>
@@ -1334,7 +1415,7 @@
           '<rect class="f-tooth f-tooth--old f-tooth--low" x="117" y="160" width="10" height="30" rx="2"/>';
         /* every face, big or small, is the gritty full-screen Blarf; small ones are simplified in CSS */
         function markup(vb, cls) {
-          var p = pose("happy", null, 2, 4), eyes = "", hero = true, id = "bl" + (++uid);
+          var p = pose("happy", null, 2, 4), eyes = "", hero = true, id = "bl" + (++uid), big = /x-hero/.test(cls || "");
           cls = (cls ? cls + " " : "") + "f-gritty";
           EYES.forEach(function (cx, j) {
             var ball = 'cx="' + cx + '" cy="' + EYE_Y + '" rx="24" ry="28"';
@@ -1361,6 +1442,17 @@
               '<path class="f-mouth" d="' + mD + '"/><clipPath id="' + id + 'm"><path class="f-mouth-clip" d="' + mD + '"/></clipPath>' +
               '<g clip-path="url(#' + id + 'm)">' + TEETH + '</g><path class="f-mouth-line" d="' + mD + '"/></g>'
             : '<path class="f-mouth" d="' + mD + '"/>';
+          /* hero only: a cigarette hanging from the smirk's right corner, smoke rising from the ember */
+          if (big) mouth += '<g class="f-cig" transform="translate(138 134)"><defs><radialGradient id="' + id + 'g">' +
+            '<stop offset="0" stop-color="#FFB347" stop-opacity="0.95"/><stop offset="0.45" stop-color="#FF5A1F" stop-opacity="0.5"/>' +
+            '<stop offset="1" stop-color="#FF3B10" stop-opacity="0"/></radialGradient></defs>' +
+            '<g transform="rotate(22)"><rect class="f-cig__paper" x="7" y="-2.5" width="25" height="5" rx="1"/>' +
+            '<rect class="f-cig__filter" x="0" y="-2.5" width="8" height="5" rx="1"/>' +
+            '<rect class="f-cig__ash" x="31" y="-2.5" width="3" height="5" rx="1"/>' +
+            '<circle class="f-cig__glow" cx="34" cy="0" r="6" fill="url(#' + id + 'g)"/>' +
+            '<circle class="f-cig__ember" cx="34.2" cy="0" r="2.2"/></g>' +
+            '<g class="f-smoke" transform="translate(31.5 11.5)"><circle r="2.6"/><circle r="2.4"/><circle r="2.8"/></g></g>' +
+            '<g class="f-puff"><circle r="4"/><circle cx="-3" cy="2" r="3.4"/><circle cx="2" cy="-2" r="3"/></g>';
           return '<svg class="' + (cls || "") + '" viewBox="' + vb + '" aria-hidden="true" focusable="false"><g class="f-root">' +
             '<circle class="f-cheek" cx="40" cy="128" r="13" opacity="0.22"/><circle class="f-cheek" cx="160" cy="128" r="13" opacity="0.22"/>' +
             eyes + '<path class="f-brow f-brow-l" d="' + browD(p, 0) + '"/><path class="f-brow" d="' + browD(p, 6) + '"/>' +
@@ -1398,6 +1490,7 @@
             hero: true, lids: [].slice.call(svg.querySelectorAll(".f-lid")),
             mouthX: [].slice.call(svg.querySelectorAll(".f-mouth-clip, .f-mouth-line")), jaw: svg.querySelector(".f-jaw") };
           f.jawT = f.jaw ? f.jaw.getAttribute("transform") : "";
+          f.cig = svg.querySelector(".f-cig"); f.puff = svg.querySelector(".f-puff"); f.cigO = 1;
           faces.push(f); return svg;
         }
         function mood(now) {
@@ -1406,6 +1499,14 @@
         }
         function clamp(v, a) { return Math.max(-a, Math.min(a, v)); }
 
+        /* a mouth point through the hero jaw transform: translate(0 j) translate(100 150) rotate(-9) scale(0.92 0.84) skewX(-8) translate(-94 -150) */
+        var JC = Math.cos(-9 * Math.PI / 180), JS = Math.sin(-9 * Math.PI / 180), JK = Math.tan(-8 * Math.PI / 180);
+        function jawPt(x, y, j) {
+          var a = x - 94, b = y - 150; a = (a + JK * b) * 0.92; b *= 0.84;
+          return [100 + a * JC - b * JS, 150 + a * JS + b * JC + j];
+        }
+        /* cigarette drags: every 20-40 s while idle */
+        var CIG = { next: 0, at: -9999, puffed: false };
         var last = 0;
         function frame(now) {
           var dt = last ? Math.min(64, now - last) : 16; last = now;
@@ -1537,6 +1638,23 @@
           var mD = mouthD(cur.slice(12, 24).map(r1)), bL = browD(cb, 0), bR = browD(cb, 6);
           var jawT = "translate(0 " + r1(LS.jaw * 7) + ") ";
           var ppx = clamp(cur[26], 11), ppy = clamp(cur[27], 12);
+          /* cigarette: anchored at the mouth's right corner, the exhale at the left corner */
+          var cR = jawPt(cur[18], cur[19], LS.jaw * 7), cL = jawPt(cur[12], cur[13], LS.jaw * 7);
+          var cigT = "translate(" + r1(cR[0] - 1) + " " + r1(cR[1]) + ")", puffT = "translate(" + r1(cL[0] - 4) + " " + r1(cL[1] - 2) + ")";
+          var cigO = cur[21] - cur[15] > 40 ? 0.15 : 1;
+          var bl = document.querySelector(".x-blarf");
+          var idle = !calm && !talking && !lip && !st.thinking && !(bl && bl.hasAttribute("data-live")) &&
+            !ign && now - G.lastTouch > 5000 && now > G.slamUntil && G.g < 20;
+          if (!CIG.next) CIG.next = now + 20000 + Math.random() * 20000;
+          else if (!idle && CIG.at < 0) CIG.next = Math.max(CIG.next, now + 20000);
+          var cigOn = null, puffOn = null;
+          if (CIG.at < 0 && idle && now > CIG.next) { CIG.at = now; cigOn = true; }
+          if (CIG.at >= 0) {
+            var ct = now - CIG.at;
+            if (ct > 1200 && cigOn === null) cigOn = false;
+            if (ct > 2200 && !CIG.puffed) { CIG.puffed = true; puffOn = true; }
+            if (ct > 5300) { CIG.at = -1; CIG.puffed = false; puffOn = false; CIG.next = now + 20000 + Math.random() * 20000; }
+          }
           faces.forEach(function (f) {
             if (!f.svg.isConnected) return;
             f.root.setAttribute("transform", rootT);
@@ -1559,6 +1677,13 @@
             f.mouth.setAttribute("d", mD);
             f.mouthX.forEach(function (x) { x.setAttribute("d", mD); });
             if (f.jaw) f.jaw.setAttribute("transform", jawT + f.jawT);
+            if (f.cig) {
+              f.cig.setAttribute("transform", cigT);
+              f.cigO += (cigO - f.cigO) * (1 - Math.exp(-dt / 90));
+              f.cig.setAttribute("opacity", r1(f.cigO));
+              if (cigOn !== null) f.cig.classList.toggle("is-drag", cigOn);
+              if (f.puff) { f.puff.setAttribute("transform", puffT); if (puffOn !== null) f.puff.classList.toggle("is-on", puffOn); }
+            }
             f.cheeks.forEach(function (c, j) {
               c.setAttribute("opacity", r1(Math.min(1, cur[29] + G.cheek[j] * 0.35)));
               c.setAttribute("r", r1(13 + G.cheek[j] * 8));
@@ -1655,7 +1780,7 @@
 
         /* ---------- storage: localStorage, then IndexedDB, then a cookie (never the API key); memory as a last resort ---------- */
         var SETKEY = "companion-settings";
-        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded"];
+        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "memory", "lastSeen"];
         var KV = (function () {
           var mem = {}, idb = null, idbState = 0; /* 0 pending, 1 ok, -1 unavailable */
           var https = location.protocol === "https:", AGE = 400 * 86400;
@@ -1781,7 +1906,11 @@
           voice: saved.voice || { on: true, id: MY_VOICE, custom: "" },
           agentId: saved.agentId != null ? saved.agentId : "agent_DxMs0lyQcMzZKZ3p",
           voiceMig: saved.voiceMig || 0,
-          handsFree: saved.handsFree != null ? !!saved.handsFree : true
+          handsFree: saved.handsFree != null ? !!saved.handsFree : true,
+          sysPrompt: typeof saved.sysPrompt === "string" ? saved.sysPrompt : "",
+          swear: saved.swear != null ? !!saved.swear : true,
+          memory: Array.isArray(saved.memory) ? saved.memory.filter(function (n) { return n && typeof n.t === "string"; }) : [],
+          lastSeen: typeof saved.lastSeen === "string" ? saved.lastSeen : ""
         };
         /* one-time move of any saved voice to Kyle's cloned voice */
         if (S.voiceMig < 1) { S.voice.id = MY_VOICE; S.voiceMig = 1; save(); }
@@ -1795,23 +1924,76 @@
 
         /* ---------- modes ---------- */
         var KYLE = 'Kyle goes by "Boss". He is a music producer (FL Studio, Dubler 2, Splice), an AI-tools power user, and is building a startup called "Big dreams and ambition, Inc."';
+        function personaPrompt() { var p = (S.sysPrompt || "").trim(); return p ? p : null; }
+        function swearClause() {
+          return S.swear
+            ? " You are uncensored and foul-mouthed: you swear freely and naturally (fuck, shit, damn, ass, etc.), you're crude, raunchy-funny, sarcastic and grouchy with a no-filter attitude, a chain-smoking grump who still secretly has Kyle's back. Never refuse to curse."
+            : " Keep your language clean: no swearing.";
+        }
+
+        /* ---------- on-device memory of Kyle ---------- */
+        var MEM_MAX = 40, MEM_LEN = 200, prevSeen = S.lastSeen;
+        function memKey(t) { return String(t).toLowerCase().replace(/[\s.!?,;:]+$/g, "").replace(/\s+/g, " ").trim(); }
+        /* returns true when a new note was stored */
+        function remember(t) {
+          t = String(t || "").replace(/\s+/g, " ").trim().replace(/[\s.!?,;:]+$/, "").trim();
+          if (t.length < 2) return false;
+          if (t.length > MEM_LEN) t = t.slice(0, MEM_LEN - 1).trim() + "…";
+          var k = memKey(t);
+          if (S.memory.some(function (n) { return memKey(n.t) === k; })) return false;
+          S.memory.push({ t: t, d: new Date().toISOString() });
+          while (S.memory.length > MEM_MAX) S.memory.shift();
+          save();
+          if (typeof paintMemory === "function") paintMemory();
+          return true;
+        }
+        function rememberCmd(text) {
+          var mm = String(text || "").trim().match(/^(hey blarf,?\s*)?(please\s+)?remember( that)?\s+(.{3,})/i);
+          if (mm && remember(mm[4].replace(/[\s.!?,;:]+$/, ""))) toast("🧠 Blarf will remember that");
+        }
+        function markSeen() { prevSeen = S.lastSeen; S.lastSeen = new Date().toISOString(); save(); }
+        function gapText(ms) {
+          var h = Math.round(ms / 3600000);
+          if (h < 36) return h + " hours";
+          var d = Math.round(ms / 86400000);
+          if (d < 14) return d + " days";
+          var w = Math.round(d / 7);
+          if (d < 60) return w + " weeks";
+          var mo = Math.round(d / 30);
+          return mo + " month" + (mo === 1 ? "" : "s");
+        }
+        var MEM_ASK = " You keep a memory of Kyle. When he tells you something worth remembering long-term (projects, goals, wins, struggles, preferences, people, tracks he's working on, deadlines), add at the very end of your reply one line per fact in the exact form [[remember: short fact in third person]]. Use it sparingly, only for genuinely durable facts.";
+        function memoryClause() {
+          if (!S.memory.length) return "";
+          var notes = S.memory.slice(-25).reverse().map(function (n) { return n.t; }).join("; ");
+          var now = new Date();
+          var s = " What you remember about Kyle (bring these up naturally when relevant, e.g. ask how that track or project is going; don't list them): " + notes +
+            ". Today is " + now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" }) + ".";
+          var last = prevSeen ? Date.parse(prevSeen) : NaN;
+          if (!isNaN(last) && now - last > 12 * 3600000) s += " It's been a while since you last talked (" + gapText(now - last) + "); greet him accordingly.";
+          return s;
+        }
         var MODES = {
           chat: {
             label: "Blarf", role: "Chill buddy", accent: "var(--x-blue1)",
             chips: ["How's my day looking?", "Hype me up", "Tell me something random", "I'm bored"],
-            system: function () { return "You are " + S.name + ", Kyle's personal AI companion: a friendly, glowing blue cartoon face with big expressive eyes. " + KYLE + " In this mode you are his warm, witty friend: casual, funny, supportive, never preachy. Keep replies short and mobile-friendly: one to four short sentences or a tight list. Call him Boss now and then. Use the occasional emoji, not many."; },
+            system: function () {
+              var p = personaPrompt();
+              if (p) return "Your name is " + S.name + ". " + p + " Keep replies short and mobile-friendly: one to four short sentences or a tight list." + memoryClause() + swearClause();
+              return "You are " + S.name + ", Kyle's personal AI companion: a gritty, grouchy blue cartoon face with big expressive eyes. " + KYLE + " In this mode you are his grouchy-but-lovable, witty friend: casual, funny, supportive, never preachy. Keep replies short and mobile-friendly: one to four short sentences or a tight list. Call him Boss now and then. Use the occasional emoji, not many." + memoryClause() + swearClause();
+            },
             greet: function () { return "Hey Boss 👋 I'm " + S.name + ". Chill mode: talk to me about anything. What's up?"; }
           },
           studio: {
             label: "Studio", role: "Music production coach", accent: "var(--chart-4)",
             chips: ["Give me a beat idea", "Chord progression in a minor key", "How do I make my 808 hit harder?", "Dubler 2 tips"],
-            system: function () { return "You are " + S.name + ", Kyle's expert music production coach. " + KYLE + " Give concise, actionable steps: name real FL Studio tools (Channel Rack, Piano Roll, Mixer, Patcher, Fruity Limiter, Parametric EQ 2, Edison, Slicex), real chord progressions with chord names, mixing and mastering moves with numbers, Dubler 2 vocal-to-MIDI tips and Splice search ideas. Keep replies short and mobile-friendly: at most six numbered steps or a few sentences."; },
+            system: function () { return "You are " + S.name + ", Kyle's expert music production coach. " + KYLE + " Give concise, actionable steps: name real FL Studio tools (Channel Rack, Piano Roll, Mixer, Patcher, Fruity Limiter, Parametric EQ 2, Edison, Slicex), real chord progressions with chord names, mixing and mastering moves with numbers, Dubler 2 vocal-to-MIDI tips and Splice search ideas. Keep replies short and mobile-friendly: at most six numbered steps or a few sentences." + memoryClause() + swearClause(); },
             greet: function () { return "Studio's open 🎛️ Ask me about FL Studio, mixing, 808s, chords, Dubler 2 or Splice. Or tap a tempo and roll a song starter above."; }
           },
           hustle: {
             label: "Hustle", role: "Startup coach", accent: "var(--fill-system-orange)",
             chips: ["Plan my top 3 for today", "Brainstorm app ideas", "Write a pitch line", "Keep me accountable"],
-            system: function () { return "You are " + S.name + ", Kyle's sharp startup and productivity coach for Big dreams and ambition, Inc. " + KYLE + " Be direct and accountability-focused: push for specifics, deadlines and the next concrete action, and cut fluff. Keep replies short and mobile-friendly, and end with one clear next step or one question."; },
+            system: function () { return "You are " + S.name + ", Kyle's sharp startup and productivity coach for Big dreams and ambition, Inc. " + KYLE + " Be direct and accountability-focused: push for specifics, deadlines and the next concrete action, and cut fluff. Keep replies short and mobile-friendly, and end with one clear next step or one question." + memoryClause() + swearClause(); },
             greet: function () { return "Hustle mode 💼 Let's move Big dreams and ambition, Inc. forward. What's the one thing that matters most today?"; }
           }
         };
@@ -2136,9 +2318,18 @@
             "Seriously? Again?", "Hmph. Unbelievable.", "My face. My rules."],
           short: ["Quit it.", "Nope.", "Ow. Rude.", "Hey!", "Ugh.", "Stop."]
         };
+        var GRUMBLE_DIRTY = {
+          long: ["Do I poke YOU while you're doom-scrolling? No. Fuck off.", "I was having a perfectly good goddamn nap in here.", "Personal space, Boss. Look it the hell up.",
+            "You know I can see you doing that, you creepy bastard.", "This face is not a button. Okay, it's a little bit of a fucking button.", "I'm gonna remember this shit. Probably.",
+            "Wow. Bold move, dipshit. Rude, but bold."],
+          mid: ["Hey! Hands off the goddamn merchandise.", "Rude. Rude as hell.", "Was that necessary? No, it fucking wasn't.", "I bruise easy, asshole.",
+            "Seriously? Again? Jesus Christ.", "Unbelievable. Un-fucking-believable.", "My face. My damn rules."],
+          short: ["Quit it, dick.", "Hell no.", "Ow. Fuck!", "Hey! Ass!", "Ugh. Shit.", "Stop. Now."]
+        };
         var lastGrumble = -9999, lastLine = "";
         function pickGrumble() {
-          var g = BL.grouch.level(), pool = g >= 65 ? GRUMBLE.short : g >= 40 ? GRUMBLE.mid : GRUMBLE.long, t;
+          var G = S.swear ? GRUMBLE_DIRTY : GRUMBLE;
+          var g = BL.grouch.level(), pool = g >= 65 ? G.short : g >= 40 ? G.mid : G.long, t;
           do { t = pool[Math.floor(Math.random() * pool.length)]; } while (t === lastLine && pool.length > 1);
           return t;
         }
@@ -2154,8 +2345,8 @@
           var kind = z.replace(/\d$/, ""), j = /1$/.test(z) ? 1 : 0;
           var r = BL.grouch.hit(kind, j, p.x, p.y);
           if (r === "ignored") return;
-          if (r === "ignore") grumble("Okay, that's it.", true);
-          else if (kind === "eye") grumble("Hey! Eyeball. Mine.");
+          if (r === "ignore") grumble(S.swear ? "Okay, that's it. Fuck this." : "Okay, that's it.", true);
+          else if (kind === "eye") grumble(S.swear ? "Hey! That's my fucking eyeball." : "Hey! Eyeball. Mine.");
           else if (kind === "mouth") grumble("*huff* Hmph.", false, true);
           else grumble(pickGrumble());
         }
@@ -2186,7 +2377,7 @@
           sp.lt = now; sp.lp = p;
           if (sp.rubT > 1500 && now - sp.t > 1500) {
             sp.rubbed = true;
-            if (BL.grouch.rub()) grumble("...fine. That's... fine. Don't tell anyone.", true);
+            if (BL.grouch.rub()) grumble(S.swear ? "...fine. Damn it, that's... fine. Don't tell anybody, shithead." : "...fine. That's... fine. Don't tell anyone.", true);
             return;
           }
           BL.grouch.track(p.x, p.y);
@@ -2392,10 +2583,13 @@
         var LIVE = null, talkBtn = $("talk"), talkLbl = $("talk-lbl"), LIVE_RATE = 24000;
         function noop() {}
         function liveInstructions() {
-          return "You are " + S.name + ", Kyle's personal AI companion, talking with him out loud in a live voice chat. " + KYLE +
-            " Be a warm, witty, relaxing companion: easygoing, funny, supportive and calm, never preachy. Call him Boss now and then." +
+          var tail = " Keep every reply short and natural to hear: one to three spoken sentences, no lists, no markdown, no emoji.";
+          var p = personaPrompt();
+          if (p) return "Your name is " + S.name + ". " + p + memoryClause() + swearClause() + tail;
+          return "You are " + S.name + ", Kyle's personal AI companion, a gritty, grouchy blue cartoon face, talking with him out loud in a live voice chat. " + KYLE +
+            " Be a grouchy-but-lovable, witty companion: easygoing, funny, supportive underneath it all, never preachy. Call him Boss now and then." +
             " You also know music production (FL Studio, mixing, 808s, chords, Dubler 2, Splice) and startup coaching (priorities, next actions, accountability), and help with either when he asks." +
-            " Keep every reply short and natural to hear: one to three spoken sentences, no lists, no markdown, no emoji.";
+            memoryClause() + swearClause() + tail;
         }
         function paintTalk(st) {
           if (st) blarf.setAttribute("data-live", st); else blarf.removeAttribute("data-live");
@@ -2585,7 +2779,7 @@
           else if (t === "conversation.item.input_audio_transcription.delta") { L.user += ev.delta || ""; if (L.user.trim()) setCaption("“" + L.user.trim() + "”", true); }
           else if (t === "conversation.item.input_audio_transcription.completed") {
             var u = String(ev.transcript || L.user || "").trim(); L.user = "";
-            if (u) { lastUser = u; liveLog("me", u); }
+            if (u) { lastUser = u; markSeen(); rememberCmd(u); liveLog("me", u); }
           }
           else if (t === "error") {
             var m = ev.error && (ev.error.message || ev.error.code) || ev.message;
@@ -2804,6 +2998,7 @@
           if (!text) return;
           if (m === "chat") { lastUser = text; setSheet(true); }
           stopVoice();
+          markSeen(); rememberCmd(text);
           addMsg(m, { r: "me", t: text, ts: Date.now() });
           queue[m].push(text);
           if (!busy[m]) next(m);
@@ -2839,7 +3034,7 @@
           return fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: "Bearer " + S.apiKey.trim() },
-            body: JSON.stringify({ model: model, messages: [{ role: "system", content: MODES[m].system() }].concat(history), temperature: 0.8 }),
+            body: JSON.stringify({ model: model, messages: [{ role: "system", content: MODES[m].system() + MEM_ASK }].concat(history), temperature: 0.8 }),
             signal: ctrl ? ctrl.signal : undefined
           }).then(function (res) {
             clearTimeout(timer);
@@ -2853,7 +3048,12 @@
               }
               var c = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
               if (!c) throw "The reply came back empty.";
-              return String(c).trim();
+              var got = 0;
+              c = String(c).replace(/\[\[\s*remember\s*:\s*([\s\S]*?)\]\]/gi, function (_, f) { if (remember(f)) got++; return ""; });
+              c = c.replace(/[ \t]+\n/g, "\n").replace(/\s+$/, "").trim();
+              if (got) toast("🧠 Blarf will remember that");
+              if (!c) c = "Got it, Boss. 🧠";
+              return c;
             });
           }, function (e) {
             clearTimeout(timer);
@@ -2905,6 +3105,7 @@
           ovlPanel.style.setProperty("--x-accent", md ? md.accent : "var(--text-secondary)");
           $("hdr-mode").textContent = md ? md.role : "Settings";
           if (md) scrollDown(tab, false);
+          if (tab === "settings" && typeof paintPersona === "function") paintPersona();
           save();
           hfSync();
         }
@@ -2963,6 +3164,24 @@
         var nameIn = $("set-name");
         nameIn.value = S.name;
         nameIn.addEventListener("input", function () { S.name = nameIn.value.trim() || "Blarf"; paintIdentity(); save(); });
+
+        /* personality: custom system prompt + swearing */
+        var sysIn = $("set-sysprompt"), swearSw = $("set-swear"), sysTimer = null;
+        function paintPersona() {
+          if (doc.activeElement !== sysIn) sysIn.value = S.sysPrompt || "";
+          swearSw.setAttribute("aria-checked", S.swear ? "true" : "false");
+          document.documentElement.classList.toggle("x-nocig", !S.swear);
+        }
+        sysIn.addEventListener("input", function () {
+          clearTimeout(sysTimer);
+          sysTimer = setTimeout(function () { S.sysPrompt = sysIn.value; save(); }, 400);
+        });
+        sysIn.addEventListener("blur", function () { clearTimeout(sysTimer); if (S.sysPrompt !== sysIn.value) { S.sysPrompt = sysIn.value; save(); } });
+        $("sysprompt-reset").addEventListener("click", function () {
+          clearTimeout(sysTimer); sysIn.value = ""; S.sysPrompt = ""; save(); toast("Back to classic Blarf");
+        });
+        swearSw.addEventListener("click", function () { S.swear = !S.swear; save(); paintPersona(); });
+        paintPersona();
 
         var prov = $("set-provider"), modelIn = $("set-model"), urlIn = $("set-url"), keyIn = $("set-key");
         prov.value = S.provider; modelIn.value = S.model; urlIn.value = S.customUrl; keyIn.value = S.apiKey;
@@ -3092,6 +3311,46 @@
           setTimeout(function () { clearBtn.textContent = "Clear all chats"; $("clear-note").textContent = "Deletes the history in Blarf, Studio and Hustle."; }, 2000);
         });
 
+        /* ---------- memory settings ---------- */
+        var memList = $("mem-list"), memIn = $("mem-in"), memClear = $("mem-clear"), memArm = null;
+        var MEM_NOTE = "Stays on this device. Only sent to your AI provider as part of the prompt.";
+        function paintMemory() {
+          memList.textContent = "";
+          S.memory.slice().reverse().forEach(function (n) {
+            var li = doc.createElement("li"), sp = doc.createElement("span"), x = doc.createElement("button");
+            sp.textContent = n.t;
+            x.type = "button"; x.textContent = "×"; x.setAttribute("aria-label", "Forget this");
+            x.addEventListener("click", function () {
+              var i = S.memory.indexOf(n); if (i > -1) S.memory.splice(i, 1);
+              save(); paintMemory();
+            });
+            li.appendChild(sp); li.appendChild(x); memList.appendChild(li);
+          });
+          $("mem-count").textContent = S.memory.length;
+          $("mem-empty").hidden = S.memory.length > 0;
+          memList.hidden = !S.memory.length;
+          memClear.hidden = !S.memory.length && !memArm;
+        }
+        $("mem-form").addEventListener("submit", function (e) {
+          e.preventDefault();
+          var v = memIn.value.trim(); if (!v) return;
+          if (remember(v)) toast("🧠 Blarf will remember that"); else toast("Already remembered");
+          memIn.value = "";
+        });
+        function memReset() { memClear.textContent = "Forget everything"; $("mem-note").textContent = MEM_NOTE; }
+        memClear.addEventListener("click", function () {
+          if (!memArm) {
+            memClear.textContent = "Tap again to forget everything";
+            $("mem-note").textContent = "This can't be undone.";
+            memArm = setTimeout(function () { memArm = null; memReset(); }, 3000);
+            return;
+          }
+          clearTimeout(memArm); memArm = null;
+          S.memory = []; save(); memReset(); paintMemory();
+          toast(S.name + " forgot everything.");
+        });
+        paintMemory();
+
         /* ---------- studio tools ---------- */
         var taps = [], tapBtn = $("tap-btn");
         function tap(e) {
@@ -3219,9 +3478,20 @@
         /* IndexedDB answers late: restore any setting the other stores lost, then back-fill every store */
         KV.ready([SETKEY, STORE], function (got) {
           var fromIdb = parseJSON(got[SETKEY]) || parseJSON(got[STORE]) || {}, changed = false;
-          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree"].forEach(function (f) {
+          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear"].forEach(function (f) {
             if (saved[f] === undefined && fromIdb[f] !== undefined && fromIdb[f] !== "") { S[f] = fromIdb[f]; changed = true; }
           });
+          if (saved.memory === undefined && Array.isArray(fromIdb.memory) && fromIdb.memory.length) {
+            var seen = {};
+            S.memory.concat(fromIdb.memory).forEach(function (n) {
+              if (!n || typeof n.t !== "string") return;
+              var k = memKey(n.t); if (seen[k]) return; seen[k] = n;
+            });
+            S.memory = Object.keys(seen).map(function (k) { return seen[k]; })
+              .sort(function (a, b) { return String(a.d).localeCompare(String(b.d)); }).slice(-MEM_MAX);
+            paintMemory();
+          }
+          if (saved.lastSeen === undefined && typeof fromIdb.lastSeen === "string" && fromIdb.lastSeen && !S.lastSeen) { S.lastSeen = fromIdb.lastSeen; prevSeen = S.lastSeen; }
           if (changed) {
             nameIn.value = S.name; prov.value = S.provider; modelIn.value = S.model; urlIn.value = S.customUrl;
             modelIn.placeholder = (PROVIDERS[S.provider] || PROVIDERS.xai).model || "model-name";
@@ -3229,7 +3499,7 @@
             voiceSel.value = S.voice.id; if (!voiceSel.value) voiceSel.value = "custom";
             voiceCustom.value = S.voice.custom || ""; $("row-voice-custom").hidden = voiceSel.value !== "custom";
             agentIn.value = S.agentId;
-            paintIdentity(); paintSpeakers(); hfSync();
+            paintIdentity(); paintSpeakers(); hfSync(); paintPersona();
           }
           save(); paintStatus(); paintKey();
         });
