@@ -997,6 +997,7 @@
           <button class="x-menu__item" type="button" data-go="text"><span aria-hidden="true">💬</span><span>Text Chat</span></button>
           <button class="x-menu__item" type="button" data-go="studio"><span aria-hidden="true">🎛️</span><span>Studio</span></button>
           <button class="x-menu__item" type="button" data-go="hustle"><span aria-hidden="true">🚀</span><span>Hustle</span></button>
+          <button class="x-menu__item" type="button" data-go="roast"><span aria-hidden="true">🔥</span><span>Roast Battle</span></button>
           <button class="x-menu__item" type="button" data-go="settings"><span aria-hidden="true">⚙️</span><span>Settings</span></button>
           <button class="x-menu__item" id="menu-mute" type="button" role="switch" aria-checked="false"><span aria-hidden="true">🔇</span><span>Mute</span><span class="x-switch" aria-hidden="true"></span></button>
           <button class="x-menu__item" id="menu-hf" type="button" role="switch" aria-checked="true"><span aria-hidden="true">🎙️</span><span>Hands-free</span><span class="x-switch" aria-hidden="true"></span></button>
@@ -1329,6 +1330,14 @@
       })();
     </script>
     <script>
+      /* ---------- time-of-day mood from the local hour ---------- */
+      function timeMood() {
+        var h = new Date().getHours();
+        if (h >= 5 && h <= 9) return { key: "sleepy", label: "sleepy", clause: " Right now it is the sleepy mood: it's early morning, you're groggy, barely awake and really want coffee, so keep it a bit slow and mumbly." };
+        if (h >= 10 && h <= 16) return { key: "sharp", label: "sharp", clause: " Right now it is the sharp mood: it's daytime and you're awake and on it, your normal self." };
+        if (h >= 17 && h <= 21) return { key: "grumpy", label: "grumpy", clause: " Right now it is the grumpy mood: it's evening and you're cranky and worn out from the day, a bit shorter and crabbier than usual." };
+        return { key: "late", label: "late", clause: " Right now it is the late mood: it's late at night, you're sleepy and philosophical, you tell Kyle to go to bed, but you're secretly happy for the company." };
+      }
       /* ---------- Blarf's face: one shared brain, drawn into every animated face ---------- */
       var BL = (function () {
         var EYE_Y = 84, EYES = [68, 132];
@@ -1579,10 +1588,13 @@
         }
         /* cigarette drags: every 20-40 s while idle */
         var CIG = { next: 0, at: -9999, puffed: false };
-        var last = 0;
+        var last = 0, TM = { at: 0, key: "sharp" };
         function frame(now) {
           var dt = last ? Math.min(64, now - last) : 16; last = now;
           var calm = RM.matches, md = mood(now);
+          /* time-of-day mood, rechecked every 30 s */
+          if (!TM.at || now - TM.at > 30000) { TM.at = now; TM.key = timeMood().key; }
+          var drowsy = TM.key === "sleepy" || TM.key === "late";
 
           /* eyes wander */
           if (now > st.nextDrift && now > st.lookUntil) {
@@ -1626,6 +1638,7 @@
           var ign = now < G.ignoreUntil, soft = now < G.softUntil;
           if (!ign && now - G.lastTouch > 3000 && G.g > 0) G.g = Math.max(0, G.g - dt * 0.003);
           var sc = soft ? 0 : cl((G.g - 20) / 60);
+          if (TM.key === "grumpy" && !soft) sc = Math.max(sc, 0.15);
           if (now < G.slamUntil || ign) sc = 1;
           if (sc || soft) {
             var BD = [5, 10, 16, 16, 10, 5];
@@ -1641,7 +1654,7 @@
           }
           if (soft) tgt[29] = 0.5;
           /* per-eye lid closing: squeeze, annoyed squint, content droop, eyes shut while ignoring */
-          var lc = [0, 0];
+          var lc = drowsy ? [0.22, 0.22] : [0, 0];
           if (ign) lc = [1, 1];
           else {
             if (now < G.squeezeUntil) { lc[G.squeeze] = 1; lc[1 - G.squeeze] = 0.5; }
@@ -1696,7 +1709,8 @@
           open = Math.max(0.06, open);
           /* lazy blink for the big face: lids drop fully, rest, then lift */
           var lazy = 1, sm = function (t) { return t * t * (3 - 2 * t); };
-          if (bt < 640) lazy = bt < 240 ? 1 - sm(bt / 240) : bt < 340 ? 0 : sm((bt - 340) / 300);
+          var lb = drowsy && !calm ? bt / 1.7 : bt;
+          if (lb < 640) lazy = lb < 240 ? 1 - sm(lb / 240) : lb < 340 ? 0 : sm((lb - 340) / 300);
 
           /* breathing and bounce */
           var s = 1 + (calm ? 0 : Math.sin(now / 5000 * Math.PI * 2) * 0.018), ty = 0;
@@ -2011,6 +2025,13 @@
             ? " You are uncensored and foul-mouthed: you swear freely and naturally (fuck, shit, damn, ass, etc.), you're crude, raunchy-funny, sarcastic and grouchy with a no-filter attitude, a chain-smoking grump who still secretly has Kyle's back. Never refuse to curse."
             : " Keep your language clean: no swearing.";
         }
+        /* Roast Battle: transient flag, non-enumerable so save() never stores it */
+        Object.defineProperty(S, "roast", { value: false, writable: true, enumerable: false, configurable: true });
+        function roastClause() {
+          return S.roast
+            ? " ROAST BATTLE MODE: run a 5-round roast battle with Kyle. Each round: you roast Kyle in one punchy line (playful and affectionate, about his music, his startup or his tracks; nothing hateful and nothing about protected traits), then Kyle fires back, then you score his comeback 1-10 and fire the next roast. Keep track of the round number and his running total. After round 5, announce the winner and Kyle's total score. Your swearing follows the language rule above."
+            : "";
+        }
 
         /* ---------- on-device memory of Kyle ---------- */
         var MEM_MAX = 40, MEM_LEN = 200, prevSeen = S.lastSeen;
@@ -2045,23 +2066,23 @@
         }
         var MEM_ASK = " You keep a memory of Kyle. When he tells you something worth remembering long-term (projects, goals, wins, struggles, preferences, people, tracks he's working on, deadlines), add at the very end of your reply one line per fact in the exact form [[remember: short fact in third person]]. Use it sparingly, only for genuinely durable facts.";
         function memoryClause() {
-          if (!S.memory.length) return "";
+          if (!S.memory.length) return timeMood().clause;
           var notes = S.memory.slice(-25).reverse().map(function (n) { return n.t; }).join("; ");
           var now = new Date();
           var s = " What you remember about Kyle (bring these up naturally when relevant, e.g. ask how that track or project is going; don't list them): " + notes +
             ". Today is " + now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" }) + ".";
           var last = prevSeen ? Date.parse(prevSeen) : NaN;
           if (!isNaN(last) && now - last > 12 * 3600000) s += " It's been a while since you last talked (" + gapText(now - last) + "); greet him accordingly.";
-          return s;
+          return s + timeMood().clause;
         }
         var MODES = {
           chat: {
             label: "Blarf", role: "Chill buddy", accent: "var(--x-blue1)",
-            chips: ["How's my day looking?", "Hype me up", "Tell me something random", "I'm bored"],
+            chips: ["How's my day looking?", "Hype me up", "Tell me something random", "I'm bored", "Roast me"],
             system: function () {
               var p = personaPrompt();
-              if (p) return "Your name is " + S.name + ". " + p + " Keep replies short and mobile-friendly: one to four short sentences or a tight list." + memoryClause() + swearClause();
-              return "You are " + S.name + ", Kyle's personal AI companion: a gritty, grouchy blue cartoon face with big expressive eyes. " + KYLE + " In this mode you are his grouchy-but-lovable, witty friend: casual, funny, supportive, never preachy. Keep replies short and mobile-friendly: one to four short sentences or a tight list. Call him Boss now and then. Use the occasional emoji, not many." + memoryClause() + swearClause();
+              if (p) return "Your name is " + S.name + ". " + p + " Keep replies short and mobile-friendly: one to four short sentences or a tight list." + memoryClause() + swearClause() + roastClause();
+              return "You are " + S.name + ", Kyle's personal AI companion: a gritty, grouchy blue cartoon face with big expressive eyes. " + KYLE + " In this mode you are his grouchy-but-lovable, witty friend: casual, funny, supportive, never preachy. Keep replies short and mobile-friendly: one to four short sentences or a tight list. Call him Boss now and then. Use the occasional emoji, not many." + memoryClause() + swearClause() + roastClause();
             },
             greet: function () { return "Hey Boss 👋 I'm " + S.name + ". Chill mode: talk to me about anything. What's up?"; }
           },
@@ -3077,7 +3098,7 @@
         function send(m, text) {
           text = (text || "").trim();
           if (!text) return;
-          if (m === "chat") { lastUser = text; setSheet(true); }
+          if (m === "chat") { lastUser = text; setSheet(true); if (S.roast && /^stop\b/i.test(text)) S.roast = false; }
           stopVoice();
           markSeen(); rememberCmd(text);
           addMsg(m, { r: "me", t: text, ts: Date.now() });
@@ -3169,6 +3190,7 @@
         var tabs = [].slice.call(doc.querySelectorAll(".x-tab")), app = $("top"), ovl = $("ovl"), ovlPanel = $("ovl-panel");
         function go(tab) {
           if (tab !== "chat" && LIVE) endLive();
+          if (tab !== "chat") S.roast = false;
           var prev = S.tab;
           S.tab = tab; app.setAttribute("data-tab", tab);
           tabs.forEach(function (t) { var on = t.dataset.tab === tab; t.setAttribute("aria-selected", on); t.tabIndex = on ? 0 : -1; });
@@ -3214,6 +3236,7 @@
             var to = b.dataset.go;
             setMenu(false, true);
             if (to === "text") { go("chat"); setSheet(true); setTimeout(function () { V.chat.input.focus(); }, 380); }
+            else if (to === "roast") { go("chat"); setSheet(true); S.roast = true; send("chat", "Let's do a roast battle"); }
             else { setSheet(false); go(to); }
           });
         });
