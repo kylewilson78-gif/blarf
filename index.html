@@ -998,6 +998,7 @@
           <button class="x-menu__item" type="button" data-go="studio"><span aria-hidden="true">🎛️</span><span>Studio</span></button>
           <button class="x-menu__item" type="button" data-go="hustle"><span aria-hidden="true">🚀</span><span>Hustle</span></button>
           <button class="x-menu__item" type="button" data-go="roast"><span aria-hidden="true">🔥</span><span>Roast Battle</span></button>
+          <button class="x-menu__item" type="button" data-go="trivia"><span aria-hidden="true">🧠</span><span>Trivia Streak</span></button>
           <button class="x-menu__item" type="button" data-go="settings"><span aria-hidden="true">⚙️</span><span>Settings</span></button>
           <button class="x-menu__item" id="menu-mute" type="button" role="switch" aria-checked="false"><span aria-hidden="true">🔇</span><span>Mute</span><span class="x-switch" aria-hidden="true"></span></button>
           <button class="x-menu__item" id="menu-hf" type="button" role="switch" aria-checked="true"><span aria-hidden="true">🎙️</span><span>Hands-free</span><span class="x-switch" aria-hidden="true"></span></button>
@@ -2032,6 +2033,13 @@
             ? " ROAST BATTLE MODE: run a 5-round roast battle with Kyle. Each round: you roast Kyle in one punchy line (playful and affectionate, about his music, his startup or his tracks; nothing hateful and nothing about protected traits), then Kyle fires back, then you score his comeback 1-10 and fire the next roast. Keep track of the round number and his running total. After round 5, announce the winner and Kyle's total score. Your swearing follows the language rule above."
             : "";
         }
+        /* Trivia Streak: transient flag, non-enumerable so save() never stores it */
+        Object.defineProperty(S, "trivia", { value: false, writable: true, enumerable: false, configurable: true });
+        function triviaClause() {
+          return S.trivia
+            ? " TRIVIA STREAK MODE: quiz Kyle one question at a time (music production, pop culture, startups, general knowledge, mixed difficulty). Wait for his answer, say if he's right or wrong in your grouchy style with the correct answer in a few words, track his current streak of correct answers and best streak this session, then ask the next question. Never reveal the answer before he replies. If he says stop, give his final streak."
+            : "";
+        }
 
         /* ---------- on-device memory of Kyle ---------- */
         var MEM_MAX = 40, MEM_LEN = 200, prevSeen = S.lastSeen;
@@ -2081,8 +2089,8 @@
             chips: ["How's my day looking?", "Hype me up", "Tell me something random", "I'm bored", "Roast me"],
             system: function () {
               var p = personaPrompt();
-              if (p) return "Your name is " + S.name + ". " + p + " Keep replies short and mobile-friendly: one to four short sentences or a tight list." + memoryClause() + swearClause() + roastClause();
-              return "You are " + S.name + ", Kyle's personal AI companion: a gritty, grouchy blue cartoon face with big expressive eyes. " + KYLE + " In this mode you are his grouchy-but-lovable, witty friend: casual, funny, supportive, never preachy. Keep replies short and mobile-friendly: one to four short sentences or a tight list. Call him Boss now and then. Use the occasional emoji, not many." + memoryClause() + swearClause() + roastClause();
+              if (p) return "Your name is " + S.name + ". " + p + " Keep replies short and mobile-friendly: one to four short sentences or a tight list." + memoryClause() + swearClause() + roastClause() + triviaClause();
+              return "You are " + S.name + ", Kyle's personal AI companion: a gritty, grouchy blue cartoon face with big expressive eyes. " + KYLE + " In this mode you are his grouchy-but-lovable, witty friend: casual, funny, supportive, never preachy. Keep replies short and mobile-friendly: one to four short sentences or a tight list. Call him Boss now and then. Use the occasional emoji, not many." + memoryClause() + swearClause() + roastClause() + triviaClause();
             },
             greet: function () { return "Hey Boss 👋 I'm " + S.name + ". Chill mode: talk to me about anything. What's up?"; }
           },
@@ -3098,7 +3106,7 @@
         function send(m, text) {
           text = (text || "").trim();
           if (!text) return;
-          if (m === "chat") { lastUser = text; setSheet(true); if (S.roast && /^stop\b/i.test(text)) S.roast = false; }
+          if (m === "chat") { lastUser = text; setSheet(true); if (/^stop\b/i.test(text)) { S.roast = false; S.trivia = false; } }
           stopVoice();
           markSeen(); rememberCmd(text);
           addMsg(m, { r: "me", t: text, ts: Date.now() });
@@ -3190,7 +3198,7 @@
         var tabs = [].slice.call(doc.querySelectorAll(".x-tab")), app = $("top"), ovl = $("ovl"), ovlPanel = $("ovl-panel");
         function go(tab) {
           if (tab !== "chat" && LIVE) endLive();
-          if (tab !== "chat") S.roast = false;
+          if (tab !== "chat") { S.roast = false; S.trivia = false; }
           var prev = S.tab;
           S.tab = tab; app.setAttribute("data-tab", tab);
           tabs.forEach(function (t) { var on = t.dataset.tab === tab; t.setAttribute("aria-selected", on); t.tabIndex = on ? 0 : -1; });
@@ -3237,6 +3245,7 @@
             setMenu(false, true);
             if (to === "text") { go("chat"); setSheet(true); setTimeout(function () { V.chat.input.focus(); }, 380); }
             else if (to === "roast") { go("chat"); setSheet(true); S.roast = true; send("chat", "Let's do a roast battle"); }
+            else if (to === "trivia") { go("chat"); setSheet(true); S.trivia = true; send("chat", "Let's play trivia streak"); }
             else { setSheet(false); go(to); }
           });
         });
