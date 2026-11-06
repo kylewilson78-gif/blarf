@@ -999,6 +999,7 @@
           <button class="x-menu__item" type="button" data-go="hustle"><span aria-hidden="true">🚀</span><span>Hustle</span></button>
           <button class="x-menu__item" type="button" data-go="roast"><span aria-hidden="true">🔥</span><span>Roast Battle</span></button>
           <button class="x-menu__item" type="button" data-go="trivia"><span aria-hidden="true">🧠</span><span>Trivia Streak</span></button>
+          <button class="x-menu__item" type="button" data-go="poke"><span aria-hidden="true">🐻</span><span>Poke the Bear</span></button>
           <button class="x-menu__item" type="button" data-go="settings"><span aria-hidden="true">⚙️</span><span>Settings</span></button>
           <button class="x-menu__item" id="menu-mute" type="button" role="switch" aria-checked="false"><span aria-hidden="true">🔇</span><span>Mute</span><span class="x-switch" aria-hidden="true"></span></button>
           <button class="x-menu__item" id="menu-hf" type="button" role="switch" aria-checked="true"><span aria-hidden="true">🎙️</span><span>Hands-free</span><span class="x-switch" aria-hidden="true"></span></button>
@@ -1811,7 +1812,7 @@
           },
           /* grouchy touch on the big face; coordinates are in the face's 200-unit space */
           grouch: {
-            hit: function (kind, j, sx, sy) {
+            hit: function (kind, j, sx, sy, game) {
               var now = performance.now();
               if (now < G.ignoreUntil) return "ignored";
               G.lastTouch = now; G.hitAt = now; G.softUntil = 0;
@@ -1824,8 +1825,16 @@
               else if (kind === "mouth") G.pressUntil = now + 1600;
               else if (kind === "cheek") { G.puff = j; G.puffUntil = now + 1600; G.turnDir = j ? -1 : 1; G.turnUntil = now + 1600; }
               else { G.joltAt = now; G.tiltDir = away; G.tiltUntil = now + 900; }
+              if (game) { G.g = Math.min(G.g, 79); return "ok"; }
               if (G.g >= 80) { G.ignoreUntil = now + 4000; G.awayDir = away; G.g = 60; G.track = null; return "ignore"; }
               return "ok";
+            },
+            /* Poke the Bear: force the most-angry reaction (the slam and the turn away) */
+            snap: function () {
+              var now = performance.now();
+              G.lastTouch = now; G.hitAt = now; G.softUntil = 0; G.slamUntil = now + 1500;
+              G.ignoreUntil = now + 4000; G.awayDir = Math.random() < 0.5 ? 1 : -1; G.g = 60; G.track = null;
+              if (navigator.vibrate && !RM.matches) navigator.vibrate([30, 40, 60]);
             },
             track: function (sx, sy) {
               if (sx == null) { G.track = null; return; }
@@ -1872,7 +1881,7 @@
 
         /* ---------- storage: localStorage, then IndexedDB, then a cookie (never the API key); memory as a last resort ---------- */
         var SETKEY = "companion-settings";
-        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit"];
+        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest"];
         var KV = (function () {
           var mem = {}, idb = null, idbState = 0; /* 0 pending, 1 ok, -1 unavailable */
           var https = location.protocol === "https:", AGE = 400 * 86400;
@@ -2006,7 +2015,8 @@
           lastSeen: typeof saved.lastSeen === "string" ? saved.lastSeen : "",
           streak: typeof saved.streak === "number" && saved.streak >= 0 ? Math.floor(saved.streak) : 0,
           streakDay: typeof saved.streakDay === "string" ? saved.streakDay : "",
-          outfit: typeof saved.outfit === "string" ? saved.outfit : "none"
+          outfit: typeof saved.outfit === "string" ? saved.outfit : "none",
+          pokeBest: typeof saved.pokeBest === "number" && saved.pokeBest >= 0 ? Math.floor(saved.pokeBest) : 0
         };
         /* one-time move of any saved voice to Kyle's cloned voice */
         if (S.voiceMig < 1) { S.voice.id = MY_VOICE; S.voiceMig = 1; save(); }
@@ -2460,6 +2470,43 @@
           else if (kind === "mouth") grumble("*huff* Hmph.", false, true);
           else grumble(pickGrumble());
         }
+        /* Poke the Bear: a transient round (not saved); only the best score persists */
+        var pokeScore = 0, pokeLeft = 0, poke = { on: false, irr: 0, last: 0 };
+        function pokeStart() {
+          pokeScore = 0; pokeLeft = 20;
+          poke.on = true; poke.irr = 0; poke.last = 0;
+          toast("Poke the Bear: 20 pokes, don't make him snap!");
+        }
+        function pokeBest(n) {
+          if (n > (S.pokeBest || 0)) { S.pokeBest = n; save(); }
+          return " · Best: " + S.pokeBest;
+        }
+        function pokeTap(z, p) {
+          var now = performance.now();
+          /* the hidden meter decays 1 per 1.5 s; fast pokes (under 400 ms apart) add 2, slow ones 1 */
+          if (poke.last) poke.irr = Math.max(0, poke.irr - (now - poke.last) / 1500);
+          poke.irr += poke.last && now - poke.last < 400 ? 2 : 1;
+          poke.last = now; pokeLeft--;
+          var kind = z.replace(/\d$/, ""), j = /1$/.test(z) ? 1 : 0;
+          if (poke.irr >= 10) {
+            poke.on = false;
+            BL.grouch.snap();
+            grumble(S.swear ? "Okay, that's it. Fuck this." : "Okay, that's it.", true);
+            toast("SNAP! Score: " + pokeScore + pokeBest(pokeScore));
+            return;
+          }
+          BL.grouch.hit(kind, j, p.x, p.y, true);
+          pokeScore++;
+          if (pokeLeft <= 0) {
+            poke.on = false;
+            var bonus = Math.max(0, Math.round(10 - poke.irr)), total = pokeScore + bonus;
+            toast("You survived! Score: " + pokeScore + " + " + bonus + " bonus = " + total + pokeBest(total));
+            grumble(pickGrumble(), true);
+            return;
+          }
+          if (kind === "mouth") grumble("*huff* Hmph.", false, true);
+          else grumble(pickGrumble());
+        }
         stage.addEventListener("pointerdown", function (e) {
           if (e.button > 0 || e.target.closest("button")) return;
           var now = performance.now(), p = svgPt(e.clientX, e.clientY), z = e.target.closest(".x-hero") ? zoneAt(p) : null;
@@ -2500,7 +2547,7 @@
           if (dy < -40 && Math.abs(dy) > Math.abs(dx) * 1.3 && (!s.z || dur < 600) && !s.rubbed) { setSheet(true); return; }
           if (s.moved) return;
           if (!s.z) { pauseTap(); return; }
-          grouchPoke(s.z, s.p);
+          if (poke.on) pokeTap(s.z, s.p); else grouchPoke(s.z, s.p);
         }
         stage.addEventListener("pointerup", function (e) { touchEnd(e, false); });
         stage.addEventListener("pointercancel", function (e) { touchEnd(e, true); });
@@ -3246,6 +3293,7 @@
             if (to === "text") { go("chat"); setSheet(true); setTimeout(function () { V.chat.input.focus(); }, 380); }
             else if (to === "roast") { go("chat"); setSheet(true); S.roast = true; send("chat", "Let's do a roast battle"); }
             else if (to === "trivia") { go("chat"); setSheet(true); S.trivia = true; send("chat", "Let's play trivia streak"); }
+            else if (to === "poke") { go("chat"); setSheet(false); pokeStart(); }
             else { setSheet(false); go(to); }
           });
         });
@@ -3727,7 +3775,7 @@
         /* IndexedDB answers late: restore any setting the other stores lost, then back-fill every store */
         KV.ready([SETKEY, STORE], function (got) {
           var fromIdb = parseJSON(got[SETKEY]) || parseJSON(got[STORE]) || {}, changed = false;
-          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit"].forEach(function (f) {
+          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest"].forEach(function (f) {
             if (saved[f] === undefined && fromIdb[f] !== undefined && fromIdb[f] !== "") { S[f] = fromIdb[f]; changed = true; }
           });
           /* a streak restored late: count today against it, then repaint the outfit */
