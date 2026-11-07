@@ -473,6 +473,22 @@
       .x-row[hidden] { display: none; }
       /* iOS-style inset hairline between rows */
       .x-row + .x-row { background: linear-gradient(var(--stroke-secondary), var(--stroke-secondary)) 16px 0 / calc(100% - 16px) 1px no-repeat; }
+      /* Beat Jam */
+      .x-beat__grid { display: grid; gap: 14px; }
+      .x-beat__grid .x-glabel { padding-left: 4px; }
+      .x-beat__steps { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; }
+      .x-beat__step {
+        min-height: var(--tap); border: 0; border-radius: var(--r-s); background: var(--fill-tertiary); cursor: pointer;
+        transition: background var(--dur-quick) var(--ease-out), transform var(--dur-quick) var(--ease-out);
+      }
+      .x-beat__step:nth-child(4n+1) { box-shadow: inset 0 0 0 1px var(--stroke-primary); }
+      .x-beat__step[aria-pressed="true"] { background: var(--fill-primary); }
+      .x-beat__step.is-now { box-shadow: inset 0 0 0 2px var(--fill-system-orange); }
+      .x-beat__step.is-now[aria-pressed="true"] { transform: scale(0.9); }
+      .x-beat__range { flex: 1; min-width: 0; min-height: var(--tap); accent-color: var(--text-primary); }
+      .x-beat__val { flex: none; width: 3.2em; text-align: right; font: var(--type-body); color: var(--text-secondary); }
+      .x-beat__ctl .btn[disabled] { opacity: 0.5; }
+      @media (prefers-reduced-motion: reduce) { .x-beat__step, .x-beat__step.is-now[aria-pressed="true"] { transition: none; transform: none; } }
       .x-row > .x-val { flex: 1; min-width: 0; text-align: right; font: var(--type-body); color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .x-row .btn { min-height: 36px; }
       .x-group > .x-danger { min-height: var(--tap); }
@@ -758,6 +774,36 @@
 
       <div class="x-views" id="ovl-views">
         <!-- Studio and Hustle views are built by script from MODES -->
+        <section class="x-view" id="view-beat" aria-label="Beat Jam">
+          <div class="x-scroll">
+            <div class="x-settings x-beat">
+              <h2>Beat Jam</h2>
+              <div class="x-beat__grid" id="beat-grid" role="group" aria-label="Drum pattern, 16 steps"></div>
+              <div class="links x-beat__ctl">
+                <button class="btn x-beat__play" id="beat-play" type="button" aria-pressed="false">▶ Play</button>
+                <button class="btn" id="beat-rand" type="button">Randomize</button>
+                <button class="btn" id="beat-clear" type="button">Clear</button>
+                <button class="btn" id="beat-wav" type="button">Export WAV</button>
+              </div>
+              <div>
+                <p class="x-glabel">Groove</p>
+                <div class="x-group">
+                  <div class="x-row">
+                    <label for="beat-bpm">BPM</label>
+                    <input class="x-beat__range" id="beat-bpm" type="range" min="60" max="180" step="1" value="90" />
+                    <output class="x-beat__val" id="beat-bpm-v" for="beat-bpm">90</output>
+                  </div>
+                  <div class="x-row">
+                    <label for="beat-swing">Swing</label>
+                    <input class="x-beat__range" id="beat-swing" type="range" min="0" max="100" step="1" value="0" />
+                    <output class="x-beat__val" id="beat-swing-v" for="beat-swing">0%</output>
+                  </div>
+                </div>
+                <p class="x-gnote">Export saves two bars as a WAV file.</p>
+              </div>
+            </div>
+          </div>
+        </section>
         <section class="x-view" id="view-settings" aria-label="Settings">
           <div class="x-scroll">
             <div class="x-settings">
@@ -1000,6 +1046,7 @@
           <button class="x-menu__item" type="button" data-go="roast"><span aria-hidden="true">🔥</span><span>Roast Battle</span></button>
           <button class="x-menu__item" type="button" data-go="trivia"><span aria-hidden="true">🧠</span><span>Trivia Streak</span></button>
           <button class="x-menu__item" type="button" data-go="poke"><span aria-hidden="true">🐻</span><span>Poke the Bear</span></button>
+          <button class="x-menu__item" type="button" data-go="beat"><span aria-hidden="true">🥁</span><span>Beat Jam</span></button>
           <button class="x-menu__item" type="button" data-go="settings"><span aria-hidden="true">⚙️</span><span>Settings</span></button>
           <button class="x-menu__item" id="menu-mute" type="button" role="switch" aria-checked="false"><span aria-hidden="true">🔇</span><span>Mute</span><span class="x-switch" aria-hidden="true"></span></button>
           <button class="x-menu__item" id="menu-hf" type="button" role="switch" aria-checked="true"><span aria-hidden="true">🎙️</span><span>Hands-free</span><span class="x-switch" aria-hidden="true"></span></button>
@@ -1881,7 +1928,7 @@
 
         /* ---------- storage: localStorage, then IndexedDB, then a cookie (never the API key); memory as a last resort ---------- */
         var SETKEY = "companion-settings";
-        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest"];
+        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat"];
         var KV = (function () {
           var mem = {}, idb = null, idbState = 0; /* 0 pending, 1 ok, -1 unavailable */
           var https = location.protocol === "https:", AGE = 400 * 86400;
@@ -2016,7 +2063,8 @@
           streak: typeof saved.streak === "number" && saved.streak >= 0 ? Math.floor(saved.streak) : 0,
           streakDay: typeof saved.streakDay === "string" ? saved.streakDay : "",
           outfit: typeof saved.outfit === "string" ? saved.outfit : "none",
-          pokeBest: typeof saved.pokeBest === "number" && saved.pokeBest >= 0 ? Math.floor(saved.pokeBest) : 0
+          pokeBest: typeof saved.pokeBest === "number" && saved.pokeBest >= 0 ? Math.floor(saved.pokeBest) : 0,
+          beat: beatClean(saved.beat)
         };
         /* one-time move of any saved voice to Kyle's cloned voice */
         if (S.voiceMig < 1) { S.voice.id = MY_VOICE; S.voiceMig = 1; save(); }
@@ -3246,6 +3294,7 @@
         function go(tab) {
           if (tab !== "chat" && LIVE) endLive();
           if (tab !== "chat") { S.roast = false; S.trivia = false; }
+          if (tab !== "beat") beatStop();
           var prev = S.tab;
           S.tab = tab; app.setAttribute("data-tab", tab);
           tabs.forEach(function (t) { var on = t.dataset.tab === tab; t.setAttribute("aria-selected", on); t.tabIndex = on ? 0 : -1; });
@@ -3261,7 +3310,7 @@
           var md = MODES[tab];
           app.style.setProperty("--x-accent", md ? md.accent : "var(--text-secondary)");
           ovlPanel.style.setProperty("--x-accent", md ? md.accent : "var(--text-secondary)");
-          $("hdr-mode").textContent = md ? md.role : "Settings";
+          $("hdr-mode").textContent = md ? md.role : tab === "beat" ? "Beat Jam" : "Settings";
           if (md) scrollDown(tab, false);
           if (tab === "settings" && typeof paintPersona === "function") paintPersona();
           save();
@@ -3772,6 +3821,203 @@
         onbFace.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); BL.poke(onbSvg); } });
         if (!S.onboarded) onb.hidden = false;
 
+        /* ---------- Beat Jam: 16-step drum machine, WebAudio synth, lookahead scheduler ---------- */
+        function beatClean(b) {
+          var def = ["1000000110100000", "0000100000001000", "1010101010101010", "0000000000001000"];
+          b = b && typeof b === "object" ? b : {};
+          var p = Array.isArray(b.pat) ? b.pat : [];
+          var bpm = Math.round(Number(b.bpm)), sw = Math.round(Number(b.swing));
+          return {
+            pat: def.map(function (d, i) { return typeof p[i] === "string" && /^[01]{16}$/.test(p[i]) ? p[i] : (b.pat ? "0000000000000000" : d); }),
+            bpm: bpm >= 60 && bpm <= 180 ? bpm : 90,
+            swing: sw >= 0 && sw <= 100 ? sw : 0
+          };
+        }
+        var BEAT_INST = ["Kick", "Snare", "Hat", "Clap"];
+        var bt = { ctx: null, out: null, noise: null, playing: false, step: 0, next: 0, timer: 0, raf: 0, q: [], cur: -1, btns: [] };
+        function beatOn(r, s) { return S.beat.pat[r].charAt(s) === "1"; }
+        function beatSet(r, s, on) { var p = S.beat.pat[r]; S.beat.pat[r] = p.slice(0, s) + (on ? "1" : "0") + p.slice(s + 1); }
+        function beatSecs() { return 60 / S.beat.bpm / 4; }
+        function beatSwing(s, dur) { return s % 2 ? dur * (S.beat.swing / 100) / 3 : 0; }
+        function beatOut(c) {
+          var g = c.createGain(); g.gain.value = 0.7;
+          var comp = c.createDynamicsCompressor ? c.createDynamicsCompressor() : null;
+          if (comp) { g.connect(comp); comp.connect(c.destination); } else g.connect(c.destination);
+          return g;
+        }
+        function beatNoise(c) {
+          var n = c.sampleRate, b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0);
+          for (var i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+          return b;
+        }
+        function beatNz(c, noise, t, dur, filt, freq, q) {
+          var s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+          s.buffer = noise; f.type = filt; f.frequency.value = freq; if (q) f.Q.value = q;
+          s.connect(f); f.connect(g);
+          s.start(t, Math.random() * 0.5, dur);
+          return g;
+        }
+        function beatVoice(c, out, noise, r, t) {
+          var g, o;
+          if (r === 0) { /* kick: sine with a fast pitch drop */
+            o = c.createOscillator(); g = c.createGain(); o.type = "sine";
+            o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.13);
+            g.gain.setValueAtTime(1, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+            o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.42);
+          } else if (r === 1) { /* snare: band-passed noise plus a short body */
+            g = beatNz(c, noise, t, 0.22, "bandpass", 1800, 0.7);
+            g.gain.setValueAtTime(0.8, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.2); g.connect(out);
+            o = c.createOscillator(); var b = c.createGain(); o.type = "triangle";
+            o.frequency.setValueAtTime(190, t); o.frequency.exponentialRampToValueAtTime(120, t + 0.1);
+            b.gain.setValueAtTime(0.4, t); b.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+            o.connect(b); b.connect(out); o.start(t); o.stop(t + 0.12);
+          } else if (r === 2) { /* hat: high-passed noise tick */
+            g = beatNz(c, noise, t, 0.06, "highpass", 7000);
+            g.gain.setValueAtTime(0.3, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.05); g.connect(out);
+          } else { /* clap: three quick filtered noise bursts and a tail */
+            g = beatNz(c, noise, t, 0.24, "bandpass", 1100, 1.5);
+            g.gain.setValueAtTime(0.001, t);
+            for (var k = 0; k < 3; k++) { g.gain.setValueAtTime(0.9, t + k * 0.011); g.gain.exponentialRampToValueAtTime(0.1, t + k * 0.011 + 0.009); }
+            g.gain.setValueAtTime(0.8, t + 0.033); g.gain.exponentialRampToValueAtTime(0.001, t + 0.22); g.connect(out);
+          }
+        }
+        function beatHit(c, out, noise, s, t) { for (var r = 0; r < 4; r++) if (beatOn(r, s)) beatVoice(c, out, noise, r, t); }
+        function beatCtx() {
+          if (bt.ctx) { if (bt.ctx.state === "suspended" && bt.ctx.resume) bt.ctx.resume(); return bt.ctx; }
+          var AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return null;
+          try { bt.ctx = new AC(); } catch (e) { return null; }
+          bt.out = beatOut(bt.ctx); bt.noise = beatNoise(bt.ctx);
+          /* unlock iOS audio with a silent blip inside the tap */
+          try { var u = bt.ctx.createBufferSource(); u.buffer = bt.ctx.createBuffer(1, 1, 22050); u.connect(bt.ctx.destination); u.start(0); } catch (e) {}
+          if (bt.ctx.resume) bt.ctx.resume();
+          return bt.ctx;
+        }
+        function beatTick() {
+          var c = bt.ctx;
+          while (bt.next < c.currentTime + 0.12) {
+            var s = bt.step, t = bt.next + beatSwing(s, beatSecs());
+            beatHit(c, bt.out, bt.noise, s, t);
+            bt.q.push({ s: s, t: t });
+            bt.next += beatSecs(); bt.step = (s + 1) % 16;
+          }
+        }
+        function beatMark(s) {
+          if (bt.cur >= 0) bt.btns.forEach(function (row) { row[bt.cur].classList.remove("is-now"); });
+          bt.cur = s;
+          if (s >= 0) bt.btns.forEach(function (row) { row[s].classList.add("is-now"); });
+        }
+        function beatNod() {
+          if (calm()) return;
+          var el = $("hdr-avatar");
+          if (el && el.animate) el.animate([{ transform: "none" }, { transform: "translateY(3px) rotate(-5deg)" }, { transform: "none" }],
+            { duration: Math.max(120, Math.min(240, beatSecs() * 2000)), easing: "ease-out" });
+        }
+        function beatDraw() {
+          var now = bt.ctx.currentTime, s = -1, kick = false;
+          while (bt.q.length && bt.q[0].t <= now) { var e = bt.q.shift(); s = e.s; kick = beatOn(0, e.s); }
+          if (s >= 0) { beatMark(s); if (kick) beatNod(); }
+          bt.raf = requestAnimationFrame(beatDraw);
+        }
+        function beatPlayBtn() {
+          var b = $("beat-play"); b.setAttribute("aria-pressed", bt.playing); b.textContent = bt.playing ? "■ Stop" : "▶ Play";
+        }
+        function beatPlay() {
+          var c = beatCtx();
+          if (!c) { toast("This browser can't play audio."); return; }
+          bt.playing = true; bt.step = 0; bt.q = []; bt.next = c.currentTime + 0.06;
+          beatTick(); bt.timer = setInterval(beatTick, 25); bt.raf = requestAnimationFrame(beatDraw);
+          beatPlayBtn();
+        }
+        function beatStop() {
+          if (!bt || !bt.playing) return;
+          clearInterval(bt.timer); cancelAnimationFrame(bt.raf);
+          bt.playing = false; bt.q = []; beatMark(-1); beatPlayBtn();
+        }
+        function beatPaint() {
+          bt.btns.forEach(function (row, r) { row.forEach(function (b, s) { b.setAttribute("aria-pressed", beatOn(r, s)); }); });
+          $("beat-bpm").value = S.beat.bpm; $("beat-bpm-v").textContent = S.beat.bpm;
+          $("beat-swing").value = S.beat.swing; $("beat-swing-v").textContent = S.beat.swing + "%";
+        }
+        function beatWav(buf) {
+          var d = buf.getChannelData(0), n = d.length, sr = buf.sampleRate, ab = new ArrayBuffer(44 + n * 2), v = new DataView(ab), o = 0;
+          function str(s) { for (var i = 0; i < s.length; i++) v.setUint8(o++, s.charCodeAt(i)); }
+          function u32(x) { v.setUint32(o, x, true); o += 4; }
+          function u16(x) { v.setUint16(o, x, true); o += 2; }
+          str("RIFF"); u32(36 + n * 2); str("WAVE"); str("fmt "); u32(16); u16(1); u16(1); u32(sr); u32(sr * 2); u16(2); u16(16);
+          str("data"); u32(n * 2);
+          for (var i = 0; i < n; i++) { var x = Math.max(-1, Math.min(1, d[i])); v.setInt16(o, x < 0 ? x * 32768 : x * 32767, true); o += 2; }
+          return new Blob([ab], { type: "audio/wav" });
+        }
+        function beatExport() {
+          var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+          if (!OAC) { toast("This browser can't export audio."); return; }
+          var ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+          var win = ios ? window.open("", "_blank") : null;
+          var sr = 44100, dur = beatSecs(), oc;
+          try { oc = new OAC(1, Math.ceil(sr * dur * 32), sr); } catch (e) { if (win) win.close(); toast("Export failed."); return; }
+          var out = beatOut(oc), nb = beatNoise(oc);
+          for (var i = 0; i < 32; i++) beatHit(oc, out, nb, i % 16, i * dur + beatSwing(i % 16, dur));
+          var btn = $("beat-wav"), done = false;
+          btn.disabled = true; btn.textContent = "Rendering…";
+          function finish(buf) {
+            if (done) return; done = true;
+            btn.disabled = false; btn.textContent = "Export WAV";
+            if (!buf) { if (win) win.close(); toast("Export failed."); return; }
+            var url = URL.createObjectURL(beatWav(buf)), name = "beat-jam-" + S.beat.bpm + "bpm.wav";
+            if (win) win.location.href = url;
+            else if (!ios && "download" in HTMLAnchorElement.prototype) {
+              var a = doc.createElement("a"); a.href = url; a.download = name; a.style.display = "none";
+              doc.body.appendChild(a); a.click(); a.remove();
+            } else if (!window.open(url, "_blank")) location.href = url;
+            setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+            toast("Exported 2 bars at " + S.beat.bpm + " BPM.");
+          }
+          oc.oncomplete = function (e) { finish(e.renderedBuffer); };
+          try { var p = oc.startRendering(); if (p && p.then) p.then(finish, function () { finish(null); }); } catch (e) { finish(null); }
+        }
+        (function () {
+          var grid = $("beat-grid");
+          BEAT_INST.forEach(function (name, r) {
+            var wrap = doc.createElement("div"), lbl = doc.createElement("p"), steps = doc.createElement("div");
+            lbl.className = "x-glabel"; lbl.textContent = name; lbl.id = "beat-lbl-" + r;
+            steps.className = "x-beat__steps"; steps.setAttribute("role", "group"); steps.setAttribute("aria-labelledby", lbl.id);
+            bt.btns[r] = [];
+            for (var s = 0; s < 16; s++) {
+              var b = doc.createElement("button");
+              b.type = "button"; b.className = "x-beat__step"; b.setAttribute("aria-label", name + " step " + (s + 1));
+              b.dataset.r = r; b.dataset.s = s;
+              steps.appendChild(b); bt.btns[r].push(b);
+            }
+            wrap.appendChild(lbl); wrap.appendChild(steps); grid.appendChild(wrap);
+          });
+          grid.addEventListener("click", function (e) {
+            var b = e.target.closest(".x-beat__step"); if (!b) return;
+            var r = +b.dataset.r, s = +b.dataset.s, on = !beatOn(r, s);
+            beatSet(r, s, on); b.setAttribute("aria-pressed", on); save();
+            var c = beatCtx();
+            if (c && on && !bt.playing) beatVoice(c, bt.out, bt.noise, r, c.currentTime + 0.01);
+          });
+          $("beat-play").addEventListener("click", function () { if (bt.playing) beatStop(); else beatPlay(); });
+          $("beat-clear").addEventListener("click", function () { S.beat.pat = BEAT_INST.map(function () { return "0000000000000000"; }); beatPaint(); save(); });
+          $("beat-rand").addEventListener("click", function () {
+            var odds = [0.28, 0.08, 0.6, 0.12];
+            S.beat.pat = odds.map(function (p, r) {
+              var row = "";
+              for (var s = 0; s < 16; s++) row += (r === 0 && s === 0) || (r === 1 && s % 8 === 4) || Math.random() < p ? "1" : "0";
+              return row;
+            });
+            beatPaint(); save();
+          });
+          $("beat-wav").addEventListener("click", beatExport);
+          $("beat-bpm").addEventListener("input", function (e) { S.beat.bpm = +e.target.value; $("beat-bpm-v").textContent = S.beat.bpm; });
+          $("beat-swing").addEventListener("input", function (e) { S.beat.swing = +e.target.value; $("beat-swing-v").textContent = S.beat.swing + "%"; });
+          $("beat-bpm").addEventListener("change", save);
+          $("beat-swing").addEventListener("change", save);
+          doc.addEventListener("visibilitychange", function () { if (doc.hidden) beatStop(); });
+          beatPaint();
+        })();
+
         /* IndexedDB answers late: restore any setting the other stores lost, then back-fill every store */
         KV.ready([SETKEY, STORE], function (got) {
           var fromIdb = parseJSON(got[SETKEY]) || parseJSON(got[STORE]) || {}, changed = false;
@@ -3783,6 +4029,7 @@
             S.streak = typeof S.streak === "number" ? S.streak : 0; streakTick();
           }
           paintOutfit();
+          if (saved.beat === undefined && fromIdb.beat && typeof fromIdb.beat === "object") { S.beat = beatClean(fromIdb.beat); beatPaint(); }
           if (saved.memory === undefined && Array.isArray(fromIdb.memory) && fromIdb.memory.length) {
             var seen = {};
             S.memory.concat(fromIdb.memory).forEach(function (n) {
