@@ -2849,6 +2849,7 @@
 
         function startLive() {
           if (LIVE) return;
+          if (isOffline()) { toast(OFFLINE_MSG); return; }
           if (!S.apiKey || S.provider !== "xai") { toast("Live talk needs the xAI Grok provider and an API key in Settings."); return; }
           var AC = window.AudioContext || window.webkitAudioContext;
           if (!AC || !window.WebSocket || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { toast("This browser can't do live talk here. Try Safari or Chrome over https."); return; }
@@ -3198,9 +3199,15 @@
 
         /* ---------- sending ---------- */
         var busy = {}, queue = { chat: [], studio: [], hustle: [] };
+        var OFFLINE_MSG = "Offline - Blarf can still grumble, drum and jam, but talking needs internet";
+        function isOffline() { return navigator.onLine === false; }
+        window.addEventListener("offline", function () { toast(OFFLINE_MSG); });
+        window.addEventListener("online", function () { toast("Back online"); });
+        if (isOffline()) toast(OFFLINE_MSG);
         function send(m, text) {
           text = (text || "").trim();
           if (!text) return;
+          if (S.apiKey && isOffline()) { toast(OFFLINE_MSG); return; }
           if (m === "chat") { lastUser = text; setSheet(true); if (/^stop\b/i.test(text)) { S.roast = false; S.trivia = false; } }
           stopVoice();
           markSeen(); rememberCmd(text);
@@ -3226,6 +3233,7 @@
         }
 
         function askAI(m) {
+          if (isOffline()) { toast(OFFLINE_MSG); return Promise.reject(OFFLINE_MSG); }
           var p = PROVIDERS[S.provider] || PROVIDERS.xai;
           var url = S.provider === "custom" ? S.customUrl.trim() : p.url;
           var model = (S.model || "").trim() || p.model;
