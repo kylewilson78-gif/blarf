@@ -436,6 +436,19 @@
       .x-tool__part { display: grid; gap: 10px; }
       .x-tool__part + .x-tool__part { border-top: 1px solid var(--stroke-secondary); padding-top: 14px; }
       .x-lbl { font: var(--type-caption); color: var(--text-secondary); }
+      /* hustle: today's 3 goals */
+      .x-goals { background: var(--fill-tertiary); border-radius: var(--r-m); margin-bottom: 14px; padding: 12px 16px 14px; display: grid; gap: 6px; }
+      .x-goals__head { display: flex; align-items: center; gap: 8px; min-height: 32px; font: var(--type-label); }
+      .x-goals__head span { margin-left: auto; color: var(--text-secondary); font: var(--type-caption); }
+      .x-goal { display: flex; align-items: center; gap: 10px; min-height: var(--tap); }
+      .x-goal input[type="checkbox"] { flex: none; width: 22px; height: 22px; margin: 0; accent-color: var(--fill-system-green); cursor: pointer; }
+      .x-goal input[type="text"] {
+        flex: 1; min-width: 0; min-height: 40px; padding: 0 12px; border: 1px solid var(--stroke-secondary); border-radius: var(--r-s);
+        background: var(--fill-primary-on); color: var(--text-primary); font: var(--type-body);
+        transition: color var(--dur-quick) var(--ease-out), opacity var(--dur-quick) var(--ease-out);
+      }
+      .x-goal.is-done input[type="text"] { text-decoration: line-through; color: var(--text-secondary); }
+      @media (prefers-reduced-motion: reduce) { .x-goal input[type="text"] { transition: none; } }
       .x-tap { display: flex; align-items: center; gap: 16px; }
       .x-tapbtn {
         flex: none; width: 84px; height: 84px; border-radius: 50%;
@@ -1928,7 +1941,7 @@
 
         /* ---------- storage: localStorage, then IndexedDB, then a cookie (never the API key); memory as a last resort ---------- */
         var SETKEY = "companion-settings";
-        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat"];
+        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals"];
         var KV = (function () {
           var mem = {}, idb = null, idbState = 0; /* 0 pending, 1 ok, -1 unavailable */
           var https = location.protocol === "https:", AGE = 400 * 86400;
@@ -2064,8 +2077,19 @@
           streakDay: typeof saved.streakDay === "string" ? saved.streakDay : "",
           outfit: typeof saved.outfit === "string" ? saved.outfit : "none",
           pokeBest: typeof saved.pokeBest === "number" && saved.pokeBest >= 0 ? Math.floor(saved.pokeBest) : 0,
-          beat: beatClean(saved.beat)
+          beat: beatClean(saved.beat),
+          goals: goalsClean(saved.goals)
         };
+        /* today's 3 goals: { day: 'YYYY-MM-DD', items: [{ t, done }] x3 } */
+        function goalsDay() { var d = new Date(); return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2); }
+        function goalsClean(g) {
+          var out = { day: goalsDay(), items: [] }, ok = g && typeof g === "object" && g.day === out.day && Array.isArray(g.items);
+          for (var i = 0; i < 3; i++) {
+            var it = ok && g.items[i] && typeof g.items[i] === "object" ? g.items[i] : {};
+            out.items.push({ t: typeof it.t === "string" ? it.t.slice(0, 120) : "", done: !!it.done });
+          }
+          return out;
+        }
         /* one-time move of any saved voice to Kyle's cloned voice */
         if (S.voiceMig < 1) { S.voice.id = MY_VOICE; S.voiceMig = 1; save(); }
         /* move the old cloned-voice ID to the new one */
@@ -2219,6 +2243,11 @@
             '<div class="x-rowbtns"><button class="btn" id="starter-roll" type="button">🎲 New starter</button><button class="btn" id="starter-ask" type="button" disabled>Ask ' + '<span class="js-name">' + esc(S.name) + "</span> about it</button></div></div>" +
             "</div></details>");
           if (m === "hustle") return (
+            '<div class="x-goals" id="goals" role="group" aria-labelledby="goals-h"><p class="x-goals__head" id="goals-h">✅ Today\'s 3 goals <span id="goals-count">0 / 3</span></p>' +
+            [0, 1, 2].map(function (i) {
+              return '<div class="x-goal" data-goal="' + i + '"><input type="checkbox" id="goal-c' + i + '" aria-label="Goal ' + (i + 1) + ' done" />' +
+                '<input type="text" id="goal-t' + i + '" maxlength="120" autocomplete="off" enterkeyhint="done" placeholder="Goal ' + (i + 1) + '" aria-label="Goal ' + (i + 1) + '" /></div>';
+            }).join("") + "</div>" +
             '<details class="x-tool" id="tool-hustle"' + (S.tools.hustle ? " open" : "") + '><summary>⏱️ Focus timer <span>25 / 5 Pomodoro</span></summary><div class="x-tool__body"><div class="x-tool__part">' +
             '<div class="x-timer"><p class="x-big" id="pomo-time" role="timer">25:00</p><div class="x-seg" role="group" aria-label="Timer length">' +
             '<button type="button" data-phase="focus" aria-pressed="true">Focus 25</button><button type="button" data-phase="break" aria-pressed="false">Break 5</button></div></div>' +
@@ -3782,6 +3811,46 @@
         [].slice.call(doc.querySelectorAll("[data-phase]")).forEach(function (b) { b.addEventListener("click", function () { setPhase(b.dataset.phase); }); });
         paintPomo();
 
+        /* ---------- hustle: today's 3 goals ---------- */
+        var GOAL_LINES = [
+          "Ugh. All three done. Fine, I'm proud of you. Don't make it weird, Boss.",
+          "Three for three. I hate how impressed I am right now. 😤",
+          "All goals checked. Great, now I have to admit you're kind of a legend. Gross.",
+          "Look at you, actually finishing stuff. I'm not crying, it's the smoke. 🚬"
+        ];
+        function goalsAllDone() { return S.goals.items.every(function (g) { return g.done; }); }
+        function goalsPaint() {
+          var n = 0;
+          S.goals.items.forEach(function (g, i) {
+            var t = $("goal-t" + i), c = $("goal-c" + i);
+            if (doc.activeElement !== t) t.value = g.t;
+            c.checked = g.done; if (g.done) n++;
+            t.parentNode.classList.toggle("is-done", g.done);
+          });
+          $("goals-count").textContent = n + " / 3";
+        }
+        function goalsRoll() {
+          if (S.goals.day === goalsDay()) return false;
+          S.goals = goalsClean(null); save(); goalsPaint(); return true;
+        }
+        [0, 1, 2].forEach(function (i) {
+          $("goal-t" + i).addEventListener("input", function (e) { goalsRoll(); S.goals.items[i].t = e.target.value.slice(0, 120); save(); });
+          $("goal-t" + i).addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); e.target.blur(); } });
+          $("goal-c" + i).addEventListener("change", function (e) {
+            goalsRoll();
+            var was = goalsAllDone();
+            S.goals.items[i].done = e.target.checked; save(); goalsPaint();
+            if (!was && goalsAllDone()) {
+              toast(GOAL_LINES[Math.floor(Math.random() * GOAL_LINES.length)]);
+              if (!calm() && BL && typeof BL.excite === "function") BL.excite(2200);
+            }
+          });
+        });
+        doc.addEventListener("visibilitychange", function () { if (!doc.hidden) goalsRoll(); });
+        window.addEventListener("focus", goalsRoll);
+        setInterval(goalsRoll, 60000);
+        goalsPaint();
+
         ["studio", "hustle"].forEach(function (m) {
           $("tool-" + m).addEventListener("toggle", function () { S.tools[m] = $("tool-" + m).open; save(); });
         });
@@ -4038,6 +4107,7 @@
           }
           paintOutfit();
           if (saved.beat === undefined && fromIdb.beat && typeof fromIdb.beat === "object") { S.beat = beatClean(fromIdb.beat); beatPaint(); }
+          if (saved.goals === undefined && fromIdb.goals && typeof fromIdb.goals === "object" && fromIdb.goals.day === goalsDay() && !S.goals.items.some(function (g) { return g.t || g.done; })) { S.goals = goalsClean(fromIdb.goals); goalsPaint(); }
           if (saved.memory === undefined && Array.isArray(fromIdb.memory) && fromIdb.memory.length) {
             var seen = {};
             S.memory.concat(fromIdb.memory).forEach(function (n) {
