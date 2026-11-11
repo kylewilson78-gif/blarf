@@ -447,6 +447,10 @@
         background: var(--fill-primary-on); color: var(--text-primary); font: var(--type-body);
         transition: color var(--dur-quick) var(--ease-out), opacity var(--dur-quick) var(--ease-out);
       }
+      .x-pad__text {
+        width: 100%; min-height: 120px; padding: 10px 12px; resize: vertical; border: 1px solid var(--stroke-secondary); border-radius: var(--r-s);
+        background: var(--fill-primary-on); color: var(--text-primary); font: var(--type-body); font-size: 16px; line-height: 1.5;
+      }
       .x-goal.is-done input[type="text"] { text-decoration: line-through; color: var(--text-secondary); }
       @media (prefers-reduced-motion: reduce) { .x-goal input[type="text"] { transition: none; } }
       .x-tap { display: flex; align-items: center; gap: 16px; }
@@ -1941,7 +1945,7 @@
 
         /* ---------- storage: localStorage, then IndexedDB, then a cookie (never the API key); memory as a last resort ---------- */
         var SETKEY = "companion-settings";
-        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals"];
+        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad"];
         var KV = (function () {
           var mem = {}, idb = null, idbState = 0; /* 0 pending, 1 ok, -1 unavailable */
           var https = location.protocol === "https:", AGE = 400 * 86400;
@@ -2078,7 +2082,8 @@
           outfit: typeof saved.outfit === "string" ? saved.outfit : "none",
           pokeBest: typeof saved.pokeBest === "number" && saved.pokeBest >= 0 ? Math.floor(saved.pokeBest) : 0,
           beat: beatClean(saved.beat),
-          goals: goalsClean(saved.goals)
+          goals: goalsClean(saved.goals),
+          pad: typeof saved.pad === "string" ? saved.pad : ""
         };
         /* today's 3 goals: { day: 'YYYY-MM-DD', items: [{ t, done }] x3 } */
         function goalsDay() { var d = new Date(); return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2); }
@@ -2241,7 +2246,10 @@
             '<div><dt>Key</dt><dd>–</dd></div><div><dt>BPM</dt><dd>–</dd></div><div><dt>Genre</dt><dd>–</dd></div><div><dt>Mood</dt><dd>–</dd></div>' +
             '<div class="x-wide"><dt>Drums</dt><dd>Roll one to get a starting point.</dd></div></dl>' +
             '<div class="x-rowbtns"><button class="btn" id="starter-roll" type="button">🎲 New starter</button><button class="btn" id="starter-ask" type="button" disabled>Ask ' + '<span class="js-name">' + esc(S.name) + "</span> about it</button></div></div>" +
-            "</div></details>");
+            "</div></details>" +
+            '<div class="x-goals x-pad" role="group" aria-labelledby="pad-h"><p class="x-goals__head" id="pad-h">📝 Lyric &amp; idea pad</p>' +
+            '<textarea class="x-pad__text" id="pad-text" rows="5" placeholder="Scribble lyrics, hooks, ideas..." aria-labelledby="pad-h"></textarea>' +
+            '<div class="x-rowbtns"><button class="btn" id="pad-copy" type="button">Copy</button><button class="btn" id="pad-clear" type="button">Clear</button></div></div>');
           if (m === "hustle") return (
             '<div class="x-goals" id="goals" role="group" aria-labelledby="goals-h"><p class="x-goals__head" id="goals-h">✅ Today\'s 3 goals <span id="goals-count">0 / 3</span></p>' +
             [0, 1, 2].map(function (i) {
@@ -3771,6 +3779,26 @@
           send("studio", "Song starter: " + s.genre + ", " + s.key + ", " + s.bpm + " BPM, " + s.mood.toLowerCase() + " mood. How should I start this beat?");
         });
 
+        /* ---------- studio: lyric & idea pad, autosaved 400 ms after typing stops ---------- */
+        var padIn = $("pad-text"), padT = null;
+        padIn.value = S.pad;
+        function padFlush() { if (padT) { clearTimeout(padT); padT = null; S.pad = padIn.value; save(); } }
+        padIn.addEventListener("input", function () { clearTimeout(padT); padT = setTimeout(function () { padT = null; S.pad = padIn.value; save(); }, 400); });
+        padIn.addEventListener("blur", padFlush);
+        window.addEventListener("pagehide", padFlush);
+        doc.addEventListener("visibilitychange", function () { if (doc.hidden) padFlush(); });
+        $("pad-copy").addEventListener("click", function () {
+          var t = padIn.value;
+          if (!t.trim()) { toast("Nothing to copy yet"); return; }
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(function () { toast("Copied"); }, function () { toast("Couldn't copy"); });
+          else toast("Couldn't copy");
+        });
+        $("pad-clear").addEventListener("click", function () {
+          if (!padIn.value) return;
+          if (!window.confirm("Clear the lyric & idea pad?")) return;
+          clearTimeout(padT); padT = null; padIn.value = ""; S.pad = ""; save();
+        });
+
         /* ---------- hustle: pomodoro ---------- */
         var LEN = { focus: 25 * 60, "break": 5 * 60 };
         var P = { phase: "focus", left: LEN.focus, running: false, end: 0, t: null };
@@ -4108,6 +4136,7 @@
           paintOutfit();
           if (saved.beat === undefined && fromIdb.beat && typeof fromIdb.beat === "object") { S.beat = beatClean(fromIdb.beat); beatPaint(); }
           if (saved.goals === undefined && fromIdb.goals && typeof fromIdb.goals === "object" && fromIdb.goals.day === goalsDay() && !S.goals.items.some(function (g) { return g.t || g.done; })) { S.goals = goalsClean(fromIdb.goals); goalsPaint(); }
+          if (saved.pad === undefined && typeof fromIdb.pad === "string" && fromIdb.pad && !S.pad && !padIn.value) { S.pad = fromIdb.pad; padIn.value = S.pad; }
           if (saved.memory === undefined && Array.isArray(fromIdb.memory) && fromIdb.memory.length) {
             var seen = {};
             S.memory.concat(fromIdb.memory).forEach(function (n) {
