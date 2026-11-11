@@ -388,6 +388,9 @@
       .x-msg--err .x-bub { background: none; border: 1px solid var(--fill-system-red); color: var(--text-primary); }
       .x-msg--err .x-bub b { color: var(--fill-system-red); }
       .x-time { font: var(--type-caption); color: var(--text-secondary); margin: 3px 8px 10px; }
+      .x-toolline { align-self: flex-start; margin: 2px 0 8px 40px; padding: 4px 10px; border-radius: var(--r-pill); background: var(--fill-tertiary); font: var(--type-caption); color: var(--text-secondary); }
+      .x-toolline.is-done { opacity: 0.7; }
+      .x-bub .x-boblink { display: inline-block; margin-top: 6px; }
       .x-typing .x-bub { display: flex; gap: 4px; padding: 14px 16px; }
       .x-typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--text-secondary); animation: x-blink 1.2s infinite ease-in-out; }
       .x-typing i:nth-child(2) { animation-delay: 0.15s; }
@@ -839,7 +842,7 @@
                 <div class="x-group">
                   <div class="x-row">
                     <label for="beat-bpm">BPM</label>
-                    <input class="x-beat__range" id="beat-bpm" type="range" min="60" max="180" step="1" value="90" />
+                    <input class="x-beat__range" id="beat-bpm" type="range" min="60" max="200" step="1" value="90" />
                     <output class="x-beat__val" id="beat-bpm-v" for="beat-bpm">90</output>
                   </div>
                   <div class="x-row">
@@ -957,6 +960,12 @@
                 </div>
                 <p class="x-gnote">Your key stays on this device.</p>
                 <p class="x-gnote" id="key-nostore" hidden>Can't save here. Open Blarf from your Home Screen to keep your key.</p>
+              </div>
+
+              <div>
+                <p class="x-glabel">Tools</p>
+                <div class="x-group" id="tools-group"></div>
+                <p class="x-gnote">What Blarf can do on this phone in text chat (Grok only).</p>
               </div>
 
               <div>
@@ -2002,7 +2011,7 @@
 
         /* ---------- storage: localStorage, then IndexedDB, then a cookie (never the API key); memory as a last resort ---------- */
         var SETKEY = "companion-settings";
-        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch", "brain"];
+        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch", "brain", "tools"];
         var KV = (function () {
           var mem = {}, idb = null, idbState = 0; /* 0 pending, 1 ok, -1 unavailable */
           var https = location.protocol === "https:", AGE = 400 * 86400;
@@ -2363,7 +2372,9 @@
           el.className = "x-msg" + (msg.r === "me" ? " x-msg--me" : msg.r === "err" ? " x-msg--err" : " x-msg--bot");
           var pic = msg.r === "me" && typeof msg.img === "string" && /^data:image\//.test(msg.img) ? '<img class="x-bubimg" src="' + esc(msg.img) + '" alt="Photo you sent" />'
             : msg.r === "bot" && typeof msg.img === "string" && /^(data:image\/|https:\/\/)/.test(msg.img) ? '<img class="x-bubimg x-genimg" src="' + esc(msg.img) + '" alt="Picture Blarf made" role="button" tabindex="0" />' : "";
-          var inner = '<div class="x-bub">' + pic + fmt(msg.t) + '</div><p class="x-time">' + clock(msg.ts) +
+          var lnk = msg.r === "bot" && typeof msg.link === "string" && /^https:\/\//.test(msg.link)
+            ? '<br /><a class="link x-boblink" href="' + esc(msg.link) + '" target="_blank" rel="noopener">' + esc(msg.linkLabel || "Open link") + "</a>" : "";
+          var inner = '<div class="x-bub">' + pic + fmt(msg.t) + lnk + '</div><p class="x-time">' + clock(msg.ts) +
             (msg.r === "bot" && msg.brain && msg.brain !== "quick" && BRAINS[msg.brain] ? '<span class="x-brtag">' + BRAINS[msg.brain].label + "</span>" : "") + "</p>";
           el.innerHTML = msg.r === "bot" ? '<span class="x-mini" aria-hidden="true">' + BL.MINI + '</span><div class="x-msg__body">' + inner + "</div>" : inner;
           return el;
@@ -3503,6 +3514,158 @@
           return text;
         }
 
+        /* ---------- on-device tools Grok can call in text chat ---------- */
+        var TOOL_HINT = " You have real tools on Kyle's phone (timers, notes, goals, lyric pad, BPM, beat machine, calculator, image drawing, links). Use them whenever they'd actually help instead of just talking about it, then confirm in one grumpy line.";
+        function toolBeep() {
+          try {
+            var c = beatCtx(); if (!c) return;
+            var t0 = c.currentTime + 0.03;
+            [0, 0.24, 0.48].forEach(function (d) {
+              var o = c.createOscillator(), g = c.createGain(), t = t0 + d;
+              o.type = "sine"; o.frequency.value = 880;
+              g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.3, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+              o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 0.2);
+            });
+          } catch (e) {}
+        }
+        function toolStr(v, n) { return String(v == null ? "" : v).replace(/\s+/g, " ").trim().slice(0, n || 300); }
+        var LINK_SITES = {
+          youtube: { l: "YouTube", u: function (q) { return "https://www.youtube.com/results?search_query=" + encodeURIComponent(q); } },
+          spotify: { l: "Spotify", u: function (q) { return "https://open.spotify.com/search/" + encodeURIComponent(q); } },
+          google: { l: "Google", u: function (q) { return "https://www.google.com/search?q=" + encodeURIComponent(q); } },
+          maps: { l: "Maps", u: function (q) { return "https://maps.apple.com/?q=" + encodeURIComponent(q); } }
+        };
+        var TOOLS = [
+          { name: "set_timer", label: "Timer", emoji: "⏰", desc: "Starts a countdown and beeps when it's up",
+            params: { type: "object", properties: { minutes: { type: "number", description: "Length in minutes" }, label: { type: "string", description: "What the timer is for" } }, required: ["minutes"] },
+            chip: function (a) { return (+a.minutes || 0) + " min"; },
+            run: function (a) {
+              var min = Number(a.minutes);
+              if (!(min > 0) || min > 1440) return "error: minutes must be between 0 and 1440";
+              var lbl = toolStr(a.label, 60) || "Your";
+              setTimeout(function () {
+                toast("⏰ " + lbl + " timer's up");
+                toolBeep();
+                addMsg("chat", { r: "bot", t: "⏰ " + lbl + " timer's up. Move it.", ts: Date.now() });
+              }, Math.round(min * 60000));
+              return "timer set for " + min + " min" + (a.label ? " (" + lbl + ")" : "");
+            } },
+          { name: "save_note", label: "Notes", emoji: "🧠", desc: "Saves a fact about you to Blarf's memory",
+            params: { type: "object", properties: { text: { type: "string", description: "Short fact to remember, third person" } }, required: ["text"] },
+            run: function (a) {
+              var t = toolStr(a.text); if (!t) return "error: empty note";
+              if (!remember(t)) return "already saved";
+              toast("🧠 Blarf will remember that");
+              return "note saved (" + S.memory.length + "/" + MEM_MAX + ")";
+            } },
+          { name: "add_goal", label: "Goals", emoji: "🎯", desc: "Adds to today's 3 goals in Hustle",
+            params: { type: "object", properties: { text: { type: "string", description: "The goal" } }, required: ["text"] },
+            run: function (a) {
+              var t = toolStr(a.text, 120); if (!t) return "error: empty goal";
+              goalsRoll();
+              for (var i = 0; i < S.goals.items.length; i++) {
+                if (!String(S.goals.items[i].t || "").trim()) {
+                  S.goals.items[i].t = t; S.goals.items[i].done = false; save(); goalsPaint();
+                  return "goal " + (i + 1) + " set";
+                }
+              }
+              return "goals full";
+            } },
+          { name: "save_lyric", label: "Lyric pad", emoji: "✍️", desc: "Adds a line to the Studio lyric pad",
+            params: { type: "object", properties: { text: { type: "string", description: "The lyric line" } }, required: ["text"] },
+            run: function (a) {
+              var t = String(a.text == null ? "" : a.text).trim().slice(0, 2000); if (!t) return "error: empty line";
+              padFlush();
+              S.pad = (S.pad ? S.pad.replace(/\s+$/, "") + "\n" : "") + t;
+              padIn.value = S.pad; save();
+              return "line added to lyric pad";
+            } },
+          { name: "set_bpm", label: "BPM", emoji: "🎚️", desc: "Sets the Beat Jam tempo (60–200)",
+            params: { type: "object", properties: { bpm: { type: "number", minimum: 60, maximum: 200 } }, required: ["bpm"] },
+            chip: function (a) { return Math.round(+a.bpm || 0) + " BPM"; },
+            run: function (a) {
+              var b = Math.round(Number(a.bpm));
+              if (!(b >= 60 && b <= 200)) return "error: bpm must be 60 to 200";
+              S.beat.bpm = b; beatPaint(); save();
+              if ($("tap-bpm")) { $("tap-bpm").textContent = b + " BPM"; if ($("tap-sub")) $("tap-sub").textContent = "Set by " + S.name; }
+              return "bpm set to " + b;
+            } },
+          { name: "start_beat", label: "Beat machine", emoji: "🥁", desc: "Opens Beat Jam and plays the saved pattern",
+            params: { type: "object", properties: {} },
+            chip: function () { return "Beat Jam"; },
+            run: function () {
+              go("beat");
+              if (!bt.playing) beatPlay();
+              return bt.playing ? "beat playing at " + S.beat.bpm + " BPM" : "error: audio unavailable";
+            } },
+          { name: "calculate", label: "Calculator", emoji: "🧮", desc: "Does exact arithmetic",
+            params: { type: "object", properties: { expression: { type: "string", description: "Digits and + - * / % ^ ( ) . only" } }, required: ["expression"] },
+            run: function (a) {
+              var ex = String(a.expression == null ? "" : a.expression);
+              if (!ex.trim() || ex.length > 200 || !/^[\d+\-*/%^().\s]+$/.test(ex)) return "error: only numbers and + - * / % ^ ( ) allowed";
+              var v;
+              try { v = Function('"use strict"; return (' + ex.replace(/\^/g, "**") + ");")(); } catch (e) { return "error: bad expression"; }
+              if (typeof v !== "number" || !isFinite(v)) return "error: no finite result";
+              return String(Math.round(v * 1e10) / 1e10);
+            } },
+          { name: "draw_image", label: "Drawing", emoji: "🎨", desc: "Draws a picture and posts it in chat",
+            params: { type: "object", properties: { prompt: { type: "string", description: "What to draw" } }, required: ["prompt"] },
+            run: function (a) {
+              var p = toolStr(a.prompt, 1000); if (!p) return "error: empty prompt";
+              return genImage(p).then(function (src) {
+                addMsg("chat", { r: "bot", t: DRAW_CAPS[Math.floor(Math.random() * DRAW_CAPS.length)], img: src, ts: Date.now() });
+                return "image posted";
+              }, function (err) { return "error: " + err; });
+            } },
+          { name: "open_link", label: "Links", emoji: "🔗", desc: "Posts a YouTube, Spotify, Google or Maps link",
+            params: { type: "object", properties: { query: { type: "string" }, site: { type: "string", enum: ["youtube", "spotify", "google", "maps"] } }, required: ["query"] },
+            chip: function (a) { return (LINK_SITES[a.site] || LINK_SITES.google).l + " · " + toolStr(a.query, 30); },
+            run: function (a) {
+              var q = toolStr(a.query, 200); if (!q) return "error: empty query";
+              var s = LINK_SITES[a.site] || LINK_SITES.google;
+              addMsg("chat", { r: "bot", t: "🔗 " + q, link: s.u(q), linkLabel: "Open on " + s.l, ts: Date.now() });
+              return "link posted (" + s.l + ")";
+            } }
+        ];
+        function toolOn(t) { return !S.tools || S.tools[t.name] !== false; }
+        function toolDefs() {
+          return TOOLS.filter(toolOn).map(function (t) { return { type: "function", name: t.name, description: t.desc, parameters: t.params }; });
+        }
+        function toolLine(m, t, a) {
+          var s = "";
+          try { s = t && t.chip ? t.chip(a) : toolStr(a.text || a.prompt || a.query || a.expression || "", 30); } catch (e) {}
+          var el = doc.createElement("p");
+          el.className = "x-toolline"; el.textContent = "🛠 " + (t ? t.name : "tool") + (s ? " · " + s : "");
+          V[m].thread.insertBefore(el, typingEl[m] || null); scrollDown(m, true);
+          return el;
+        }
+        function runTool(m, call) {
+          var t = null; TOOLS.forEach(function (x) { if (x.name === call.name) t = x; });
+          var a = {}; try { a = JSON.parse(call.arguments || "{}") || {}; } catch (e) {}
+          if (!t || !toolOn(t)) return Promise.resolve("error: tool unavailable");
+          var el = toolLine(m, t, a);
+          return new Promise(function (ok) { ok(t.run(a)); }).then(function (r) { return String(r); }, function (e) { return "error: " + (e && e.message || e); })
+            .then(function (r) { el.classList.add("is-done"); return r; });
+        }
+        function paintTools() {
+          TOOLS.forEach(function (t) { var b = $("set-tool-" + t.name); if (b) b.setAttribute("aria-checked", toolOn(t) ? "true" : "false"); });
+        }
+        (function () {
+          var g = $("tools-group"); if (!g) return;
+          g.innerHTML = TOOLS.map(function (t) {
+            return '<div class="x-row"><span class="x-twoline" id="lbl-tool-' + t.name + '">' + t.emoji + " " + esc(t.label) + "<small>" + esc(t.desc) + "</small></span>" +
+              '<button class="x-switch" id="set-tool-' + t.name + '" type="button" role="switch" aria-checked="true" aria-labelledby="lbl-tool-' + t.name + '"></button></div>';
+          }).join("");
+          TOOLS.forEach(function (t) {
+            $("set-tool-" + t.name).addEventListener("click", function () {
+              if (!S.tools || typeof S.tools !== "object") S.tools = { studio: true, hustle: true };
+              S.tools[t.name] = !toolOn(t); save(); paintTools();
+              toast(t.label + (S.tools[t.name] ? " on." : " off."));
+            });
+          });
+          paintTools();
+        })();
+
         function askAI(m) {
           if (isOffline()) { toast(OFFLINE_MSG); return Promise.reject(OFFLINE_MSG); }
           var p = PROVIDERS[S.provider] || PROVIDERS.xai;
@@ -3522,46 +3685,71 @@
             }
             return { role: role, content: role === "user" && (x.img || x.pic) ? x.t + " [photo]" : x.t };
           });
-          var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
           var bm = m === "chat" ? BRAINS[S.brain] || BRAINS.quick : null;
           var brainClause = bm ? bm.clause + (bm.long ? " Ignore the earlier length limit for this answer." : "") : "";
-          var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, xr ? (bm === BRAINS.deep ? 180000 : 90000) : 60000);
-          var reqBody;
+          var waitMs = xr ? (bm === BRAINS.deep ? 180000 : 90000) : 60000;
+          var reqBody, tools = null;
           if (xr) {
             url = XAI_RESPONSES;
-            reqBody = { model: model, input: [{ role: "system", content: MODES[m].system() + VISION + MEM_ASK + LIVE_HINT + brainClause }].concat(history) };
-            if (S.liveSearch !== false) reqBody.tools = [{ type: "web_search" }, { type: "x_search" }];
+            var fnTools = m === "chat" ? toolDefs() : [];
+            tools = (S.liveSearch !== false ? [{ type: "web_search" }, { type: "x_search" }] : []).concat(fnTools);
+            reqBody = { model: model, input: [{ role: "system", content: MODES[m].system() + VISION + MEM_ASK + LIVE_HINT + (fnTools.length ? TOOL_HINT : "") + brainClause }].concat(history) };
+            if (tools.length) reqBody.tools = tools; else tools = null;
             if (bm) reqBody.reasoning = { effort: bm.effort };
           } else {
             reqBody = { model: model, messages: [{ role: "system", content: MODES[m].system() + VISION + MEM_ASK + brainClause }].concat(history), temperature: 0.8 };
           }
-          return fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: "Bearer " + S.apiKey.trim() },
-            body: JSON.stringify(reqBody),
-            signal: ctrl ? ctrl.signal : undefined
-          }).then(function (res) {
-            clearTimeout(timer);
-            return res.text().then(function (body) {
-              var data = null; try { data = JSON.parse(body); } catch (e) {}
-              if (!res.ok) {
-                if (res.status === 401 || res.status === 403) throw "The API key was rejected (" + res.status + "). Check it in Settings.";
-                if (res.status === 429) throw "Rate limit or quota hit (429). Try again in a bit.";
-                if (res.status === 404) throw "Endpoint or model not found (404). Check the model name.";
-                throw "The server said " + res.status + (data && data.error && data.error.message ? ": " + String(data.error.message).slice(0, 120) : ".");
-              }
-              var c = xr ? xaiText(data) : data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
-              if (!c) throw "The reply came back empty.";
-              var got = 0;
-              c = String(c).replace(/\[\[\s*remember\s*:\s*([\s\S]*?)\]\]/gi, function (_, f) { if (remember(f)) got++; return ""; });
-              c = c.replace(/[ \t]+\n/g, "\n").replace(/\s+$/, "").trim();
-              if (got) toast("🧠 Blarf will remember that");
-              if (!c) c = "Got it, Boss. 🧠";
-              return c;
+          function post(body) {
+            var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+            var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, waitMs);
+            return fetch(url, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: "Bearer " + S.apiKey.trim() },
+              body: JSON.stringify(body),
+              signal: ctrl ? ctrl.signal : undefined
+            }).then(function (res) {
+              clearTimeout(timer);
+              return res.text().then(function (txt) {
+                var data = null; try { data = JSON.parse(txt); } catch (e) {}
+                if (!res.ok) {
+                  if (res.status === 401 || res.status === 403) throw "The API key was rejected (" + res.status + "). Check it in Settings.";
+                  if (res.status === 429) throw "Rate limit or quota hit (429). Try again in a bit.";
+                  if (res.status === 404) throw "Endpoint or model not found (404). Check the model name.";
+                  throw "The server said " + res.status + (data && data.error && data.error.message ? ": " + String(data.error.message).slice(0, 120) : ".");
+                }
+                return data;
+              });
+            }, function (e) {
+              clearTimeout(timer);
+              throw e && e.name === "AbortError" ? "The request timed out." : "Network or CORS block: some providers don't accept calls straight from a browser.";
             });
-          }, function (e) {
-            clearTimeout(timer);
-            throw e && e.name === "AbortError" ? "The request timed out." : "Network or CORS block: some providers don't accept calls straight from a browser.";
+          }
+          var ran = 0;
+          function calls(data) {
+            return (data && Array.isArray(data.output) ? data.output : []).filter(function (it) { return it && it.type === "function_call" && it.call_id && it.name; });
+          }
+          /* run any function calls, send their outputs back, at most 4 rounds */
+          function loop(data, round) {
+            var cs = xr && tools ? calls(data) : [];
+            if (!cs.length || round >= 4) return data;
+            return cs.reduce(function (p, c) {
+              return p.then(function (outs) { return runTool(m, c).then(function (r) { ran++; outs.push({ type: "function_call_output", call_id: c.call_id, output: r }); return outs; }); });
+            }, Promise.resolve([])).then(function (outs) {
+              var nb = { model: model, previous_response_id: data.id, input: outs, tools: tools };
+              if (reqBody.reasoning) nb.reasoning = reqBody.reasoning;
+              return post(nb).then(function (d) { return loop(d, round + 1); });
+            });
+          }
+          return post(reqBody).then(function (data) { return loop(data, 0); }).then(function (data) {
+            var c = xr ? xaiText(data) : data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+            if (!c && ran) c = "Done. Don't say I never did nothin' for ya. 🛠";
+            if (!c) throw "The reply came back empty.";
+            var got = 0;
+            c = String(c).replace(/\[\[\s*remember\s*:\s*([\s\S]*?)\]\]/gi, function (_, f) { if (remember(f)) got++; return ""; });
+            c = c.replace(/[ \t]+\n/g, "\n").replace(/\s+$/, "").trim();
+            if (got) toast("🧠 Blarf will remember that");
+            if (!c) c = "Got it, Boss. 🧠";
+            return c;
           });
         }
 
@@ -4243,7 +4431,7 @@
           var bpm = Math.round(Number(b.bpm)), sw = Math.round(Number(b.swing));
           return {
             pat: def.map(function (d, i) { return typeof p[i] === "string" && /^[01]{16}$/.test(p[i]) ? p[i] : (b.pat ? "0000000000000000" : d); }),
-            bpm: bpm >= 60 && bpm <= 180 ? bpm : 90,
+            bpm: bpm >= 60 && bpm <= 200 ? bpm : 90,
             swing: sw >= 0 && sw <= 100 ? sw : 0
           };
         }
@@ -4435,9 +4623,11 @@
         /* IndexedDB answers late: restore any setting the other stores lost, then back-fill every store */
         KV.ready([SETKEY, STORE], function (got) {
           var fromIdb = parseJSON(got[SETKEY]) || parseJSON(got[STORE]) || {}, changed = false;
-          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch", "brain"].forEach(function (f) {
+          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch", "brain", "tools"].forEach(function (f) {
             if (saved[f] === undefined && fromIdb[f] !== undefined && fromIdb[f] !== "") { S[f] = fromIdb[f]; changed = true; }
           });
+          if (!S.tools || typeof S.tools !== "object") S.tools = { studio: true, hustle: true };
+          paintTools();
           if (modelMig()) changed = true;
           if (["quick", "deep", "expert", "gamer"].indexOf(S.brain) < 0) S.brain = "quick";
           paintBrain();
