@@ -990,6 +990,10 @@
     prepare: prepare, clause: clause, onGenerated: onGenerated, runnable: runnable,
     addFiles: function (fs, folder, o) { return addFiles(fs, folder, o); }, saveChat: saveChat, saveCode: saveCode,
     pin: function (id, on) { var it = L.by[id]; return it ? setPin(it, on !== false) : Promise.reject("not found"); },
+    /* P3a: the avatar module keeps uploaded models in a Library folder and reads them back as blobs */
+    ensureFolder: function (id, name, sys) { return ensureFolder(id, name, sys); }, blob: function (id) { return blobOf(id); },
+    list: function (folder) { return L.items.filter(function (x) { return x.folder === folder && x.type !== "folder"; }); },
+    item: function (id) { return L.by[id] || null; },
     ready: function () { return new Promise(function (r) { (function w() { if (L.ready) r(); else setTimeout(w, 30); })(); }); },
     _t: { L: L, chunkText: chunkText, rank: rank, toHtml: toHtml, newFolder: newFolder, remove: remove, openRun: openRun, openDetail: openDetail, startThreadSelect: startThreadSelect, finishPick: finishPick, startPick: startPick, index: index, pdfLoader: null, reload: load, linkProject: linkProject }
   };

@@ -1,0 +1,42 @@
+/* Blarf OS P3a: 3D avatar. The canvas sits exactly over the hero SVG; with 3D on, the SVG face parts are hidden but the
+   SVG stays (it still receives taps, and the needs props like Zzz, stink lines and food ride on top of the 3D head). */
+canvas.x-3d {
+  position: absolute; z-index: 0; display: block; pointer-events: none;
+  opacity: 0; transition: opacity 320ms var(--ease-out, ease-out), transform 420ms var(--ease-out, ease-out);
+  filter: brightness(calc(1 + var(--x-voice, 0) * 0.25)) drop-shadow(0 0 14px rgba(150, 215, 255, 0.28));
+}
+html.x-3d canvas.x-3d { opacity: 1; }
+html.x-3d #stage > svg.x-hero { position: relative; z-index: 1; }
+html.x-3d #stage > svg.x-hero .f-root > :not(.nd) { visibility: hidden; }
+html.x-3d #stage > svg.x-hero .f-root { filter: none; }
+.x-blarf.is-up canvas.x-3d { opacity: 0; transform: translateY(-38%) scale(0.22); }
+.x-blarf.x-nd-nap canvas.x-3d { filter: brightness(0.72) saturate(0.85); }
+
+/* reset the 3D view (only shown after a pinch or turn) */
+.x-3dreset {
+  position: absolute; z-index: 3; right: calc(16px + env(safe-area-inset-right)); bottom: 120px;
+  min-width: 44px; min-height: 44px; border-radius: 22px; border: 1px solid color-mix(in srgb, #A6E4FF 35%, transparent);
+  background: color-mix(in srgb, #06182b 55%, transparent); color: #E6F4FF; font: 600 20px/1 -apple-system, system-ui, sans-serif;
+  display: flex; align-items: center; justify-content: center; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+}
+.x-3dreset[hidden] { display: none; }
+html:not(.x-3d) .x-3dreset { display: none; }
+.x-blarf.is-up .x-3dreset { display: none; }
+
+/* Settings › Look */
+#look-settings .x-seg button { min-height: 36px; padding: 0 14px; }
+#look-settings .look-up { flex-wrap: wrap; gap: 8px; }
+#look-settings .look-checkrow { display: block; }
+#look-settings .look-checkrow[hidden] { display: none; }
+.look-check { width: 100%; }
+.look-check__h { margin: 0 0 4px; font: var(--type-body-strong, 600 15px/1.3 -apple-system, system-ui, sans-serif); }
+.look-check ul { margin: 0; padding: 0 0 0 18px; font: var(--type-caption, 13px/1.4 -apple-system, system-ui, sans-serif); color: var(--x-ink-2, inherit); opacity: 0.9; }
+.look-check li { margin: 2px 0; overflow-wrap: anywhere; }
+.look-check li.is-warn { list-style: none; margin-left: -18px; color: #FFB340; }
+.look-status { margin: 0; padding: 8px 16px 12px; font: var(--type-caption, 13px/1.4 -apple-system, system-ui, sans-serif); opacity: 0.85; }
+.look-status[hidden] { display: none; }
+#look-settings [hidden] { display: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  canvas.x-3d { transition-duration: 1ms; }
+}

@@ -22,6 +22,9 @@
     <link rel="stylesheet" href="hark-charts.css" />
     <link rel="stylesheet" href="blarf-p2a.css" />
     <link rel="stylesheet" href="blarf-needs.css" />
+    <link rel="stylesheet" href="blarf-avatar.css" />
+    <!-- P3a: 3D avatar engine, pinned and loaded lazily by blarf-avatar.js only when 3D is on (sw.js caches it) -->
+    <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/","@pixiv/three-vrm":"https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3.5.5/lib/three-vrm.module.min.js"}}</script>
     <script>
       /* iOS home-screen icon, drawn at runtime, plus a tiny manifest */
       (function () {
@@ -2654,6 +2657,21 @@
             if (ct > 2200 && !CIG.puffed) { CIG.puffed = true; puffOn = true; }
             if (ct > 5300) { CIG.at = -1; CIG.puffed = false; puffOn = false; CIG.next = now + 20000 + Math.random() * 20000; }
           }
+          /* P3a: the 3D avatar mirrors exactly what the 2D face is doing (lip sync, acts, needs, grouch, blinks) */
+          if (window.blarf3DOn) {
+            var F3 = window.blarfFace3 || (window.blarfFace3 = { mouth: [], brows: [], lid: [0, 0], cheek: [0, 0], vis: [1, 0, 0, 0, 0, 0, 0, 0] });
+            for (var f3 = 0; f3 < 12; f3++) { F3.mouth[f3] = cur[12 + f3]; F3.brows[f3] = cb[f3]; }
+            for (var f4 = 0; f4 < 8; f4++) F3.vis[f4] = LS.w[f4];
+            F3.t = now; F3.calm = calm; F3.md = md; F3.talking = !!(talking || lip); F3.lip = !!lip; F3.open = LS.open; F3.jaw = jy;
+            F3.lid[0] = Math.max(1 - lazy, G.lid[0]); F3.lid[1] = Math.max(1 - lazy, G.lid[1]); F3.drowsy = drowsy;
+            F3.gx = (ppx * 0.8 + AX.dx) / 16; F3.gy = (Math.max(-4, ppy) * 0.5 + AX.dy) / 12; F3.es = cur[25];
+            F3.hx = sx + G.hx + AX.hx; F3.ty = ty + gy + LS.jaw * 1.5 + AX.ty + (NF.ty || 0);
+            F3.rot = cur[30] + sway + G.hr + gr + AX.rot + (NF.rot || 0); F3.s = s * gs;
+            F3.act = A ? A.n : ""; F3.ap = A ? (now - A.at) / A.dur : 0;
+            F3.sc = sc; F3.soft = soft; F3.ign = ign; F3.cheek[0] = G.cheek[0]; F3.cheek[1] = G.cheek[1];
+            F3.sleep = !!NF.sleep; F3.sulk = NF.sulk || 0; F3.glow = st.glow;
+            F3.cigO = cigO; F3.drag = CIG.at >= 0 && now - CIG.at < 1200; F3.puff = CIG.at >= 0 && CIG.puffed;
+          }
           faces.forEach(function (f) {
             if (!f.svg.isConnected) return;
             f.root.setAttribute("transform", rootT);
@@ -2795,7 +2813,7 @@
 
         /* ---------- storage: localStorage, then IndexedDB, then a cookie (never the API key); memory as a last resort ---------- */
         var SETKEY = "companion-settings";
-        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch", "brain", "mode", "deepStrength", "obsSub", "crew", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel", "autoRoute", "voicePolish", "thinkProv", "thinkModel", "visionModel", "memAuto", "memMig", "embedModel", "selfCheck", "checkLog", "autoResearch", "skillsOff", "mySkills", "lib", "vaultCfg", "vaultKeys", "vaultShared", "needs"];
+        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch", "brain", "mode", "deepStrength", "obsSub", "crew", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel", "autoRoute", "voicePolish", "thinkProv", "thinkModel", "visionModel", "memAuto", "memMig", "embedModel", "selfCheck", "checkLog", "autoResearch", "skillsOff", "mySkills", "lib", "vaultCfg", "vaultKeys", "vaultShared", "needs", "avatar"];
         var SECRET_FIELDS = ["apiKey", "elevenKey", "oaiKey", "fishKey"];
         var KV = (function () {
           var mem = {}, idb = null, idbState = 0; /* 0 pending, 1 ok, -1 unavailable */
@@ -3000,6 +3018,8 @@
           lib: saved.lib && typeof saved.lib === "object" ? saved.lib : {},
           /* P2b: needs (tamagotchi) state + settings; blarf-needs.js normalizes it */
           needs: saved.needs && typeof saved.needs === "object" ? saved.needs : {},
+          /* P3a: avatar engine (2d / 3d), chosen model, low power; blarf-avatar.js normalizes it */
+          avatar: saved.avatar && typeof saved.avatar === "object" ? saved.avatar : {},
           vaultCfg: saved.vaultCfg && typeof saved.vaultCfg === "object" ? saved.vaultCfg : {},
           vaultKeys: Array.isArray(saved.vaultKeys) ? saved.vaultKeys.filter(function (f) { return SECRET_FIELDS.indexOf(f) >= 0; }) : [],
           vaultShared: Array.isArray(saved.vaultShared) ? saved.vaultShared.filter(function (x) { return typeof x === "string"; }).slice(0, 20) : [],
@@ -4392,6 +4412,9 @@
             return { x: p.x, y: p.y };
           } catch (err) { return null; }
         }
+        /* P3a: where a finger lands on the face, from the 3D raycast when the 3D avatar is showing */
+        function on3D() { return !!(window.blarf3D && window.blarf3D.on && window.blarf3D.on()); }
+        function facePt(x, y) { return on3D() ? window.blarf3D.pick(x, y) : svgPt(x, y); }
         function zoneAt(p) {
           if (!p) return null;
           var x = p.x, y = p.y, inE = function (cx, cy, rx, ry) { var a = (x - cx) / rx, b = (y - cy) / ry; return a * a + b * b <= 1; };
@@ -4493,7 +4516,8 @@
         }
         stage.addEventListener("pointerdown", function (e) {
           if (e.button > 0 || e.target.closest("button")) return;
-          var now = performance.now(), p = svgPt(e.clientX, e.clientY), z = e.target.closest(".x-hero") ? zoneAt(p) : null;
+          if (on3D() && window.blarf3D.gesturing()) { sp = null; clearTimeout(lpT); return; }
+          var now = performance.now(), p = facePt(e.clientX, e.clientY), z = on3D() || e.target.closest(".x-hero") ? zoneAt(p) : null;
           sp = { x: e.clientX, y: e.clientY, t: now, z: z, p: p, moved: false, done: false, lt: now, lp: p, spd: 0, rubT: 0, rubbed: false, id: e.pointerId };
           try { stage.setPointerCapture(e.pointerId); } catch (err) {}
           clearTimeout(lpT);
@@ -4509,7 +4533,7 @@
           if (!sp.moved && Math.hypot(e.clientX - sp.x, e.clientY - sp.y) < 12) return;
           if (!sp.moved) { sp.moved = true; clearTimeout(lpT); }
           if (!sp.z || sp.rubbed) return;
-          var now = performance.now(), p = svgPt(e.clientX, e.clientY); if (!p || !sp.lp) return;
+          var now = performance.now(), p = facePt(e.clientX, e.clientY); if (!p || !sp.lp) return;
           var dt = Math.max(1, now - sp.lt), v = Math.hypot(p.x - sp.lp.x, p.y - sp.lp.y) / dt;
           sp.spd += (v - sp.spd) * 0.25;
           var zz = zoneAt(p) || "";
@@ -4530,6 +4554,7 @@
           clearTimeout(lpT);
           var s = sp; sp = null; BL.grouch.track(null);
           if (!s || s.done || cancel || e.pointerId !== s.id) return;
+          if (on3D() && window.blarf3D.gesturing(true)) return; /* that was a pinch or a turn of the 3D view */
           var dx = e.clientX - s.x, dy = e.clientY - s.y, dur = performance.now() - s.t;
           if (dy < -40 && Math.abs(dy) > Math.abs(dx) * 1.3 && (!s.z || dur < 600) && !s.rubbed) { setSheet(true); return; }
           if (s.moved) return;
@@ -7871,7 +7896,7 @@
         /* IndexedDB answers late: restore any setting the other stores lost, then back-fill every store */
         KV.ready([SETKEY, STORE], function (got) {
           var fromIdb = parseJSON(got[SETKEY]) || parseJSON(got[STORE]) || {}, changed = false;
-          ["needs", "lib", "vaultCfg", "vaultKeys", "vaultShared", "name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch", "brain", "mode", "deepStrength", "obsSub", "crew", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel", "autoRoute", "voicePolish", "thinkProv", "thinkModel", "visionModel", "memAuto", "memMig", "embedModel", "selfCheck", "checkLog", "autoResearch", "skillsOff", "mySkills"].forEach(function (f) {
+          ["avatar", "needs", "lib", "vaultCfg", "vaultKeys", "vaultShared", "name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch", "brain", "mode", "deepStrength", "obsSub", "crew", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel", "autoRoute", "voicePolish", "thinkProv", "thinkModel", "visionModel", "memAuto", "memMig", "embedModel", "selfCheck", "checkLog", "autoResearch", "skillsOff", "mySkills"].forEach(function (f) {
             if (saved[f] === undefined && fromIdb[f] !== undefined && fromIdb[f] !== "") { S[f] = fromIdb[f]; changed = true; }
           });
           S.chars = charsClean(S.chars);
@@ -7950,6 +7975,8 @@
           secretFields: SECRET_FIELDS.slice(),
           /* P2b: needs */
           grumble: grumble, setCaption: setCaption, pokeStart: pokeStart, paintOutfit: paintOutfit,
+          /* P3a: 3D avatar */
+          heroSvg: function () { return heroSvg; }, zoneAt: zoneAt,
           repaintKeys: function () { try { paintKey(); paintVoiceKeys(); paintStatus(); } catch (e) {} },
           offline: function () { return isOffline(); }
         };
@@ -7959,6 +7986,7 @@
     <script src="blarf-vault.js"></script>
     <script src="blarf-lib.js"></script>
     <script src="blarf-needs.js"></script>
+    <script src="blarf-avatar.js"></script>
     <script>
       /* iOS polish: sliding highlight behind the active brain pill, light haptics on primary actions */
       (function () {
