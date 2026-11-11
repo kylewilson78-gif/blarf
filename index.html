@@ -328,6 +328,12 @@
       .x-sheet__close { flex: none; width: var(--tap); height: var(--tap); border: 0; border-radius: 50%; background: none; display: grid; place-items: center; color: var(--text-secondary); }
       .x-sheet__close svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
       .x-sheet__main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+      .x-brain { flex: none; overflow-x: auto; scrollbar-width: none; padding: 8px calc(16px + env(safe-area-inset-right)) 8px calc(16px + env(safe-area-inset-left)); border-bottom: 1px solid var(--stroke-secondary); }
+      .x-brain::-webkit-scrollbar { display: none; }
+      .x-brain .x-seg { display: flex; width: max-content; background: var(--fill-tertiary); }
+      .x-brain .x-seg button { white-space: nowrap; }
+      .x-typing__lbl { align-self: center; margin-left: 6px; font: var(--type-caption); color: var(--text-secondary); }
+      .x-brtag { margin-left: 6px; padding: 1px 8px; border-radius: var(--r-pill); background: var(--fill-tertiary); color: var(--text-secondary); }
       .x-onb__face {
         width: 168px; height: 168px; border-radius: 44px; overflow: hidden; cursor: pointer;
         box-shadow: 0 0 40px color-mix(in srgb, var(--x-blue1) 40%, transparent);
@@ -1705,6 +1711,8 @@
           }
           var px = st.look[0], py = st.look[1];
           if (md === "thinking") { px = 8; py = -10; }
+          /* deep think: a slow look up-left */
+          if (md === "thinking" && st.deep) { px = calm ? -9 : Math.round(-9 + Math.sin(now / 1400) * 1.5); py = -10; }
 
           /* talking mouth */
           var talking = now < st.talkUntil || st.voice, m = null, g = 0;
@@ -1749,6 +1757,8 @@
             tgt[25] -= sc * 0.1;
           }
           for (var bj = 0; bj < 2; bj++) if (now < G.browUntil[bj]) for (var bk = 1; bk < 6; bk += 2) tgt[bj * 6 + bk] += bk === (bj ? 1 : 5) ? 14 : 10;
+          /* deep think: the left brow hitched up */
+          if (md === "thinking" && st.deep) for (var bd = 1; bd < 6; bd += 2) tgt[bd] -= bd === 3 ? 10 : 7;
           for (var bc = 1; bc < 12; bc += 2) tgt[bc] = Math.min(tgt[bc], 70);
           if (!m && md !== "thinking") {
             if (now < G.pressUntil) for (var mi = 0; mi < 12; mi++) tgt[12 + mi] = VA[1][mi];
@@ -1886,7 +1896,7 @@
           get MINI() { return mini(); },
           mount: mount,
           calm: function () { G.g = 0; G.ignoreUntil = 0; G.slamUntil = 0; G.track = null; st.excitedUntil = performance.now() + 1500; },
-          think: function (on) { st.thinking = !!on; },
+          think: function (on, deep) { st.thinking = !!on; st.deep = !!(on && deep); },
           say: function (text, userText, quiet) {
             var now = performance.now();
             st.thinking = false;
@@ -1981,7 +1991,7 @@
 
         /* ---------- storage: localStorage, then IndexedDB, then a cookie (never the API key); memory as a last resort ---------- */
         var SETKEY = "companion-settings";
-        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch"];
+        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch", "brain"];
         var KV = (function () {
           var mem = {}, idb = null, idbState = 0; /* 0 pending, 1 ok, -1 unavailable */
           var https = location.protocol === "https:", AGE = 400 * 86400;
@@ -2104,6 +2114,7 @@
           provider: saved.provider || "xai",
           model: saved.model != null ? saved.model : "grok-4.7",
           liveSearch: saved.liveSearch != null ? !!saved.liveSearch : true,
+          brain: ["quick", "deep", "expert", "gamer"].indexOf(saved.brain) >= 0 ? saved.brain : "quick",
           customUrl: saved.customUrl || "",
           apiKey: saved.apiKey || KV.legacyKey || "",
           onboarded: !!saved.onboarded,
@@ -2245,6 +2256,13 @@
         var ORDER = ["chat", "studio", "hustle"];
         var CAM_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5A2 2 0 0 1 6 6.5h1.8l1.4-2h5.6l1.4 2H18a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.5"/></svg>';
         var VISION = " When Kyle sends a photo or screenshot (games, gear, tracks, screens, anything), look closely and react in character, then actually help (game strategy, gear advice, fixes).";
+        /* brain modes for text chat: reasoning effort, prompt clause, reply tag */
+        var BRAINS = {
+          quick: { label: "⚡ Quick", effort: "low", clause: "" },
+          deep: { label: "🧠 Deep Think", effort: "xhigh", long: true, clause: " DEEP THINK MODE: think it through properly. Give a careful, correct answer with the reasoning steps that matter, still in your voice. Longer replies are fine here." },
+          expert: { label: "🎓 Expert", effort: "high", long: true, clause: " EXPERT BLARF MODE: answer like a top specialist in the field: structured (short headers or numbered steps), precise numbers, real tools and names, tradeoffs, and a clear recommendation. Still grumpy Boston, but the substance is pro-level. Longer replies are fine." },
+          gamer: { label: "🎮 Gamer", effort: "low", clause: " GAMER MODE: you're Kyle's PS5/console gaming sidekick: strategy, builds, boss tips, walkthrough steps, settings, and trash talk. If he sends a screenshot, read it closely and tell him exactly what to do next." }
+        };
         var SEND_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
 
         /* ---------- build the three chat views ---------- */
@@ -2274,6 +2292,9 @@
             '<button class="x-clear" id="chat-clear" type="button">Clear chat</button>' +
             '<button class="x-spk js-spk" type="button"></button>' +
             '<button class="x-sheet__close" id="sheet-close" type="button" aria-label="Hide chat and show ' + esc(S.name) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></div>' +
+            '<div class="x-brain"><div class="x-seg" id="brain-seg" role="group" aria-label="Brain mode">' +
+            Object.keys(BRAINS).map(function (k) { return '<button type="button" data-brain="' + k + '" aria-pressed="' + (S.brain === k) + '">' + BRAINS[k].label + "</button>"; }).join("") +
+            "</div></div>" +
             threadHTML + "</div></div></div>";
           sec.innerHTML = threadHTML +
             '<div class="x-chips" role="group" aria-label="Quick replies">' +
@@ -2330,7 +2351,8 @@
           var el = doc.createElement("div");
           el.className = "x-msg" + (msg.r === "me" ? " x-msg--me" : msg.r === "err" ? " x-msg--err" : " x-msg--bot");
           var pic = msg.r === "me" && typeof msg.img === "string" && /^data:image\//.test(msg.img) ? '<img class="x-bubimg" src="' + esc(msg.img) + '" alt="Photo you sent" />' : "";
-          var inner = '<div class="x-bub">' + pic + fmt(msg.t) + '</div><p class="x-time">' + clock(msg.ts) + "</p>";
+          var inner = '<div class="x-bub">' + pic + fmt(msg.t) + '</div><p class="x-time">' + clock(msg.ts) +
+            (msg.r === "bot" && msg.brain && msg.brain !== "quick" && BRAINS[msg.brain] ? '<span class="x-brtag">' + BRAINS[msg.brain].label + "</span>" : "") + "</p>";
           el.innerHTML = msg.r === "bot" ? '<span class="x-mini" aria-hidden="true">' + BL.MINI + '</span><div class="x-msg__body">' + inner + "</div>" : inner;
           return el;
         }
@@ -2362,16 +2384,18 @@
         }
         var typingEl = {}, lastUser = "";
         function typing(m, on) {
+          var deep = on && m === "chat" && S.brain === "deep" && !!S.apiKey;
           if (on && !typingEl[m]) {
             var el = doc.createElement("div");
-            el.className = "x-msg x-msg--bot x-typing"; el.setAttribute("aria-label", S.name + " is typing");
-            el.innerHTML = '<span class="x-mini" aria-hidden="true">' + BL.MINI + '</span><div class="x-msg__body"><div class="x-bub"><i></i><i></i><i></i></div></div>';
+            el.className = "x-msg x-msg--bot x-typing"; el.setAttribute("aria-label", deep ? "Blarf's thinkin' wicked hard…" : S.name + " is typing");
+            el.innerHTML = '<span class="x-mini" aria-hidden="true">' + BL.MINI + '</span><div class="x-msg__body"><div class="x-bub"><i></i><i></i><i></i>' +
+              (deep ? '<span class="x-typing__lbl">Blarf\'s thinkin\' wicked hard…</span>' : "") + "</div></div>";
             V[m].thread.appendChild(el); typingEl[m] = el; scrollDown(m, true);
           } else if (!on && typingEl[m]) { typingEl[m].remove(); typingEl[m] = null; }
           if (m === "chat") {
-            BL.think(on);
+            BL.think(on, deep);
             $("sheet-status").textContent = on ? "thinking…" : MODES.chat.role;
-            if (on) setCaption("Hmm, let me think…", true);
+            if (on) setCaption(deep ? "Blarf's thinkin' wicked hard…" : "Hmm, let me think…", true);
           }
         }
 
@@ -2453,6 +2477,16 @@
           if (up) scrollDown("chat", false); else { hidePill(); if (doc.activeElement === V.chat.input) V.chat.input.blur(); }
         }
         sheetDrag(sheet, [grab, $("sheet-head")], $("sheet-scrim"), function () { setSheet(false); });
+        /* brain mode pills */
+        function paintBrain() {
+          [].slice.call($("brain-seg").querySelectorAll("[data-brain]")).forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.brain === S.brain ? "true" : "false"); });
+        }
+        $("brain-seg").addEventListener("click", function (e) {
+          var b = e.target.closest("[data-brain]");
+          if (!b || !BRAINS[b.dataset.brain]) return;
+          S.brain = b.dataset.brain; save(); paintBrain();
+          b.scrollIntoView({ block: "nearest", inline: "nearest" });
+        });
         grab.addEventListener("click", function () { setSheet(!sheetUp); });
         $("sheet-scrim").addEventListener("click", function () { setSheet(false); });
         $("sheet-close").addEventListener("click", function () { setSheet(false); });
@@ -3318,7 +3352,8 @@
           busy[m] = true; typing(m, true);
           var done = function (reply) { typing(m, false); addMsg(m, { r: "bot", t: reply, ts: Date.now() }); next(m); };
           if (S.apiKey) {
-            askAI(m).then(done, function (err) {
+            var br = m === "chat" ? S.brain : "";
+            askAI(m).then(function (reply) { typing(m, false); addMsg(m, { r: "bot", t: reply, ts: Date.now(), brain: br !== "quick" ? br || undefined : undefined }); next(m); }, function (err) {
               typing(m, false);
               addMsg(m, { r: "err", t: "**Couldn't reach the AI.** " + err + " Answering offline for now.", ts: Date.now() });
               typing(m, true);
@@ -3378,14 +3413,17 @@
             return { role: role, content: role === "user" && (x.img || x.pic) ? x.t + " [photo]" : x.t };
           });
           var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
-          var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, xr ? 90000 : 60000);
+          var bm = m === "chat" ? BRAINS[S.brain] || BRAINS.quick : null;
+          var brainClause = bm ? bm.clause + (bm.long ? " Ignore the earlier length limit for this answer." : "") : "";
+          var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, xr ? (bm === BRAINS.deep ? 180000 : 90000) : 60000);
           var reqBody;
           if (xr) {
             url = XAI_RESPONSES;
-            reqBody = { model: model, input: [{ role: "system", content: MODES[m].system() + VISION + MEM_ASK + LIVE_HINT }].concat(history) };
+            reqBody = { model: model, input: [{ role: "system", content: MODES[m].system() + VISION + MEM_ASK + LIVE_HINT + brainClause }].concat(history) };
             if (S.liveSearch !== false) reqBody.tools = [{ type: "web_search" }, { type: "x_search" }];
+            if (bm) reqBody.reasoning = { effort: bm.effort };
           } else {
-            reqBody = { model: model, messages: [{ role: "system", content: MODES[m].system() + VISION + MEM_ASK }].concat(history), temperature: 0.8 };
+            reqBody = { model: model, messages: [{ role: "system", content: MODES[m].system() + VISION + MEM_ASK + brainClause }].concat(history), temperature: 0.8 };
           }
           return fetch(url, {
             method: "POST",
@@ -4287,10 +4325,12 @@
         /* IndexedDB answers late: restore any setting the other stores lost, then back-fill every store */
         KV.ready([SETKEY, STORE], function (got) {
           var fromIdb = parseJSON(got[SETKEY]) || parseJSON(got[STORE]) || {}, changed = false;
-          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch"].forEach(function (f) {
+          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch", "brain"].forEach(function (f) {
             if (saved[f] === undefined && fromIdb[f] !== undefined && fromIdb[f] !== "") { S[f] = fromIdb[f]; changed = true; }
           });
           if (modelMig()) changed = true;
+          if (["quick", "deep", "expert", "gamer"].indexOf(S.brain) < 0) S.brain = "quick";
+          paintBrain();
           /* a streak restored late: count today against it, then repaint the outfit */
           if (saved.streakDay === undefined && typeof fromIdb.streakDay === "string" && fromIdb.streakDay) {
             S.streak = typeof S.streak === "number" ? S.streak : 0; streakTick();
