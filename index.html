@@ -21,6 +21,7 @@
     <link rel="stylesheet" href="hark.css" />
     <link rel="stylesheet" href="hark-charts.css" />
     <link rel="stylesheet" href="blarf-p2a.css" />
+    <link rel="stylesheet" href="blarf-needs.css" />
     <script>
       /* iOS home-screen icon, drawn at runtime, plus a tiny manifest */
       (function () {
@@ -2388,7 +2389,9 @@
           '<path d="M-7 -14h14M-7 -8h10M-7 -2h12" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity="0.8"/>' +
           '<rect x="-4" y="19.5" width="8" height="2" rx="1" fill="#5B636B"/></g></g>';
         var ACTS = { yawn: 2000, roll: 1200, phone: 3000, shake: 1000, side: 2100, smoke: 2600,
-          nod: 700, think: 1800, expert: 3000, gamer: 1600, crew: 2400, onit: 700, proud: 1600, error: 1400, phew: 1600 };
+          nod: 700, think: 1800, expert: 3000, gamer: 1600, crew: 2400, onit: 700, proud: 1600, error: 1400, phew: 1600,
+          /* P2b: needs (tamagotchi) care reactions; props live in blarf-needs.js */
+          eat: 2600, sip: 2400, shower: 3000, play: 1800, pet: 2200, wake: 1600, growl: 1400 };
         var YAWN = [72, 146, 76, 112, 124, 112, 128, 146, 126, 206, 74, 206];
         var A = null, PEND = null, IDL = { next: 0, lastN: "" }, AX0 = { look: 0, dx: 0, dy: 0, bl: 0, br: 0, mouth: null, mw: 0, jaw: 0, lid: 0, rot: 0, ty: 0, hx: 0, es: 0, think: false };
         function ss(t) { t = t < 0 ? 0 : t > 1 ? 1 : t; return t * t * (3 - 2 * t); }
@@ -2413,6 +2416,13 @@
           else if (n === "proud") { e = env(p, 0.15, 0.8); o.br = -16 * e; o.bl = -3 * e; o.rot = 4 * e; o.mouth = VA[3]; o.mw = 0.45 * e; o.es = 0.04 * e; }
           else if (n === "error") { e = env(p, 0.1, 0.85); o.rot = p < 0.75 ? 6 * Math.sin(6 * PI * p / 0.75) * (1 - 0.3 * ss(p / 0.75)) : 0; o.bl = o.br = 10 * e; o.mouth = FROWN; o.mw = e; o.lid = 0.35 * e; }
           else if (n === "phew") { o.bl = o.br = -10 * env(p, 0.15, 0.45); o.mouth = VA[5]; o.mw = env(p, 0.2, 0.65); o.ty = 4 * env(p, 0.35, 0.85); o.lid = 0.45 * env(p, 0.3, 0.85); }
+          else if (n === "eat") { e = env(p, 0.12, 0.88); var ch = Math.sin(8 * PI * p); o.mouth = ch > 0 ? VA[4] : VA[1]; o.mw = e; o.jaw = 3 * e * Math.max(0, ch); o.lid = 0.35 * e; o.bl = o.br = -5 * e; o.ty = 1.5 * ch * e; }
+          else if (n === "sip") { e = env(p, 0.15, 0.85); o.mouth = VA[5]; o.mw = p < 0.62 ? e : 0; o.look = e; o.dy = p < 0.62 ? 5 * e : 0; o.lid = (p < 0.62 ? 0.4 : 0) * e; o.bl = o.br = p > 0.62 ? -12 * env((p - 0.62) / 0.38, 0.2, 0.7) : 0; o.ty = 2 * e; }
+          else if (n === "shower") { e = env(p, 0.1, 0.9); o.lid = 0.9 * e; o.rot = 4 * Math.sin(6 * PI * p) * e; o.mouth = VA[3]; o.mw = 0.6 * e; o.bl = o.br = -6 * e; o.ty = -1 * e; }
+          else if (n === "play") { e = env(p, 0.08, 0.85); o.ty = -8 * Math.abs(Math.sin(3 * PI * p)) * e; o.mouth = VA[3]; o.mw = e; o.bl = o.br = -10 * e; o.es = 0.06 * e; }
+          else if (n === "pet") { e = env(p, 0.15, 0.85); o.lid = 0.6 * e; o.bl = o.br = -4 * e; o.rot = 5 * e; o.mouth = VA[0]; o.mw = 0.5 * e; o.hx = 2 * e; }
+          else if (n === "wake") { e = env(p, 0.05, 0.8); o.lid = Math.max(0.35 * e, 1 - ss(p / 0.45)); o.bl = o.br = 10 * e; o.mouth = FROWN; o.mw = e; o.rot = p < 0.6 ? 3 * Math.sin(5 * PI * p / 0.6) : 0; }
+          else if (n === "growl") { e = env(p, 0.1, 0.85); o.ty = 1.5 * Math.sin(20 * PI * p) * e; o.look = e; o.dy = 8 * e; o.bl = o.br = 6 * e; o.mouth = FROWN; o.mw = 0.6 * e; }
           return o;
         }
         function actClass(n) {
@@ -2456,6 +2466,7 @@
 
         /* cigarette drags: every 20-40 s while idle */
         var CIG = { next: 0, at: -9999, puffed: false };
+        var NF0 = { sleep: false, droop: 0, sulk: 0, ty: 0, rot: 0 }; /* P2b: needs face state, set by blarf-needs.js */
         var last = 0, TM = { at: 0, key: "sharp" };
         function frame(now) {
           var dt = last ? Math.min(64, now - last) : 16; last = now;
@@ -2463,6 +2474,8 @@
           /* time-of-day mood, rechecked every 30 s */
           if (!TM.at || now - TM.at > 30000) { TM.at = now; TM.key = timeMood().key; }
           var drowsy = TM.key === "sleepy" || TM.key === "late";
+          var NF = window.blarfNeedsFace || NF0;
+          if (NF.sleep) drowsy = true;
           /* the current act: cut short by talking, listening or reduced motion; a waiting reaction plays once free */
           var vBusy = voiceBusy(now);
           if (A && (calm || vBusy || now - A.at >= A.dur)) endAct();
@@ -2518,6 +2531,7 @@
           if (!ign && now - G.lastTouch > 3000 && G.g > 0) G.g = Math.max(0, G.g - dt * 0.003);
           var sc = soft ? 0 : cl((G.g - 20) / 60);
           if (TM.key === "grumpy" && !soft) sc = Math.max(sc, 0.15);
+          if (NF.sulk && !soft) sc = Math.max(sc, Math.min(0.6, NF.sulk));
           if (now < G.slamUntil || ign) sc = 1;
           if (sc || soft) {
             var BD = [5, 10, 16, 16, 10, 5];
@@ -2535,6 +2549,7 @@
             else if (sc) for (var mj = 0; mj < 12; mj++) tgt[12 + mj] += (FROWN[mj] - tgt[12 + mj]) * sc * 0.85;
           }
           if (AX.mw && !m) for (var am = 0; am < 12; am++) tgt[12 + am] += (AX.mouth[am] - tgt[12 + am]) * AX.mw;
+          if (NF.sleep && !m && !A) for (var nm = 0; nm < 12; nm++) tgt[12 + nm] += (VA[5][nm] - tgt[12 + nm]) * 0.45;
           if (soft) tgt[29] = 0.5;
           /* per-eye lid closing: squeeze, annoyed squint, content droop, eyes shut while ignoring */
           var lc = drowsy ? [0.22, 0.22] : [0, 0];
@@ -2544,6 +2559,8 @@
             if (G.track) { lc[0] = Math.max(lc[0], 0.4); lc[1] = Math.max(lc[1], 0.4); }
             if (soft) { lc[0] = Math.max(lc[0], 0.6); lc[1] = Math.max(lc[1], 0.6); }
             if (AX.lid) { lc[0] = Math.max(lc[0], AX.lid); lc[1] = Math.max(lc[1], AX.lid); }
+            if (NF.droop) { lc[0] = Math.max(lc[0], NF.droop); lc[1] = Math.max(lc[1], NF.droop); }
+            if (NF.sleep && !A) lc = [1, 1];
           }
           for (var li = 0; li < 2; li++) {
             G.lid[li] += (lc[li] - G.lid[li]) * (1 - Math.exp(-dt / (lc[li] > G.lid[li] ? 45 : 160)));
@@ -2601,7 +2618,7 @@
           var tb = (now - st.bounceAt) / 1000;
           if (tb < 0.9) { var b = Math.exp(-tb * 5.5) * Math.sin(tb * 20); s += (calm ? 0.015 : 0.07) * b; ty = (calm ? -2 : -10) * Math.abs(b); }
 
-          var rootT = "translate(" + r1(100 + sx + G.hx + AX.hx) + " " + r1(100 + ty + gy + LS.jaw * 1.5 + AX.ty) + ") rotate(" + r1(cur[30] + sway + G.hr + gr + AX.rot) + ") scale(" + r1(s * gs) + ") translate(-100 -100)";
+          var rootT = "translate(" + r1(100 + sx + G.hx + AX.hx) + " " + r1(100 + ty + gy + LS.jaw * 1.5 + AX.ty + (NF.ty || 0)) + ") rotate(" + r1(cur[30] + sway + G.hr + gr + AX.rot + (NF.rot || 0)) + ") scale(" + r1(s * gs) + ") translate(-100 -100)";
           /* brows bob on loud peaks */
           var bbt = now - LS.browAt, bob = bbt < 260 ? -7 * Math.sin(Math.PI * bbt / 260) : 0, cb = cur.map(r1);
           if (bob) for (var q = 1; q < 12; q += 2) cb[q] = r1(cb[q] + bob);
@@ -2615,7 +2632,7 @@
           var cigO = cur[21] - cur[15] > 40 ? 0.15 : 1;
           var bl = document.querySelector(".x-blarf");
           var idle = !calm && !talking && !lip && !st.thinking && !(bl && bl.hasAttribute("data-live")) &&
-            !ign && now - G.lastTouch > 5000 && now > G.slamUntil && G.g < 20;
+            !ign && now - G.lastTouch > 5000 && now > G.slamUntil && G.g < 20 && !NF.sleep;
           if (!CIG.next) CIG.next = now + 20000 + Math.random() * 20000;
           else if (!idle && CIG.at < 0) CIG.next = Math.max(CIG.next, now + 20000);
           var cigOn = null, puffOn = null;
@@ -2778,7 +2795,7 @@
 
         /* ---------- storage: localStorage, then IndexedDB, then a cookie (never the API key); memory as a last resort ---------- */
         var SETKEY = "companion-settings";
-        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch", "brain", "mode", "deepStrength", "obsSub", "crew", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel", "autoRoute", "voicePolish", "thinkProv", "thinkModel", "visionModel", "memAuto", "memMig", "embedModel", "selfCheck", "checkLog", "autoResearch", "skillsOff", "mySkills", "lib", "vaultCfg", "vaultKeys", "vaultShared"];
+        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch", "brain", "mode", "deepStrength", "obsSub", "crew", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel", "autoRoute", "voicePolish", "thinkProv", "thinkModel", "visionModel", "memAuto", "memMig", "embedModel", "selfCheck", "checkLog", "autoResearch", "skillsOff", "mySkills", "lib", "vaultCfg", "vaultKeys", "vaultShared", "needs"];
         var SECRET_FIELDS = ["apiKey", "elevenKey", "oaiKey", "fishKey"];
         var KV = (function () {
           var mem = {}, idb = null, idbState = 0; /* 0 pending, 1 ok, -1 unavailable */
@@ -2981,6 +2998,8 @@
           apiKey: saved.apiKey || KV.legacyKey || "",
           /* P2a: library settings, vault settings, which provider keys live in the Secure Vault (opt-in), vault item names Kyle shared with Blarf */
           lib: saved.lib && typeof saved.lib === "object" ? saved.lib : {},
+          /* P2b: needs (tamagotchi) state + settings; blarf-needs.js normalizes it */
+          needs: saved.needs && typeof saved.needs === "object" ? saved.needs : {},
           vaultCfg: saved.vaultCfg && typeof saved.vaultCfg === "object" ? saved.vaultCfg : {},
           vaultKeys: Array.isArray(saved.vaultKeys) ? saved.vaultKeys.filter(function (f) { return SECRET_FIELDS.indexOf(f) >= 0; }) : [],
           vaultShared: Array.isArray(saved.vaultShared) ? saved.vaultShared.filter(function (x) { return typeof x === "string"; }).slice(0, 20) : [],
@@ -3763,7 +3782,11 @@
           if (ctx.role) sheet += " " + ctx.role;
           if (ctx.len) sheet += " " + ctx.len;
           if (!ctx.compact) sheet += BLARF_LISTEN + (ctx.live ? BLARF_RESEARCH_LIVE : BLARF_RESEARCH);
-          return sheet + memoryClause() + swearClause();
+          return sheet + needsClause(ctx) + memoryClause() + swearClause();
+        }
+        /* P2b: hunger/coffee/sleep state line; rate-limited inside blarf-needs.js (one mention per ~10 messages) */
+        function needsClause(ctx) {
+          try { return window.blarfNeeds && window.blarfNeeds.clause ? window.blarfNeeds.clause(ctx || {}) : ""; } catch (e) { return ""; }
         }
         var SHORT_LEN = "Keep replies short and mobile-friendly: one to four short sentences or a tight list.";
         var MODES = {
@@ -4436,6 +4459,7 @@
           pokeScore = 0; pokeLeft = 20;
           poke.on = true; poke.irr = 0; poke.last = 0;
           toast("Poke the Bear: 20 pokes, don't make him snap!");
+          try { if (window.blarfNeeds) window.blarfNeeds.onPlay("poke"); } catch (e) {}
         }
         function pokeBest(n) {
           if (n > (S.pokeBest || 0)) { S.pokeBest = n; save(); }
@@ -4494,7 +4518,10 @@
           sp.lt = now; sp.lp = p;
           if (sp.rubT > 1500 && now - sp.t > 1500) {
             sp.rubbed = true;
-            if (BL.grouch.rub()) grumble(S.swear ? "...fine. Damn it, that's... fine. Don't tell anybody, shithead." : "...fine. That's... fine. Don't tell anyone.", true);
+            if (BL.grouch.rub()) {
+              grumble(S.swear ? "...fine. Damn it, that's... fine. Don't tell anybody, shithead." : "...fine. That's... fine. Don't tell anyone.", true);
+              try { if (window.blarfNeeds) window.blarfNeeds.onRub(); } catch (e) {}
+            }
             return;
           }
           BL.grouch.track(p.x, p.y);
@@ -4507,6 +4534,7 @@
           if (dy < -40 && Math.abs(dy) > Math.abs(dx) * 1.3 && (!s.z || dur < 600) && !s.rubbed) { setSheet(true); return; }
           if (s.moved) return;
           if (!s.z) { pauseTap(); return; }
+          if (!poke.on && window.blarfNeeds && window.blarfNeeds.tapFace && window.blarfNeeds.tapFace()) return;
           if (poke.on) pokeTap(s.z, s.p); else grouchPoke(s.z, s.p);
         }
         stage.addEventListener("pointerup", function (e) { touchEnd(e, false); });
@@ -4857,6 +4885,7 @@
         function startLive() {
           if (LIVE) return;
           if (window.blarfVault && window.blarfVault.keysLocked && window.blarfVault.keysLocked()) { window.blarfVault.unlockFor(startLive); return; }
+          try { if (window.blarfNeeds) window.blarfNeeds.onTalk("live", ""); } catch (e) {}
           if (isOffline()) { toast(OFFLINE_MSG); return; }
           if (!S.apiKey || S.provider !== "xai") { toast("Live talk needs the xAI Grok provider and an API key in Settings."); return; }
           var AC = window.AudioContext || window.webkitAudioContext;
@@ -5238,6 +5267,7 @@
           var dp = img ? null : drawPrompt(text);
           if (S.apiKey && isOffline() && !(localHas() && !img && !dp)) { toast(OFFLINE_MSG); return false; }
           if (m === "chat") { lastUser = text; setSheet(true); if (/^stop\b/i.test(text)) { S.roast = false; S.trivia = false; } }
+          try { if (window.blarfNeeds) window.blarfNeeds.onTalk(m, text); } catch (e) {}
           stopVoice();
           markSeen(); rememberCmd(text); memTouch(m, text);
           var me = { r: "me", t: text, ts: Date.now() };
@@ -6657,8 +6687,8 @@
             var to = b.dataset.go;
             setMenu(false, true);
             if (to === "text") { go("chat"); setSheet(true); setTimeout(function () { V.chat.input.focus(); }, 380); }
-            else if (to === "roast") { go("chat"); setSheet(true); S.roast = true; send("chat", "Let's do a roast battle"); }
-            else if (to === "trivia") { go("chat"); setSheet(true); S.trivia = true; send("chat", "Let's play trivia streak"); }
+            else if (to === "roast") { go("chat"); setSheet(true); S.roast = true; try { if (window.blarfNeeds) window.blarfNeeds.onPlay("roast"); } catch (e) {} send("chat", "Let's do a roast battle"); }
+            else if (to === "trivia") { go("chat"); setSheet(true); S.trivia = true; try { if (window.blarfNeeds) window.blarfNeeds.onPlay("trivia"); } catch (e) {} send("chat", "Let's play trivia streak"); }
             else if (to === "poke") { go("chat"); setSheet(false); pokeStart(); }
             else if (to === "crew") {
               go("chat"); setSheet(true); S.crew = true; save(); paintBrain(); window.blarfAct("crew");
@@ -6753,8 +6783,11 @@
         /* outfits: unlocked by a daily-visit streak, worn on the hero face via html.x-out-<id> */
         var OUTFITS = [
           { id: "none", name: "None", day: 0 }, { id: "beanie", name: "Beanie", day: 1 },
-          { id: "headphones", name: "Headphones", day: 3 }, { id: "shades", name: "Shades", day: 7 }, { id: "crown", name: "Crown", day: 14 }
+          { id: "headphones", name: "Headphones", day: 3 }, { id: "shades", name: "Shades", day: 7 }, { id: "crown", name: "Crown", day: 14 },
+          /* P2b: perfect-care streak rewards (Needs) */
+          { id: "dunkin", name: "Dunkin' cap", day: 0, care: 7 }, { id: "bruins", name: "Bruins jersey", day: 0, care: 14 }
         ];
+        function careBest() { try { return window.blarfNeeds && window.blarfNeeds.careBest ? window.blarfNeeds.careBest() : 0; } catch (e) { return 0; } }
         var LOCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
         function ymd(d) { return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2); }
         function streakTick() {
@@ -6767,7 +6800,7 @@
             if (o.day && before < o.day && S.streak >= o.day) toast("New outfit unlocked: " + o.name + ". Settings > Outfit.");
           });
         }
-        function outfitOpen(o) { return (S.streak || 0) >= o.day; }
+        function outfitOpen(o) { return o.care ? careBest() >= o.care : (S.streak || 0) >= o.day; }
         var outList = $("out-list");
         function paintOutfit() {
           var cur = OUTFITS.filter(function (o) { return o.id === S.outfit && outfitOpen(o); })[0] || OUTFITS[0];
@@ -6777,14 +6810,14 @@
           outList.innerHTML = OUTFITS.map(function (o) {
             var open = outfitOpen(o);
             return '<button class="btn" type="button" data-out="' + o.id + '" aria-pressed="' + (o.id === cur.id) + '"' +
-              (open ? "" : ' aria-disabled="true"') + ">" + (open ? "" : LOCK) + o.name + (open ? "" : " <small>Day " + o.day + "</small>") + "</button>";
+              (open ? "" : ' aria-disabled="true"') + ">" + (open ? "" : LOCK) + o.name + (open ? "" : o.care ? " <small>" + o.care + "d care</small>" : " <small>Day " + o.day + "</small>") + "</button>";
           }).join("");
         }
         outList.addEventListener("click", function (e) {
           var b = e.target.closest("[data-out]"); if (!b) return;
           var o = OUTFITS.filter(function (x) { return x.id === b.getAttribute("data-out"); })[0];
           if (!o) return;
-          if (!outfitOpen(o)) { toast("Locked: keep visiting daily"); return; }
+          if (!outfitOpen(o)) { toast(o.care ? "Locked: " + o.care + " days of perfect care in a row (tap the needs pill)" : "Locked: keep visiting daily"); return; }
           S.outfit = o.id; save(); paintOutfit();
         });
         streakTick();
@@ -7838,7 +7871,7 @@
         /* IndexedDB answers late: restore any setting the other stores lost, then back-fill every store */
         KV.ready([SETKEY, STORE], function (got) {
           var fromIdb = parseJSON(got[SETKEY]) || parseJSON(got[STORE]) || {}, changed = false;
-          ["lib", "vaultCfg", "vaultKeys", "vaultShared", "name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch", "brain", "mode", "deepStrength", "obsSub", "crew", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel", "autoRoute", "voicePolish", "thinkProv", "thinkModel", "visionModel", "memAuto", "memMig", "embedModel", "selfCheck", "checkLog", "autoResearch", "skillsOff", "mySkills"].forEach(function (f) {
+          ["needs", "lib", "vaultCfg", "vaultKeys", "vaultShared", "name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch", "brain", "mode", "deepStrength", "obsSub", "crew", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel", "autoRoute", "voicePolish", "thinkProv", "thinkModel", "visionModel", "memAuto", "memMig", "embedModel", "selfCheck", "checkLog", "autoResearch", "skillsOff", "mySkills"].forEach(function (f) {
             if (saved[f] === undefined && fromIdb[f] !== undefined && fromIdb[f] !== "") { S[f] = fromIdb[f]; changed = true; }
           });
           S.chars = charsClean(S.chars);
@@ -7915,6 +7948,8 @@
           memProjects: function () { return MEM.items.filter(function (it) { return it.kind === "project" && it.p && it.active !== false && !it.outdated; }); },
           memKey: memKey, memSim: memSim,
           secretFields: SECRET_FIELDS.slice(),
+          /* P2b: needs */
+          grumble: grumble, setCaption: setCaption, pokeStart: pokeStart, paintOutfit: paintOutfit,
           repaintKeys: function () { try { paintKey(); paintVoiceKeys(); paintStatus(); } catch (e) {} },
           offline: function () { return isOffline(); }
         };
@@ -7923,6 +7958,7 @@
     </script>
     <script src="blarf-vault.js"></script>
     <script src="blarf-lib.js"></script>
+    <script src="blarf-needs.js"></script>
     <script>
       /* iOS polish: sliding highlight behind the active brain pill, light haptics on primary actions */
       (function () {
