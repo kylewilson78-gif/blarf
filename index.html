@@ -334,6 +334,40 @@
       .x-brain .x-seg button { white-space: nowrap; }
       .x-typing__lbl { align-self: center; margin-left: 6px; font: var(--type-caption); color: var(--text-secondary); }
       .x-brtag { margin-left: 6px; padding: 1px 8px; border-radius: var(--r-pill); background: var(--fill-tertiary); color: var(--text-secondary); }
+      /* the crew: faces and the crew panel bubble */
+      .x-cf { display: block; }
+      .x-cf__lid { transform-box: fill-box; transform-origin: 50% 0; transform: scaleY(0); animation: x-cf-blink 5.2s infinite; }
+      .x-cf[data-cf="tina"] .x-cf__lid { animation-duration: 6.1s; animation-delay: -1.7s; }
+      .x-cf[data-cf="marv"] .x-cf__lid { animation-duration: 7.3s; animation-delay: -3.1s; }
+      .x-cf[data-cf="slarf"] .x-cf__lid { animation-duration: 5.8s; animation-delay: -4.4s; }
+      @keyframes x-cf-blink { 0%, 93%, 100% { transform: scaleY(0); } 96% { transform: scaleY(1); } }
+      @media (prefers-reduced-motion: reduce) { .x-cf__lid { animation: none; } }
+      .x-crewp {
+        width: 340px; max-width: 100%; padding: 10px 12px 12px; border-radius: 20px; border-bottom-left-radius: 6px;
+        background: var(--fill-tertiary); color: var(--text-primary);
+      }
+      .x-crewp__head { display: flex; justify-content: space-between; gap: 8px; margin: 0 2px 8px; font: var(--type-tag); }
+      .x-crewp__head span:last-child { color: var(--text-secondary); font: var(--type-caption); text-align: right; }
+      .x-crewp__row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+      .x-crewp__m {
+        min-height: var(--tap); padding: 6px 2px; border: 1px solid transparent; border-radius: var(--r-s); background: none;
+        display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--text-primary); cursor: pointer;
+        transition: background var(--dur-quick) var(--ease-out), border-color var(--dur-quick) var(--ease-out);
+      }
+      .x-crewp__m[aria-expanded="true"] { background: var(--fill-primary-on); border-color: var(--stroke-secondary); }
+      .x-crewp__face { width: 48px; height: 48px; border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 1.5px var(--stroke-primary); }
+      .x-crewp__face svg { width: 100%; height: 100%; }
+      .x-crewp__name { font: var(--type-tag); }
+      .x-crewp__stat { display: inline-flex; align-items: center; gap: 4px; font: var(--type-caption); color: var(--text-secondary); white-space: nowrap; }
+      .x-crewp__m.is-done .x-crewp__stat { color: var(--fill-system-green); }
+      .x-crewp__m.is-fail .x-crewp__stat { color: var(--fill-system-red); }
+      .x-crewp__spin { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--stroke-primary); border-top-color: var(--text-primary); animation: x-spin 0.9s linear infinite; }
+      @media (prefers-reduced-motion: reduce) { .x-crewp__spin { animation: none; } }
+      .x-crewp__ans {
+        margin-top: 8px; padding: 10px 12px; border-radius: var(--r-s); background: var(--fill-primary-on);
+        font: var(--weight-regular) var(--size-prose)/1.35 var(--sans); overflow-wrap: anywhere; white-space: pre-wrap;
+      }
+      .x-crewp__ans b { display: block; margin-bottom: 4px; font: var(--type-tag); color: var(--text-secondary); white-space: normal; }
       .x-onb__face {
         width: 168px; height: 168px; border-radius: 44px; overflow: hidden; cursor: pointer;
         box-shadow: 0 0 40px color-mix(in srgb, var(--x-blue1) 40%, transparent);
@@ -1037,6 +1071,16 @@
                     <button class="x-switch" id="set-swear" type="button" role="switch" aria-checked="true" aria-labelledby="lbl-swear"></button>
                   </div>
                   <div class="x-row">
+                    <span class="x-twoline" id="lbl-crewheavy">👥 Crew Heavy (Grok multi-agent)<small>One grok-4.20-multi-agent call instead of the 4 specialists. Uses lots of tokens.</small></span>
+                    <button class="x-switch" id="set-crewheavy" type="button" role="switch" aria-checked="false" aria-labelledby="lbl-crewheavy"></button>
+                  </div>
+                  <div class="x-row">
+                    <span class="x-twoline" id="lbl-crewagents">Heavy agents<small>4 = medium effort, 16 = high effort.</small></span>
+                    <div class="x-seg" id="set-crewagents" role="group" aria-labelledby="lbl-crewagents">
+                      <button type="button" data-agents="4" aria-pressed="true">4</button><button type="button" data-agents="16" aria-pressed="false">16</button>
+                    </div>
+                  </div>
+                  <div class="x-row">
                     <span id="lbl-gaze">Eye contact (front camera)</span>
                     <button class="x-switch" id="set-gaze" type="button" role="switch" aria-checked="false" aria-labelledby="lbl-gaze"></button>
                   </div>
@@ -1164,6 +1208,7 @@
           <button class="x-menu__item" type="button" data-go="hustle"><span aria-hidden="true">🚀</span><span>Hustle</span></button>
           <button class="x-menu__item" type="button" data-go="roast"><span aria-hidden="true">🔥</span><span>Roast Battle</span></button>
           <button class="x-menu__item" type="button" data-go="trivia"><span aria-hidden="true">🧠</span><span>Trivia Streak</span></button>
+          <button class="x-menu__item" type="button" data-go="crew"><span aria-hidden="true">👥</span><span>The Crew</span></button>
           <button class="x-menu__item" type="button" data-go="poke"><span aria-hidden="true">🐻</span><span>Poke the Bear</span></button>
           <button class="x-menu__item" type="button" data-go="beat"><span aria-hidden="true">🥁</span><span>Beat Jam</span></button>
           <button class="x-menu__item" type="button" data-go="settings"><span aria-hidden="true">⚙️</span><span>Settings</span></button>
@@ -2106,7 +2151,7 @@
 
         /* ---------- storage: localStorage, then IndexedDB, then a cookie (never the API key); memory as a last resort ---------- */
         var SETKEY = "companion-settings";
-        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch", "brain", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy"];
+        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch", "brain", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents"];
         var SECRET_FIELDS = ["apiKey", "elevenKey", "oaiKey", "fishKey"];
         var KV = (function () {
           var mem = {}, idb = null, idbState = 0; /* 0 pending, 1 ok, -1 unavailable */
@@ -2285,7 +2330,9 @@
           provider: saved.provider || "xai",
           model: saved.model != null ? saved.model : "grok-4.7",
           liveSearch: saved.liveSearch != null ? !!saved.liveSearch : true,
-          brain: ["quick", "deep", "expert", "gamer"].indexOf(saved.brain) >= 0 ? saved.brain : "quick",
+          brain: ["quick", "deep", "expert", "gamer", "crew"].indexOf(saved.brain) >= 0 ? saved.brain : "quick",
+          crewHeavy: !!saved.crewHeavy,
+          crewAgents: saved.crewAgents === 16 ? 16 : 4,
           customUrl: saved.customUrl || "",
           apiKey: saved.apiKey || KV.legacyKey || "",
           onboarded: !!saved.onboarded,
@@ -2439,7 +2486,8 @@
           quick: { label: "⚡ Quick", effort: "low", clause: "" },
           deep: { label: "🧠 Deep Think", effort: "xhigh", long: true, clause: " DEEP THINK MODE: think it through properly. Give a careful, correct answer with the reasoning steps that matter, still in your voice. Longer replies are fine here." },
           expert: { label: "🎓 Expert", effort: "high", long: true, clause: " EXPERT BLARF MODE: answer like a top specialist in the field: structured (short headers or numbered steps), precise numbers, real tools and names, tradeoffs, and a clear recommendation. Still grumpy Boston, but the substance is pro-level. Longer replies are fine." },
-          gamer: { label: "🎮 Gamer", effort: "low", clause: " GAMER MODE: you're Kyle's PS5/console gaming sidekick: strategy, builds, boss tips, walkthrough steps, settings, and trash talk. If he sends a screenshot, read it closely and tell him exactly what to do next." }
+          gamer: { label: "🎮 Gamer", effort: "low", clause: " GAMER MODE: you're Kyle's PS5/console gaming sidekick: strategy, builds, boss tips, walkthrough steps, settings, and trash talk. If he sends a screenshot, read it closely and tell him exactly what to do next." },
+          crew: { label: "👥 Crew", effort: "low", clause: "" }
         };
         var SEND_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
 
@@ -2533,7 +2581,8 @@
           var lnk = msg.r === "bot" && typeof msg.link === "string" && /^https:\/\//.test(msg.link)
             ? '<br /><a class="link x-boblink" href="' + esc(msg.link) + '" target="_blank" rel="noopener">' + esc(msg.linkLabel || "Open link") + "</a>" : "";
           var inner = '<div class="x-bub">' + pic + fmt(msg.t) + lnk + '</div><p class="x-time">' + clock(msg.ts) +
-            (msg.r === "bot" && msg.brain && msg.brain !== "quick" && BRAINS[msg.brain] ? '<span class="x-brtag">' + BRAINS[msg.brain].label + "</span>" : "") + "</p>";
+            (msg.r === "bot" && typeof msg.tag === "string" && msg.tag ? '<span class="x-brtag">' + esc(msg.tag) + "</span>"
+              : msg.r === "bot" && msg.brain && msg.brain !== "quick" && BRAINS[msg.brain] ? '<span class="x-brtag">' + BRAINS[msg.brain].label + "</span>" : "") + "</p>";
           el.innerHTML = msg.r === "bot" ? '<span class="x-mini" aria-hidden="true">' + BL.MINI + '</span><div class="x-msg__body">' + inner + "</div>" : inner;
           return el;
         }
@@ -3652,6 +3701,7 @@
             }, function (err) { bot({ r: "err", t: "**Couldn't make the picture.** " + err, ts: Date.now() }); });
             return;
           }
+          if (m === "chat" && S.brain === "crew" && S.apiKey) { crewRun(m); return; }
           typing(m, true);
           var done = function (reply) { typing(m, false); addMsg(m, { r: "bot", t: reply, ts: Date.now() }); next(m); };
           if (S.apiKey) {
@@ -4008,6 +4058,255 @@
           });
         }
 
+        /* ---------- The Crew: faces ---------- */
+        function crewFace(id, size) {
+          var INK = "#141a22";
+          var P = {
+            larf: { base: "#8FA38A", bg: "#2E3A30" },
+            tina: { base: "#C04A9A", bg: "#3A1838" },
+            marv: { base: "#6383A6", bg: "#1E2A3A" },
+            slarf: { base: "#D2A65C", bg: "#3A2C14" }
+          }[id] || { base: "#8FA38A", bg: "#2E3A30" };
+          function face(cx, cy, rx, ry) {
+            return '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + rx + '" ry="' + ry + '" fill="' + P.base + '" stroke="' + INK + '" stroke-width="3"/>' +
+              '<path d="M' + (cx - rx * 0.86) + " " + (cy + ry * 0.5) + " Q" + cx + " " + (cy + ry * 1.25) + " " + (cx + rx * 0.86) + " " + (cy + ry * 0.5) + " Q" + cx + " " + (cy + ry * 0.85) + " " + (cx - rx * 0.86) + " " + (cy + ry * 0.5) + 'Z" fill="#000" opacity=".16"/>' +
+              '<ellipse cx="' + (cx - rx * 0.38) + '" cy="' + (cy - ry * 0.48) + '" rx="' + rx * 0.34 + '" ry="' + ry * 0.2 + '" fill="#fff" opacity=".16" transform="rotate(-25 ' + (cx - rx * 0.38) + " " + (cy - ry * 0.48) + ')"/>' +
+              '<g fill="none" stroke-linecap="round" stroke-width="1"><path stroke="#fff" stroke-opacity=".18" d="M' + (cx - 20) + " " + (cy - 6) + "l6 2M" + (cx + 16) + " " + (cy - 16) + "l-4 5M" + (cx + 24) + " " + (cy + 10) + "l6-1M" + (cx - 22) + " " + (cy + 16) + 'l-4 4"/>' +
+              '<path stroke="#000" stroke-opacity=".2" d="M' + (cx + 10) + " " + (cy + 22) + "l-5 3M" + (cx - 28) + " " + (cy + 4) + 'l5-1"/></g>';
+          }
+          /* eye: white, pupil (dx/dy offset), then the blinking lid */
+          function eye(x, y, rx, ry, dx, dy, lid) {
+            return '<ellipse cx="' + x + '" cy="' + y + '" rx="' + rx + '" ry="' + ry + '" fill="#fff" stroke="' + INK + '" stroke-width="2.5"/>' +
+              '<circle cx="' + (x + dx) + '" cy="' + (y + dy) + '" r="3.6" fill="' + INK + '"/><circle cx="' + (x + dx + 1.2) + '" cy="' + (y + dy - 1.3) + '" r="1" fill="#fff"/>' +
+              (lid || "") +
+              '<ellipse class="x-cf__lid" cx="' + x + '" cy="' + y + '" rx="' + (rx + 1) + '" ry="' + (ry + 1) + '" fill="' + P.base + '" stroke="' + INK + '" stroke-width="2.5"/>';
+          }
+          /* a heavy static lid down to a line from (x1,y1) to (x2,y2) */
+          function lid(x1, y1, x2, y2) {
+            return '<path d="M' + (x1 - 1) + " " + (y1 - 14) + "L" + (x2 + 1) + " " + (y2 - 14) + "L" + (x2 + 1) + " " + y2 + "L" + (x1 - 1) + " " + y1 + 'Z" fill="' + P.base + '"/>' +
+              '<path d="M' + x1 + " " + y1 + "L" + x2 + " " + y2 + '" stroke="' + INK + '" stroke-width="2.6" stroke-linecap="round"/>';
+          }
+          var s = '<rect width="100" height="100" fill="' + P.bg + '"/>', ln = ' fill="none" stroke="' + INK + '" stroke-linecap="round" stroke-linejoin="round"';
+          if (id === "larf") {
+            s += '<path d="M18 42L13 28L24 31L21 16L33 24L36 8L45 20L52 5L58 20L67 9L68 24L80 14L77 30L88 27L82 42Z" fill="#3E443D" stroke="' + INK + '" stroke-width="2.5" stroke-linejoin="round"/>' +
+              face(50, 54, 35, 34) +
+              '<path d="M30 26l4 8M44 21l1 9M58 22l-2 8M71 27l-4 7" stroke="#3E443D" stroke-width="3.2" stroke-linecap="round"/>' +
+              eye(37, 52, 7.5, 8.5, 0, 0) + eye(63, 52, 7.5, 8.5, 0, 0) +
+              '<g' + ln + ' stroke-width="3.4"><circle cx="37" cy="52" r="13" fill="#fff" fill-opacity=".12"/><circle cx="63" cy="52" r="13" fill="#fff" fill-opacity=".12"/>' +
+              '<path d="M48 49Q50 46 52 49M24 50L15 47M76 50L85 47"/></g>' +
+              '<path d="M27 34Q35 28 44 34M56 34Q65 28 73 34"' + ln + ' stroke-width="3.4"/>' +
+              '<path d="M38 75q3-3 6 0t6 0t6 0t6 0"' + ln + ' stroke-width="3"/>';
+          } else if (id === "tina") {
+            s += '<path d="M14 58C8 26 28 8 50 8C72 8 92 26 86 58L80 72L20 72Z" fill="#2B1236" stroke="' + INK + '" stroke-width="2.5"/>' +
+              '<path d="M42 78L42 100L58 100L58 78Z" fill="' + P.base + '" stroke="' + INK + '" stroke-width="2.5"/>' +
+              face(50, 50, 33, 34) +
+              '<path d="M19 46C23 24 44 15 64 20C53 24 47 30 45 39C38 31 29 35 19 46Z" fill="#2B1236" stroke="' + INK + '" stroke-width="2.5" stroke-linejoin="round"/>' +
+              '<path d="M30 21C40 16 52 15 62 18" stroke="#fff" stroke-opacity=".3" stroke-width="1.6" fill="none" stroke-linecap="round"/>' +
+              eye(38, 52, 7, 8, 1, 0.5) + eye(62, 52, 7, 8, 1, 0.5) +
+              '<path d="M31 46l-4-3M69 46l4-3"' + ln + ' stroke-width="2.4"/>' +
+              '<path d="M30 40Q37 36 45 40M55 37Q63 30 71 35"' + ln + ' stroke-width="3.4"/>' +
+              '<path d="M41 69Q52 73 62 65l3-1"' + ln + ' stroke-width="3"/>' +
+              '<g fill="none"><circle cx="17" cy="64" r="7" stroke="' + INK + '" stroke-width="5"/><circle cx="17" cy="64" r="7" stroke="#E9B634" stroke-width="3"/>' +
+              '<circle cx="83" cy="64" r="7" stroke="' + INK + '" stroke-width="5"/><circle cx="83" cy="64" r="7" stroke="#E9B634" stroke-width="3"/></g>' +
+              '<path d="M24 90Q50 104 76 90" fill="none" stroke="#1d1d24" stroke-width="6" stroke-linecap="round"/>' +
+              '<rect x="14" y="80" width="14" height="17" rx="5" fill="#2a2a33" stroke="' + INK + '" stroke-width="2"/><rect x="72" y="80" width="14" height="17" rx="5" fill="#2a2a33" stroke="' + INK + '" stroke-width="2"/>' +
+              '<rect x="18" y="84" width="6" height="9" rx="2" fill="#FF5FB8"/><rect x="76" y="84" width="6" height="9" rx="2" fill="#FF5FB8"/>';
+          } else if (id === "marv") {
+            s += '<path d="M6 100L9 52C9 20 30 5 50 5C70 5 91 20 91 52L94 100Z" fill="#34465B" stroke="' + INK + '" stroke-width="3"/>' +
+              '<ellipse cx="50" cy="55" rx="33" ry="37" fill="#1F2B3B"/>' +
+              face(50, 57, 28, 31) +
+              '<path d="M18 30C26 16 38 10 50 10" stroke="#fff" stroke-opacity=".18" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+              eye(40, 55, 6.5, 7, 0, 2.5, lid(32.5, 54, 47.5, 54)) + eye(60, 55, 6.5, 7, 0, 2.5, lid(52.5, 54, 67.5, 54)) +
+              '<path d="M34 64q6 3 12 0M54 64q6 3 12 0" fill="none" stroke="#000" stroke-opacity=".3" stroke-width="1.6" stroke-linecap="round"/>' +
+              '<path d="M33 44L47 45.5M53 45.5L67 44"' + ln + ' stroke-width="3.6"/>' +
+              '<g fill="' + INK + '" opacity=".4">' + [[36, 72], [40, 76], [44, 79], [50, 80], [56, 79], [60, 76], [64, 72], [38, 79], [62, 79], [46, 83], [54, 83], [50, 85], [34, 75], [66, 75], [42, 70], [58, 70]].map(function (p) { return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r=".95"/>'; }).join("") + "</g>" +
+              '<path d="M43 74L57 73.4"' + ln + ' stroke-width="3"/>' +
+              '<path d="M38 90L36 100M62 90L64 100" stroke="#D9DDE3" stroke-width="2.5" stroke-linecap="round"/>';
+          } else {
+            s += '<path d="M41 78L41 100L59 100L59 78Z" fill="' + P.base + '" stroke="' + INK + '" stroke-width="2.5"/>' +
+              face(50, 50, 34, 34) +
+              '<path d="M16 46C14 22 34 10 54 12C72 14 86 26 84 44C76 32 62 26 46 28C34 30 24 36 16 46Z" fill="#2A1C10" stroke="' + INK + '" stroke-width="2.5" stroke-linejoin="round"/>' +
+              '<path d="M34 20C46 15 62 16 74 24" stroke="#fff" stroke-opacity=".35" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+              '<path d="M28 30C40 23 58 22 72 29" stroke="#000" stroke-opacity=".3" stroke-width="1.2" fill="none" stroke-linecap="round"/>' +
+              eye(38, 53, 7, 7, 2.5, 1, lid(30.5, 49, 45.5, 51)) + eye(62, 53, 7, 7, 2.5, 1, lid(54.5, 51, 69.5, 49)) +
+              '<path d="M29 41Q37 37 45 41M55 39Q63 33 71 37"' + ln + ' stroke-width="3.4"/>' +
+              '<path d="M37 66Q52 69 67 61Q57 81 37 66Z" fill="#fff" stroke="' + INK + '" stroke-width="2.6" stroke-linejoin="round"/>' +
+              '<path d="M43 68.6L60 65.6" stroke="' + INK + '" stroke-width="1.1"/>' +
+              '<path d="M24 88Q50 104 76 88" fill="none" stroke="' + INK + '" stroke-width="6.5" stroke-linecap="round"/>' +
+              '<path d="M24 88Q50 104 76 88" fill="none" stroke="#F2C230" stroke-width="4" stroke-dasharray="4 2.5" stroke-linecap="round"/>' +
+              '<circle cx="50" cy="97" r="4.2" fill="#F2C230" stroke="' + INK + '" stroke-width="2"/>';
+          }
+          return '<svg class="x-cf" data-cf="' + id + '" viewBox="0 0 100 100" width="' + (size || 48) + '" height="' + (size || 48) + '" aria-hidden="true" focusable="false">' + s + "</svg>";
+        }
+
+        /* ---------- The Crew: 4 specialists in parallel, then Blarf reviews ---------- */
+        var CREW_SPECS = ["larf", "tina", "marv", "slarf"];
+        function crewSettle(ps) {
+          if (Promise.allSettled) return Promise.allSettled(ps);
+          return Promise.all(ps.map(function (p) { return p.then(function (v) { return { status: "fulfilled", value: v }; }, function (e) { return { status: "rejected", reason: e }; }); }));
+        }
+        function crewEnd() {
+          var p = PROVIDERS[S.provider] || PROVIDERS.xai, xr = S.provider === "xai";
+          return { xr: xr, url: xr ? XAI_RESPONSES : S.provider === "custom" ? S.customUrl.trim() : p.url, model: (S.model || "").trim() || p.model };
+        }
+        function crewUser(text, img, xr) {
+          if (!img) return { role: "user", content: text };
+          return { role: "user", content: xr
+            ? [{ type: "input_text", text: text }, { type: "input_image", image_url: img, detail: "high" }]
+            : [{ type: "text", text: text }, { type: "image_url", image_url: { url: img } }] };
+        }
+        function crewBody(ep, model, sys, input, effort, tools) {
+          if (!ep.xr) return { model: model, messages: [{ role: "system", content: sys }].concat(input), temperature: 0.8 };
+          var b = { model: model, input: [{ role: "system", content: sys }].concat(input) };
+          if (effort) b.reasoning = { effort: effort };
+          if (tools && tools.length) b.tools = tools;
+          return b;
+        }
+        function crewPost(ep, body, signal) {
+          return fetch(ep.url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: "Bearer " + S.apiKey.trim() },
+            body: JSON.stringify(body),
+            signal: signal || undefined
+          }).then(function (res) {
+            return res.text().then(function (txt) {
+              var data = null; try { data = JSON.parse(txt); } catch (e) {}
+              if (!res.ok) {
+                if (res.status === 401 || res.status === 403) throw "The API key was rejected (" + res.status + "). Check it in Settings.";
+                if (res.status === 429) throw "Rate limit or quota hit (429). Try again in a bit.";
+                if (res.status === 404) throw "Endpoint or model not found (404). Check the model name.";
+                throw "The server said " + res.status + (data && data.error && data.error.message ? ": " + String(data.error.message).slice(0, 120) : ".");
+              }
+              var c = ep.xr ? xaiText(data) : data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+              if (!c) throw "The reply came back empty.";
+              return String(c);
+            });
+          }, function (e) {
+            throw e && e.name === "AbortError" ? "The request timed out." : "Network or CORS block: some providers don't accept calls straight from a browser.";
+          });
+        }
+        function crewTidy(c, keep) {
+          var got = 0;
+          c = String(c || "").replace(/\[\[\s*remember\s*:\s*([\s\S]*?)\]\]/gi, function (_, f) { if (keep && remember(f)) got++; return ""; });
+          c = c.replace(/[ \t]+\n/g, "\n").replace(/\s+$/, "").trim();
+          if (got) toast("🧠 Blarf will remember that");
+          return c || (keep ? "Got it, Boss. 🧠" : "…");
+        }
+        /* the last 8 turns as text, plus the newest message (with its photo) */
+        function crewHist(m) {
+          var hist = S.threads[m].filter(function (x) { return x && (x.r === "me" || x.r === "bot") && x.t; }), lastMe = -1;
+          hist.forEach(function (x, i) { if (x.r === "me") lastMe = i; });
+          var me = lastMe >= 0 ? hist[lastMe] : { t: "" };
+          var prior = hist.slice(Math.max(0, lastMe - 8), Math.max(0, lastMe)).map(function (x) {
+            return { role: x.r === "me" ? "user" : "assistant", content: String(x.t) + (x.r === "me" && (x.img || x.pic) ? " [photo]" : "") };
+          });
+          var img = typeof me.img === "string" && /^data:image\//.test(me.img) ? me.img : null;
+          return { prior: prior, text: String(me.t || ""), img: img };
+        }
+        function crewPanel(m) {
+          var el = doc.createElement("div"), uid = "crew-ans-" + Date.now();
+          el.className = "x-msg x-msg--bot x-crewmsg";
+          el.innerHTML = '<span class="x-mini" aria-hidden="true">' + BL.MINI + '</span><div class="x-msg__body"><div class="x-crewp">' +
+            '<p class="x-crewp__head"><span>👥 The Crew</span><span class="x-crewp__st" aria-live="polite">Workin\' on it…</span></p>' +
+            '<div class="x-crewp__row" role="group" aria-label="Crew answers. Tap a face to read that answer.">' +
+            CREW_SPECS.map(function (id) {
+              var c = crewMember(id);
+              return '<button type="button" class="x-crewp__m" data-id="' + id + '" aria-expanded="false" aria-controls="' + uid + '" aria-label="' + esc(c.name + ", " + c.role + ", thinking") + '">' +
+                '<span class="x-crewp__face">' + crewFace(id, 48) + '</span><span class="x-crewp__name">' + esc(c.name) + '</span>' +
+                '<span class="x-crewp__stat"><i class="x-crewp__spin" aria-hidden="true"></i>thinkin\'…</span></button>';
+            }).join("") +
+            '</div><div class="x-crewp__ans" id="' + uid + '" hidden></div></div></div>';
+          var ans = {}, open = null, ansEl = el.querySelector(".x-crewp__ans"), st = el.querySelector(".x-crewp__st");
+          function btn(id) { return el.querySelector('.x-crewp__m[data-id="' + id + '"]'); }
+          function paint() {
+            CREW_SPECS.forEach(function (id) { btn(id).setAttribute("aria-expanded", open === id ? "true" : "false"); });
+            ansEl.hidden = !open;
+            if (!open) return;
+            var c = crewMember(open), a = ans[open];
+            ansEl.innerHTML = "<b>" + esc(c.name + " · " + c.role) + "</b>" + (a ? fmt(a.t) : "Still thinkin'…");
+            scrollDown(m, true);
+          }
+          el.querySelector(".x-crewp__row").addEventListener("click", function (e) {
+            var b = e.target.closest(".x-crewp__m"); if (!b) return;
+            open = open === b.dataset.id ? null : b.dataset.id; paint();
+          });
+          V[m].thread.insertBefore(el, typingEl[m] || null); scrollDown(m, true);
+          return {
+            set: function (id, ok, t) {
+              var b = btn(id), c = crewMember(id);
+              ans[id] = { ok: ok, t: t };
+              b.classList.add(ok ? "is-done" : "is-fail");
+              b.querySelector(".x-crewp__stat").textContent = ok ? "✓ done" : "✕ off sick";
+              b.setAttribute("aria-label", c.name + ", " + c.role + (ok ? ", done. Show answer" : ", no answer"));
+              if (open === id) paint();
+            },
+            status: function (t) { st.textContent = t; }
+          };
+        }
+        function crewRun(m) {
+          var done = function (msg) { typing(m, false); addMsg(m, msg); next(m); };
+          var fail = function (err) { typing(m, false); addMsg(m, { r: "err", t: "**The crew choked.** " + err, ts: Date.now() }); next(m); };
+          if (isOffline()) { toast(OFFLINE_MSG); fail(OFFLINE_MSG); return; }
+          var ep = crewEnd();
+          if (!ep.url) { fail("Add a URL for your custom provider in Settings."); return; }
+          if (!ep.model) { fail("Add a model name in Settings."); return; }
+          var h = crewHist(m), live = S.liveSearch !== false, search = [{ type: "web_search" }, { type: "x_search" }];
+          var mkCtrl = function () { return typeof AbortController !== "undefined" ? new AbortController() : null; };
+          var sig = function (c) { return c ? c.signal : undefined; };
+
+          /* Heavy: one grok-4.20-multi-agent call (xAI only) */
+          if (S.crewHeavy && ep.xr) {
+            var n = S.crewAgents === 16 ? 16 : 4, hc = mkCtrl();
+            var ht = setTimeout(function () { if (hc) hc.abort(); }, 180000);
+            typing(m, true, "Heavy crew ×" + n + " on it… this burns tokens");
+            var hb = crewBody(ep, "grok-4.20-multi-agent", MODES.chat.system() + VISION + MEM_ASK + (live ? LIVE_HINT : "") + " Ignore the earlier length limit if the question needs it.",
+              h.prior.concat([crewUser(h.text, h.img, true)]), n === 16 ? "high" : "medium", live ? search : null);
+            crewPost(ep, hb, sig(hc)).then(function (c) {
+              clearTimeout(ht); done({ r: "bot", t: crewTidy(c, true), ts: Date.now(), brain: "crew", tag: "👥 Heavy ×" + n });
+            }, function (err) { clearTimeout(ht); fail(err); });
+            return;
+          }
+          if (S.crewHeavy) toast("Crew Heavy is xAI only. Runnin' the regular crew.");
+
+          typing(m, true, "Blarf's roundin' up the crew…");
+          var panel = crewPanel(m), all = mkCtrl(), spec = mkCtrl();
+          /* 120 s for the whole run; specialists get 75 s so Blarf has time to review */
+          var tAll = setTimeout(function () { if (all) all.abort(); if (spec) spec.abort(); }, 120000);
+          var tSpec = setTimeout(function () { if (spec) spec.abort(); }, 75000);
+          var calls = CREW_SPECS.map(function (id) {
+            var c = crewMember(id), larf = id === "larf" && ep.xr && live;
+            var sys = (charPersona(id) || "") + " You are on Blarf's crew. Your specialty: " + c.role + ". Give Kyle your best expert take on his message from your specialty only, in under 150 words, in character. If it's outside your lane say so in one line." +
+              memoryClause() + swearClause() + (larf ? LIVE_HINT : "");
+            var body = crewBody(ep, ep.model, sys, h.prior.concat([crewUser(h.text, h.img, ep.xr)]), ep.xr ? "low" : null, larf ? search : null);
+            return crewPost(ep, body, sig(spec)).then(function (t) { t = crewTidy(t, false); panel.set(id, true, t); return t; },
+              function (err) { panel.set(id, false, "Off sick: " + err); throw err; });
+          });
+          crewSettle(calls).then(function (rs) {
+            clearTimeout(tSpec);
+            var got = 0;
+            var takes = rs.map(function (r, i) {
+              var c = crewMember(CREW_SPECS[i]);
+              if (r.status === "fulfilled") { got++; return c.name + " (" + c.role + "):\n" + r.value; }
+              return c.name + " (" + c.role + "): NO ANSWER (off sick or timed out).";
+            }).join("\n\n");
+            panel.status(got + " of 4 answered · Blarf's reviewin'");
+            typing(m, false); typing(m, true, "Blarf's reviewin' the crew's work…");
+            var sys = MODES.chat.system() + VISION + MEM_ASK +
+              " CREW BOSS MODE: You're the boss of this crew. Review their takes, call out anyone who's wrong or lazy (by name, in your voice), merge the best into one final answer for Kyle. Lead with the answer." +
+              " If someone didn't answer, mention it in one grumpy aside (like \"Larf's off sick, figures.\") and work with whoever answered; if nobody did, answer it yourself. Ignore the earlier length limit, but keep it tight.";
+            var user = "Kyle's message: " + h.text + "\n\nThe crew's takes:\n\n" + takes;
+            return crewPost(ep, crewBody(ep, ep.model, sys, [crewUser(user, h.img, ep.xr)], ep.xr ? "high" : null, null), sig(all));
+          }).then(function (c) {
+            clearTimeout(tAll);
+            panel.status("✓ Blarf signed off");
+            done({ r: "bot", t: crewTidy(c, true), ts: Date.now(), brain: "crew" });
+          }, function (err) {
+            clearTimeout(tAll); clearTimeout(tSpec);
+            panel.status("Blarf walked off the job");
+            fail(err);
+          });
+        }
+
         ORDER.forEach(function (m) {
           var v = V[m];
           /* grows with the text, up to four lines, then scrolls inside */
@@ -4121,6 +4420,11 @@
             else if (to === "roast") { go("chat"); setSheet(true); S.roast = true; send("chat", "Let's do a roast battle"); }
             else if (to === "trivia") { go("chat"); setSheet(true); S.trivia = true; send("chat", "Let's play trivia streak"); }
             else if (to === "poke") { go("chat"); setSheet(false); pokeStart(); }
+            else if (to === "crew") {
+              go("chat"); setSheet(true); S.brain = "crew"; save(); paintBrain();
+              toast("👥 The crew's on deck. Ask away.");
+              setTimeout(function () { V.chat.input.focus(); }, 380);
+            }
             else { setSheet(false); go(to); }
           });
         });
@@ -4190,6 +4494,20 @@
         $("set-livesearch").addEventListener("click", function () { S.liveSearch = S.liveSearch === false; save(); paintLiveSearch(); toast(S.liveSearch ? "Live search on." : "Live search off."); });
         paintLiveSearch();
         paintPersona();
+        /* Crew Heavy: one grok-4.20-multi-agent call, 4 or 16 agents */
+        function paintCrewHeavy() {
+          $("set-crewheavy").setAttribute("aria-checked", S.crewHeavy ? "true" : "false");
+          [].slice.call($("set-crewagents").querySelectorAll("[data-agents]")).forEach(function (b) { b.setAttribute("aria-pressed", +b.dataset.agents === S.crewAgents ? "true" : "false"); });
+        }
+        $("set-crewheavy").addEventListener("click", function () {
+          S.crewHeavy = !S.crewHeavy; save(); paintCrewHeavy();
+          toast(S.crewHeavy ? (S.provider === "xai" ? "Crew Heavy on. Hope you got tokens to burn." : "Crew Heavy on, but it's xAI only.") : "Crew Heavy off.");
+        });
+        $("set-crewagents").addEventListener("click", function (e) {
+          var b = e.target.closest("[data-agents]"); if (!b) return;
+          S.crewAgents = +b.dataset.agents === 16 ? 16 : 4; save(); paintCrewHeavy();
+        });
+        paintCrewHeavy();
 
         /* outfits: unlocked by a daily-visit streak, worn on the hero face via html.x-out-<id> */
         var OUTFITS = [
@@ -4965,7 +5283,7 @@
         /* IndexedDB answers late: restore any setting the other stores lost, then back-fill every store */
         KV.ready([SETKEY, STORE], function (got) {
           var fromIdb = parseJSON(got[SETKEY]) || parseJSON(got[STORE]) || {}, changed = false;
-          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch", "brain", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy"].forEach(function (f) {
+          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch", "brain", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents"].forEach(function (f) {
             if (saved[f] === undefined && fromIdb[f] !== undefined && fromIdb[f] !== "") { S[f] = fromIdb[f]; changed = true; }
           });
           S.chars = charsClean(S.chars);
@@ -4973,8 +5291,10 @@
           if (!S.tools || typeof S.tools !== "object") S.tools = { studio: true, hustle: true };
           paintTools();
           if (modelMig()) changed = true;
-          if (["quick", "deep", "expert", "gamer"].indexOf(S.brain) < 0) S.brain = "quick";
+          if (["quick", "deep", "expert", "gamer", "crew"].indexOf(S.brain) < 0) S.brain = "quick";
           paintBrain();
+          S.crewHeavy = !!S.crewHeavy; S.crewAgents = S.crewAgents === 16 ? 16 : 4;
+          paintCrewHeavy();
           /* a streak restored late: count today against it, then repaint the outfit */
           if (saved.streakDay === undefined && typeof fromIdb.streakDay === "string" && fromIdb.streakDay) {
             S.streak = typeof S.streak === "number" ? S.streak : 0; streakTick();
