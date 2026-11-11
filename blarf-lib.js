@@ -726,6 +726,9 @@
     }
     var acts = '<div class="x-libacts">' + pinBtn +
       (it.type === "image" ? '<button class="btn" type="button" data-d="ask">👁️ Ask Blarf about it</button>' : "") +
+      /* P3b: Studio FX */
+      (it.type === "image" && window.blarfFX ? '<button class="btn" type="button" data-d="fx">✏️ Edit</button>' : "") +
+      (/^video\//.test(it.mime || "") && window.blarfVideo ? '<button class="btn" type="button" data-d="fxv">🎬 Edit video</button>' : "") +
       (it.type === "file" && it.hasBlob ? '<button class="btn" type="button" data-d="open">Open</button>' : "") +
       (it.type === "build" ? '<button class="btn" type="button" data-d="copy">Copy code</button>' : "") +
       '<button class="btn" type="button" data-d="share">' + (it.type === "folder" ? "Share all" : "Share / Export") + "</button>" +
@@ -746,6 +749,8 @@
       else if (d === "copy") C.copyText(it.text || "");
       else if (d === "open") urlOf(it).then(function (u) { if (u) window.open(u, "_blank", "noopener"); });
       else if (d === "ask") askAbout(it);
+      else if (d === "fx") { closeSheet(); window.blarfFX.openPhoto(it.meta && it.meta.url && !it.hasBlob ? it.meta.url : { libId: it.id }, { name: it.name }); }
+      else if (d === "fxv") { closeSheet(); window.blarfVideo.open({ items: [it] }); }
       else if (d === "del") {
         if (L.armed !== "d" + it.id) { L.armed = "d" + it.id; b.textContent = it.type === "folder" ? "Delete folder + " + descendants(it.id).length + "?" : "Tap again to delete"; b.classList.add("is-armed"); return; }
         L.armed = null; remove(it).then(function () { closeSheet(); toast("Deleted"); paint(); });
@@ -994,6 +999,16 @@
     ensureFolder: function (id, name, sys) { return ensureFolder(id, name, sys); }, blob: function (id) { return blobOf(id); },
     list: function (folder) { return L.items.filter(function (x) { return x.folder === folder && x.type !== "folder"; }); },
     item: function (id) { return L.by[id] || null; },
+    /* P3b: newest first, by kind (image / video / audio) for the Studio FX pickers */
+    items: function (kind) {
+      return L.items.filter(function (x) {
+        if (x.type === "folder") return false;
+        if (kind === "image") return x.type === "image";
+        if (kind === "video") return /^video\//.test(x.mime || "");
+        if (kind === "audio") return /^audio\//.test(x.mime || "");
+        return true;
+      }).sort(function (a, b) { return (b.created || 0) - (a.created || 0); });
+    },
     ready: function () { return new Promise(function (r) { (function w() { if (L.ready) r(); else setTimeout(w, 30); })(); }); },
     _t: { L: L, chunkText: chunkText, rank: rank, toHtml: toHtml, newFolder: newFolder, remove: remove, openRun: openRun, openDetail: openDetail, startThreadSelect: startThreadSelect, finishPick: finishPick, startPick: startPick, index: index, pdfLoader: null, reload: load, linkProject: linkProject }
   };

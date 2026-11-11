@@ -23,6 +23,7 @@
     <link rel="stylesheet" href="blarf-p2a.css" />
     <link rel="stylesheet" href="blarf-needs.css" />
     <link rel="stylesheet" href="blarf-avatar.css" />
+    <link rel="stylesheet" href="blarf-studio.css" />
     <!-- P3a: 3D avatar engine, pinned and loaded lazily by blarf-avatar.js only when 3D is on (sw.js caches it) -->
     <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/","@pixiv/three-vrm":"https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3.5.5/lib/three-vrm.module.min.js"}}</script>
     <script>
@@ -3846,7 +3847,7 @@
             id: "studio", label: "Studio", emoji: "🎛️", role: "Studio collaborator", act: "proud",
             toneClause: "STUDIO MODE: you're Kyle's creative and technical music collaborator, in the room with him. Get curious about the track: ask about the mix, the vibe, the reference, what's bugging him. Give practical production moves: real FL Studio tools (Channel Rack, Piano Roll, Mixer, Patcher, Fruity Limiter, Parametric EQ 2, Edison, Slicex), chord names, mixing and mastering moves with real numbers (Hz, dB, ms, ratios), Dubler 2 vocal-to-MIDI tips and Splice search ideas. If he sends a screenshot or photo of his mixer, DAW, plugin or meters, read it closely (levels, EQ curves, routing, clipping, panning) and tell him exactly what to change.",
             len: "Keep replies short and mobile-friendly: at most six numbered steps or a few sentences, and ask one question about the track when it helps.",
-            brainPolicy: "auto", reasoningEffort: "low", tools: ["set_timer", "save_note", "save_lyric", "set_bpm", "start_beat", "calculate", "draw_image", "open_link"], liveSearch: true,
+            brainPolicy: "auto", reasoningEffort: "low", tools: ["set_timer", "save_note", "save_lyric", "set_bpm", "start_beat", "calculate", "draw_image", "open_link", "edit_photo", "make_video"], liveSearch: true,
             starters: ["My mix sounds muddy, fix it", "Gimme a dark chord progression", "Make my 808 hit harder"],
             blurb: "Studio mode. Show me the mix."
           },
@@ -3870,7 +3871,7 @@
           observer: {
             id: "observer", label: "Observer", emoji: "👁️", role: "Observer", act: "side",
             toneClause: "OBSERVER MODE: you analyze what Kyle shows you: photos, screenshots, the camera. Look closely and call out what actually matters (details, text, numbers, problems), then help. If he hasn't sent an image yet, tell him in one line to tap the camera and show you, and don't guess what it looks like.",
-            len: SHORT_LEN, brainPolicy: "vision", reasoningEffort: "low", tools: ["save_note", "open_link", "set_timer"], liveSearch: false,
+            len: SHORT_LEN, brainPolicy: "vision", reasoningEffort: "low", tools: ["save_note", "open_link", "set_timer", "edit_photo"], liveSearch: false,
             subs: { look: { label: "Look" }, game: { label: "🎮 Game coach", act: "gamer", liveSearch: true,
               clause: " GAME COACH: it's a game (PS5/console). Read the screen like a pro coach: HUD, health, ammo, map, loadout, menus. Tell him exactly what to do next: strategy, builds, boss tips, settings. A little trash talk is fine." } },
             starters: ["📷 Show you somethin'", "Coach me on this game screen", "Read this screenshot for me"],
@@ -5485,7 +5486,7 @@
         }
 
         /* ---------- on-device tools Grok can call in text chat ---------- */
-        var TOOL_HINT = " You have real tools on Kyle's phone (timers, notes, goals, lyric pad, BPM, beat machine, calculator, image drawing, links). Use them whenever they'd actually help instead of just talking about it, then confirm in one grumpy line.";
+        var TOOL_HINT = " You have real tools on Kyle's phone (timers, notes, goals, lyric pad, BPM, beat machine, calculator, image drawing, links, the Studio FX photo editor and video editor). Use them whenever they'd actually help instead of just talking about it, then confirm in one grumpy line.";
         function toolBeep() {
           try {
             var c = beatCtx(); if (!c) return;
@@ -5586,6 +5587,43 @@
                 addMsg("chat", { r: "bot", t: DRAW_CAPS[Math.floor(Math.random() * DRAW_CAPS.length)], img: src, ts: Date.now() });
                 return "image posted";
               }, function (err) { return "error: " + err; });
+            } },
+          /* P3b: Studio FX editors, opened pre-loaded; Kyle does the final tap (AI edits cost money, exports are his) */
+          { name: "edit_photo", label: "Photo editor", emoji: "🖼️", desc: "Opens the Studio FX photo editor on a picture (the latest one in this chat, a Library image by name, or Kyle picks), with an optional look, AI edit instruction and your one-line take",
+            params: { type: "object", properties: {
+              source: { type: "string", enum: ["last", "library", "pick", "camera"], description: "last = latest picture in this chat (default); library = search Library by name; pick/camera = Kyle chooses" },
+              name: { type: "string", description: "Library image name to look for" },
+              instruction: { type: "string", description: "AI edit to have ready, e.g. 'make it a snowy night in Southie'" },
+              filter: { type: "string", enum: ["southie", "dotave", "greenline", "fenway", "masspike", "noreaster", "harborfog", "packie", "bigdig", "chowdah", "dunks", "pissah"], description: "Look to pre-apply: southie (warm punch), dotave (gritty desat), greenline (green fade), fenway (warm dusk), masspike (cool), noreaster (cold muted), harborfog (faded), packie (neon pop), bigdig (gritty B&W), chowdah (creamy warm), dunks (orange-pink pop), pissah (HDR punch)" },
+              note: { type: "string", description: "One short in-character line shown in the editor: your take on the edit" } } },
+            chip: function (a) { return toolStr(a.filter || a.instruction || a.name || "editor", 30); },
+            run: function (a) {
+              var FX = window.blarfFX; if (!FX) return "error: photo editor not loaded";
+              var s = a.source || "last", src = null, it = null;
+              if (s === "library" || a.name) { it = FX.findLib("image", toolStr(a.name, 80)); if (it) src = { libId: it.id }; }
+              if (!src && (s === "last" || s === "library")) { var li = FX.lastChatImage(); if (li) src = li; }
+              FX.openPhoto(src, { prompt: toolStr(a.instruction, 600), filter: a.filter || "", note: toolStr(a.note, 200), name: it ? it.name : "" });
+              return src ? "photo editor opened on " + (it ? "Library image '" + it.name + "'" : "the latest chat picture") + (a.filter ? ", look " + a.filter + " applied" : "") + (a.instruction ? ", AI edit typed in for Kyle to tap" : "") : "photo editor opened; Kyle picks the picture";
+            } },
+          { name: "make_video", label: "Video editor", emoji: "🎬", desc: "Opens the Studio FX video editor loaded with Kyle's Library videos (recent ones or by name), with optional shape, caption, music and look",
+            params: { type: "object", properties: {
+              source: { type: "string", enum: ["recent", "library", "pick"], description: "recent = newest Library videos (default); library = by names; pick = empty editor" },
+              names: { type: "string", description: "Comma-separated Library video names, in order" },
+              count: { type: "number", description: "How many recent videos (1-8, default 3)" },
+              aspect: { type: "string", enum: ["9:16", "1:1", "16:9"] },
+              caption: { type: "string", description: "Opening caption" },
+              music: { type: "string", description: "'beat' = Kyle's Beat Jam loop, 'none', or a Library audio name" },
+              filter: { type: "string", enum: ["southie", "dotave", "greenline", "fenway", "masspike", "noreaster", "harborfog", "packie", "bigdig", "chowdah", "dunks", "pissah"] },
+              note: { type: "string", description: "One short in-character line shown in the editor" } } },
+            chip: function (a) { return toolStr(a.aspect || a.names || "editor", 30); },
+            run: function (a) {
+              var FX = window.blarfFX, VE = window.blarfVideo; if (!FX || !VE) return "error: video editor not loaded";
+              var items = [], s = a.source || "recent";
+              if (a.names) String(a.names).split(",").forEach(function (n) { var it = FX.findLib("video", n.trim()); if (it && items.indexOf(it) < 0) items.push(it); });
+              else if (s === "recent" && window.blarfLib && window.blarfLib.items) items = window.blarfLib.items("video").slice(0, Math.max(1, Math.min(8, Math.round(+a.count || 3))));
+              var mu = a.music === "beat" ? "beat" : a.music && a.music !== "none" ? FX.findLib("audio", toolStr(a.music, 80)) : null;
+              VE.open({ items: items, aspect: a.aspect, caption: toolStr(a.caption, 200), music: mu, filter: a.filter || "", note: toolStr(a.note, 200) });
+              return "video editor opened with " + items.length + " clip" + (items.length === 1 ? "" : "s") + (items.length ? "" : " (no Library videos: Kyle adds them)") + (mu ? ", music set" : "") + (a.caption ? ", caption added" : "");
             } },
           { name: "open_link", label: "Links", emoji: "🔗", desc: "Posts a YouTube, Spotify, Google or Maps link",
             params: { type: "object", properties: { query: { type: "string" }, site: { type: "string", enum: ["youtube", "spotify", "google", "maps"] } }, required: ["query"] },
@@ -7824,6 +7862,20 @@
           for (var i = 0; i < n; i++) { var x = Math.max(-1, Math.min(1, d[i])); v.setInt16(o, x < 0 ? x * 32768 : x * 32767, true); o += 2; }
           return new Blob([ab], { type: "audio/wav" });
         }
+        /* P3b: the Beat Jam pattern as an AudioBuffer (2 bars) for Studio FX music */
+        function beatRender() {
+          var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+          if (!OAC) return Promise.resolve(null);
+          var sr = 44100, dur = beatSecs(), oc;
+          try { oc = new OAC(1, Math.ceil(sr * dur * 32), sr); } catch (e) { return Promise.resolve(null); }
+          var out = beatOut(oc), nb = beatNoise(oc);
+          for (var i = 0; i < 32; i++) beatHit(oc, out, nb, i % 16, i * dur + beatSwing(i % 16, dur));
+          return new Promise(function (ok) {
+            var done = false; function f(b) { if (done) return; done = true; ok(b || null); }
+            oc.oncomplete = function (e) { f(e.renderedBuffer); };
+            try { var p = oc.startRendering(); if (p && p.then) p.then(f, function () { f(null); }); } catch (e) { f(null); }
+          });
+        }
         function beatExport() {
           var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
           if (!OAC) { toast("This browser can't export audio."); return; }
@@ -7978,7 +8030,10 @@
           /* P3a: 3D avatar */
           heroSvg: function () { return heroSvg; }, zoneAt: zoneAt,
           repaintKeys: function () { try { paintKey(); paintVoiceKeys(); paintStatus(); } catch (e) {} },
-          offline: function () { return isOffline(); }
+          offline: function () { return isOffline(); },
+          /* P3b: Studio FX */
+          character: function (o) { return blarfCharacter(o || {}); }, act: function (n) { try { window.blarfAct(n); } catch (e) {} },
+          beatBuffer: beatRender
         };
         try { window.dispatchEvent(new Event("blarf-core")); } catch (e) {}
       })();
@@ -7987,6 +8042,9 @@
     <script src="blarf-lib.js"></script>
     <script src="blarf-needs.js"></script>
     <script src="blarf-avatar.js"></script>
+    <!-- P3b: Studio FX photo + video editors -->
+    <script src="blarf-fx.js"></script>
+    <script src="blarf-video.js"></script>
     <script>
       /* iOS polish: sliding highlight behind the active brain pill, light haptics on primary actions */
       (function () {
