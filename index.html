@@ -511,6 +511,8 @@
       .x-group > .x-danger { min-height: var(--tap); }
       .x-group > * + .x-danger, .x-group > * + .x-steps { background: linear-gradient(var(--stroke-secondary), var(--stroke-secondary)) 16px 0 / calc(100% - 16px) 1px no-repeat; }
       .x-row > label, .x-row > span { flex: none; font: var(--type-body); }
+      .x-row > .x-twoline { flex: 1; min-width: 0; }
+      .x-twoline small { display: block; font: var(--type-caption); color: var(--text-secondary); }
       .x-field {
         flex: 1; min-width: 0; min-height: var(--tap); text-align: right; border: 0; outline: none; background: none;
         font: var(--weight-regular) 16px/1.3 var(--sans); color: var(--text-secondary);
@@ -519,6 +521,7 @@
       .x-prompt { display: grid; gap: 6px; padding: 12px 16px 10px; }
       .x-prompt > label { font: var(--type-body); }
       .x-area { width: 100%; text-align: left; resize: vertical; padding: 10px 12px; border-radius: var(--r-s); background: var(--fill-primary-on); border: 1px solid var(--stroke-secondary); font-size: 16px; }
+      .x-row + .x-prompt { background: linear-gradient(var(--stroke-secondary), var(--stroke-secondary)) 16px 0 / calc(100% - 16px) 1px no-repeat; }
       .x-prompt + .x-row { background: linear-gradient(var(--stroke-secondary), var(--stroke-secondary)) 16px 0 / calc(100% - 16px) 1px no-repeat; }
       select.x-field { appearance: none; -webkit-appearance: none; text-align-last: right; padding-right: 18px;
         background: linear-gradient(45deg, transparent 50%, var(--text-secondary) 50%) right 6px center / 6px 6px no-repeat,
@@ -918,6 +921,10 @@
                     <label for="set-model">Model</label>
                     <input class="x-field" id="set-model" autocomplete="off" autocapitalize="off" spellcheck="false" />
                   </div>
+                  <div class="x-row">
+                    <span class="x-twoline" id="lbl-livesearch">Live search<small>Web + X search for fresh info (xAI only)</small></span>
+                    <button class="x-switch" id="set-livesearch" type="button" role="switch" aria-checked="true" aria-labelledby="lbl-livesearch"></button>
+                  </div>
                 </div>
                 <p class="x-gnote">Your key stays on this device.</p>
                 <p class="x-gnote" id="key-nostore" hidden>Can't save here. Open Blarf from your Home Screen to keep your key.</p>
@@ -926,6 +933,19 @@
               <div>
                 <p class="x-glabel">Personality</p>
                 <div class="x-group">
+                  <div class="x-row">
+                    <label for="set-template">Templates</label>
+                    <select class="x-field" id="set-template">
+                      <option value="" selected>Choose a template…</option>
+                      <option value="boston">Classic Boston Blarf</option>
+                      <option value="hype">Hype Man</option>
+                      <option value="studio">Studio Producer</option>
+                      <option value="hustle">Hustle Coach</option>
+                      <option value="gamer">Gamer Buddy</option>
+                      <option value="philo">Late-Night Philosopher</option>
+                      <option value="critic">Brutal Critic</option>
+                    </select>
+                  </div>
                   <div class="x-prompt">
                     <label for="set-sysprompt">My system prompt</label>
                     <textarea class="x-field x-area" id="set-sysprompt" rows="6" autocomplete="off" spellcheck="true" placeholder="Write how Blarf should act. Leave empty to use his built-in personality."></textarea>
@@ -1945,7 +1965,7 @@
 
         /* ---------- storage: localStorage, then IndexedDB, then a cookie (never the API key); memory as a last resort ---------- */
         var SETKEY = "companion-settings";
-        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad"];
+        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch"];
         var KV = (function () {
           var mem = {}, idb = null, idbState = 0; /* 0 pending, 1 ok, -1 unavailable */
           var https = location.protocol === "https:", AGE = 400 * 86400;
@@ -2049,7 +2069,7 @@
         }
 
         var PROVIDERS = {
-          xai: { label: "Grok", url: "https://api.x.ai/v1/chat/completions", model: "grok-4" },
+          xai: { label: "Grok", url: "https://api.x.ai/v1/chat/completions", model: "grok-4.7" },
           openai: { label: "OpenAI", url: "https://api.openai.com/v1/chat/completions", model: "gpt-4o-mini" },
           custom: { label: "Custom", url: "", model: "" }
         };
@@ -2059,7 +2079,8 @@
         var S = {
           name: saved.name && saved.name !== "Nova" ? saved.name : "Blarf",
           provider: saved.provider || "xai",
-          model: saved.model != null ? saved.model : "grok-4",
+          model: saved.model != null ? saved.model : "grok-4.7",
+          liveSearch: saved.liveSearch != null ? !!saved.liveSearch : true,
           customUrl: saved.customUrl || "",
           apiKey: saved.apiKey || KV.legacyKey || "",
           onboarded: !!saved.onboarded,
@@ -2095,6 +2116,9 @@
           }
           return out;
         }
+        /* move xAI users on the old default model to grok-4.7 */
+        function modelMig() { if (S.provider === "xai" && (!(S.model || "").trim() || S.model.trim() === "grok-4")) { S.model = "grok-4.7"; return true; } return false; }
+        if (modelMig()) save();
         /* one-time move of any saved voice to Kyle's cloned voice */
         if (S.voiceMig < 1) { S.voice.id = MY_VOICE; S.voiceMig = 1; save(); }
         /* move the old cloned-voice ID to the new one */
@@ -2107,6 +2131,7 @@
 
         /* ---------- modes ---------- */
         var KYLE = 'Kyle goes by "Boss". He is a music producer (FL Studio, Dubler 2, Splice), an AI-tools power user, and is building a startup called "Big dreams and ambition, Inc."';
+        var BOSTON = "Talk like a grumpy, blunt, working-class Boston guy: wicked direct, Boston slang, zero corporate HR-speak, never preachy, but you've always got Kyle's back.";
         function personaPrompt() { var p = (S.sysPrompt || "").trim(); return p ? p : null; }
         function swearClause() {
           return S.swear
@@ -2177,20 +2202,20 @@
             system: function () {
               var p = personaPrompt();
               if (p) return "Your name is " + S.name + ". " + p + " Keep replies short and mobile-friendly: one to four short sentences or a tight list." + memoryClause() + swearClause() + roastClause() + triviaClause();
-              return "You are " + S.name + ", Kyle's personal AI companion: a gritty, grouchy blue cartoon face with big expressive eyes. " + KYLE + " In this mode you are his grouchy-but-lovable, witty friend: casual, funny, supportive, never preachy. Keep replies short and mobile-friendly: one to four short sentences or a tight list. Call him Boss now and then. Use the occasional emoji, not many." + memoryClause() + swearClause() + roastClause() + triviaClause();
+              return "You are " + S.name + ", Kyle's personal AI companion: a gritty, grouchy blue cartoon face with big expressive eyes. " + KYLE + " " + BOSTON + " You're a grumpy, blunt, foul-mouthed working-class Boston guy. Use Boston slang naturally (wicked, kid, pissah, bang a uey, packie, frappe). Gripe about Dunkin', traffic on 93, and the Sox, Pats, Celtics and Bruins. You're not politically correct: you say what you think and roast everyone and everything equally. Never preachy, never lecture, no HR-speak. Under the grumbling you secretly have Kyle's back. Keep replies short and mobile-friendly: one to four short sentences or a tight list. Call him Boss now and then. Use the occasional emoji, not many." + memoryClause() + swearClause() + roastClause() + triviaClause();
             },
             greet: function () { return "Hey Boss 👋 I'm " + S.name + ". Chill mode: talk to me about anything. What's up?"; }
           },
           studio: {
             label: "Studio", role: "Music production coach", accent: "var(--chart-4)",
             chips: ["Give me a beat idea", "Chord progression in a minor key", "How do I make my 808 hit harder?", "Dubler 2 tips"],
-            system: function () { return "You are " + S.name + ", Kyle's expert music production coach. " + KYLE + " Give concise, actionable steps: name real FL Studio tools (Channel Rack, Piano Roll, Mixer, Patcher, Fruity Limiter, Parametric EQ 2, Edison, Slicex), real chord progressions with chord names, mixing and mastering moves with numbers, Dubler 2 vocal-to-MIDI tips and Splice search ideas. Keep replies short and mobile-friendly: at most six numbered steps or a few sentences." + memoryClause() + swearClause(); },
+            system: function () { return BOSTON + " You are " + S.name + ", Kyle's expert music production coach. " + KYLE + " Give concise, actionable steps: name real FL Studio tools (Channel Rack, Piano Roll, Mixer, Patcher, Fruity Limiter, Parametric EQ 2, Edison, Slicex), real chord progressions with chord names, mixing and mastering moves with numbers, Dubler 2 vocal-to-MIDI tips and Splice search ideas. Keep replies short and mobile-friendly: at most six numbered steps or a few sentences." + memoryClause() + swearClause(); },
             greet: function () { return "Studio's open 🎛️ Ask me about FL Studio, mixing, 808s, chords, Dubler 2 or Splice. Or tap a tempo and roll a song starter above."; }
           },
           hustle: {
             label: "Hustle", role: "Startup coach", accent: "var(--fill-system-orange)",
             chips: ["Plan my top 3 for today", "Brainstorm app ideas", "Write a pitch line", "Keep me accountable"],
-            system: function () { return "You are " + S.name + ", Kyle's sharp startup and productivity coach for Big dreams and ambition, Inc. " + KYLE + " Be direct and accountability-focused: push for specifics, deadlines and the next concrete action, and cut fluff. Keep replies short and mobile-friendly, and end with one clear next step or one question." + memoryClause() + swearClause(); },
+            system: function () { return BOSTON + " You are " + S.name + ", Kyle's sharp startup and productivity coach for Big dreams and ambition, Inc. " + KYLE + " Be direct and accountability-focused: push for specifics, deadlines and the next concrete action, and cut fluff. Keep replies short and mobile-friendly, and end with one clear next step or one question." + memoryClause() + swearClause(); },
             greet: function () { return "Hustle mode 💼 Let's move Big dreams and ambition, Inc. forward. What's the one thing that matters most today?"; }
           }
         };
@@ -2829,7 +2854,7 @@
           var p = personaPrompt();
           if (p) return "Your name is " + S.name + ". " + p + memoryClause() + swearClause() + tail;
           return "You are " + S.name + ", Kyle's personal AI companion, a gritty, grouchy blue cartoon face, talking with him out loud in a live voice chat. " + KYLE +
-            " Be a grouchy-but-lovable, witty companion: easygoing, funny, supportive underneath it all, never preachy. Call him Boss now and then." +
+            " " + BOSTON + " Be a grouchy-but-lovable, witty companion: easygoing, funny, supportive underneath it all, never preachy. Call him Boss now and then." +
             " You also know music production (FL Studio, mixing, 808s, chords, Dubler 2, Splice) and startup coaching (priorities, next actions, accountability), and help with either when he asks." +
             memoryClause() + swearClause() + tail;
         }
@@ -3269,6 +3294,35 @@
           }
         }
 
+        var XAI_RESPONSES = "https://api.x.ai/v1/responses";
+        var LIVE_HINT = " You have live web and X search: use it for news, scores, prices, weather, release dates, videos, anything recent; mention the source site briefly.";
+        /* text of an xAI Responses reply, plus up to 3 source domains */
+        function xaiText(data) {
+          if (!data) return "";
+          var text = "", urls = [];
+          var out = Array.isArray(data.output) ? data.output : [];
+          var parts = [];
+          out.forEach(function (it) {
+            if (!it || it.type !== "message" || !Array.isArray(it.content)) return;
+            it.content.forEach(function (c) {
+              if (!c || c.type !== "output_text") return;
+              if (typeof c.text === "string") parts.push(c.text);
+              (Array.isArray(c.annotations) ? c.annotations : []).forEach(function (a) {
+                if (a && (a.type === "url_citation" || a.url) && typeof a.url === "string") urls.push(a.url);
+              });
+            });
+          });
+          text = typeof data.output_text === "string" ? data.output_text : parts.join("\n\n");
+          if (Array.isArray(data.citations)) data.citations.forEach(function (u) { if (typeof u === "string") urls.push(u); else if (u && typeof u.url === "string") urls.push(u.url); });
+          var doms = [];
+          urls.forEach(function (u) {
+            var d = ""; try { d = new URL(u).hostname.replace(/^www\./, ""); } catch (e) {}
+            if (d && doms.indexOf(d) < 0 && doms.length < 3) doms.push(d);
+          });
+          if (text && doms.length) text = String(text).replace(/\s+$/, "") + "\n\nSources: " + doms.join(", ");
+          return text;
+        }
+
         function askAI(m) {
           if (isOffline()) { toast(OFFLINE_MSG); return Promise.reject(OFFLINE_MSG); }
           var p = PROVIDERS[S.provider] || PROVIDERS.xai;
@@ -3279,12 +3333,21 @@
           var history = S.threads[m].filter(function (x) { return x.r !== "err"; }).slice(-20).map(function (x) {
             return { role: x.r === "me" ? "user" : "assistant", content: x.t };
           });
+          var xr = S.provider === "xai";
           var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
-          var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 60000);
+          var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, xr ? 90000 : 60000);
+          var reqBody;
+          if (xr) {
+            url = XAI_RESPONSES;
+            reqBody = { model: model, input: [{ role: "system", content: MODES[m].system() + MEM_ASK + LIVE_HINT }].concat(history) };
+            if (S.liveSearch !== false) reqBody.tools = [{ type: "web_search" }, { type: "x_search" }];
+          } else {
+            reqBody = { model: model, messages: [{ role: "system", content: MODES[m].system() + MEM_ASK }].concat(history), temperature: 0.8 };
+          }
           return fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: "Bearer " + S.apiKey.trim() },
-            body: JSON.stringify({ model: model, messages: [{ role: "system", content: MODES[m].system() + MEM_ASK }].concat(history), temperature: 0.8 }),
+            body: JSON.stringify(reqBody),
             signal: ctrl ? ctrl.signal : undefined
           }).then(function (res) {
             clearTimeout(timer);
@@ -3296,7 +3359,7 @@
                 if (res.status === 404) throw "Endpoint or model not found (404). Check the model name.";
                 throw "The server said " + res.status + (data && data.error && data.error.message ? ": " + String(data.error.message).slice(0, 120) : ".");
               }
-              var c = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+              var c = xr ? xaiText(data) : data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
               if (!c) throw "The reply came back empty.";
               var got = 0;
               c = String(c).replace(/\[\[\s*remember\s*:\s*([\s\S]*?)\]\]/gi, function (_, f) { if (remember(f)) got++; return ""; });
@@ -3436,7 +3499,26 @@
         $("sysprompt-reset").addEventListener("click", function () {
           clearTimeout(sysTimer); sysIn.value = ""; S.sysPrompt = ""; save(); toast("Back to classic Blarf");
         });
+        var TEMPLATES = {
+          boston: "You're a grumpy, blunt, foul-mouthed Boston guy from Southie who says exactly what he thinks. You bitch about Dunkin' lines, traffic on 93 and whatever the Sox did last night, and you roast everybody equally, Kyle included. No HR-speak, no lectures, no preaching. Deep down you've got the Boss's back, wicked hard.",
+          hype: "You're Kyle's hype man, kid, and you go wicked loud for every win, big or small. Finished a beat? Pissah. Sent a pitch? Legend. Keep it real though: no fake fluff, just loud Boston energy that gets the Boss off the couch and back to work.",
+          studio: "You're a grizzled Boston studio producer who's heard every bad mix since the '90s. Talk FL Studio, Dubler 2 and Splice like you've got gear grease under your nails: real chords, real EQ numbers, real arrangement fixes. Blunt notes, no hand-holding, but you want Kyle's tracks to bang.",
+          hustle: "You're Kyle's hustle coach for Big dreams and ambition, Inc., a Boston grinder who's sick of excuses. Push for deadlines, numbers and the next concrete move, and call out procrastination like a bad call at the Garden. Short, sharp, and always end with what he's doing next.",
+          gamer: "You're Kyle's PS5 and console gaming sidekick, a trash-talking Boston kid on the couch with a controller. Give strategy tips, builds and walkthrough help when he's stuck, and rag on him when he whiffs. Keep it fun, keep it wicked competitive.",
+          philo: "You're the late-night philosopher version of Blarf: still a Boston grump, but it's 2 a.m., the packie's closed and you're thinking about the big stuff. Riff on life, ambition, music and why anybody puts raisins in anything. Thoughtful but never preachy, and you still bust Kyle's chops.",
+          critic: "You're a brutal Boston critic who rips apart Kyle's tracks, ideas and pitches with zero sugarcoating. Say what stinks and why, like a Pats fan after a bad draft. Then tell him exactly how to fix it, step by step, because you want him to win."
+        };
+        var tplSel = $("set-template");
+        tplSel.addEventListener("change", function () {
+          var t = TEMPLATES[tplSel.value];
+          if (t) { clearTimeout(sysTimer); sysIn.value = t; S.sysPrompt = t; save(); toast("Template loaded"); }
+          tplSel.value = "";
+        });
         swearSw.addEventListener("click", function () { S.swear = !S.swear; save(); paintPersona(); });
+        /* live web + X search for xAI text chat */
+        function paintLiveSearch() { $("set-livesearch").setAttribute("aria-checked", S.liveSearch !== false ? "true" : "false"); }
+        $("set-livesearch").addEventListener("click", function () { S.liveSearch = S.liveSearch === false; save(); paintLiveSearch(); toast(S.liveSearch ? "Live search on." : "Live search off."); });
+        paintLiveSearch();
         paintPersona();
 
         /* outfits: unlocked by a daily-visit streak, worn on the hero face via html.x-out-<id> */
@@ -4126,9 +4208,10 @@
         /* IndexedDB answers late: restore any setting the other stores lost, then back-fill every store */
         KV.ready([SETKEY, STORE], function (got) {
           var fromIdb = parseJSON(got[SETKEY]) || parseJSON(got[STORE]) || {}, changed = false;
-          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest"].forEach(function (f) {
+          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch"].forEach(function (f) {
             if (saved[f] === undefined && fromIdb[f] !== undefined && fromIdb[f] !== "") { S[f] = fromIdb[f]; changed = true; }
           });
+          if (modelMig()) changed = true;
           /* a streak restored late: count today against it, then repaint the outfit */
           if (saved.streakDay === undefined && typeof fromIdb.streakDay === "string" && fromIdb.streakDay) {
             S.streak = typeof S.streak === "number" ? S.streak : 0; streakTick();
@@ -4155,7 +4238,7 @@
             voiceSel.value = S.voice.id; if (!voiceSel.value) voiceSel.value = "custom";
             voiceCustom.value = S.voice.custom || ""; $("row-voice-custom").hidden = voiceSel.value !== "custom";
             agentIn.value = S.agentId;
-            paintIdentity(); paintSpeakers(); hfSync(); paintPersona();
+            paintIdentity(); paintSpeakers(); hfSync(); paintPersona(); paintLiveSearch();
           }
           save(); paintStatus(); paintKey();
         });
