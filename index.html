@@ -586,6 +586,10 @@
         min-height: var(--tap); padding: 0 16px;
       }
       .x-row[hidden] { display: none; }
+      /* on-device brain: download progress row */
+      .x-row.x-local__prog { flex-direction: column; align-items: stretch; justify-content: center; gap: 6px; padding-top: 10px; padding-bottom: 10px; }
+      .x-local__prog .x-bar i { background: var(--fill-primary); }
+      .x-local__txt { margin: 0; font: var(--type-caption); color: var(--text-secondary); overflow-wrap: anywhere; }
       /* iOS-style inset hairline between rows */
       .x-row + .x-row { background: linear-gradient(var(--stroke-secondary), var(--stroke-secondary)) 16px 0 / calc(100% - 16px) 1px no-repeat; }
       /* Beat Jam */
@@ -1215,6 +1219,7 @@
                       <option value="xai">xAI Grok</option>
                       <option value="openai">OpenAI</option>
                       <option value="custom">Custom (OpenAI-compatible)</option>
+                      <option value="local">On-device (experimental)</option>
                     </select>
                   </div>
                   <div class="x-row" id="row-url" hidden>
@@ -1250,6 +1255,36 @@
                   </div>
                 </div>
                 <p class="x-gnote">Your key stays on this device.</p>
+                <div id="local-card" hidden>
+                  <div class="x-group" style="margin-top: 12px">
+                    <div class="x-row">
+                      <span class="x-twoline">📱 On-device brain<small>Experimental, via WebLLM</small></span>
+                    </div>
+                    <div class="x-row">
+                      <label for="local-model">Model</label>
+                      <select class="x-field" id="local-model">
+                        <option value="Qwen2.5-0.5B-Instruct-q4f16_1-MLC">Qwen2.5 0.5B — ~400 MB, fastest</option>
+                        <option value="Llama-3.2-1B-Instruct-q4f16_1-MLC">Llama 3.2 1B — ~900 MB, smarter</option>
+                      </select>
+                    </div>
+                    <div class="x-row">
+                      <span>Model files</span>
+                      <span class="x-keybtns">
+                        <button class="btn" id="local-dl" type="button">Download model</button>
+                        <button class="btn" id="local-del" type="button">Delete model</button>
+                      </span>
+                    </div>
+                    <div class="x-row x-local__prog" id="local-prog-row" hidden>
+                      <div class="x-bar" role="progressbar" aria-label="Model download" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="local-bar-wrap"><i id="local-bar"></i></div>
+                      <p class="x-local__txt" id="local-prog" aria-live="polite"></p>
+                    </div>
+                    <div class="x-row">
+                      <span>Status</span>
+                      <span class="x-val" id="local-status" role="status">Not downloaded</span>
+                    </div>
+                  </div>
+                  <p class="x-gnote">Runs fully on your iPhone, no internet after download. Needs WebGPU (iOS 26+ Safari). Big download — use Wi-Fi. Dumber than Grok.</p>
+                </div>
                 <div class="x-group" style="margin-top: 12px">
                   <div class="x-row">
                     <label for="set-elevenkey">ElevenLabs API key</label>
@@ -2549,7 +2584,7 @@
 
         /* ---------- storage: localStorage, then IndexedDB, then a cookie (never the API key); memory as a last resort ---------- */
         var SETKEY = "companion-settings";
-        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch", "brain", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp"];
+        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch", "brain", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel"];
         var SECRET_FIELDS = ["apiKey", "elevenKey", "oaiKey", "fishKey"];
         var KV = (function () {
           var mem = {}, idb = null, idbState = 0; /* 0 pending, 1 ok, -1 unavailable */
@@ -2670,7 +2705,8 @@
         var PROVIDERS = {
           xai: { label: "Grok", url: "https://api.x.ai/v1/chat/completions", model: "grok-4.7" },
           openai: { label: "OpenAI", url: "https://api.openai.com/v1/chat/completions", model: "gpt-4o-mini" },
-          custom: { label: "Custom", url: "", model: "" }
+          custom: { label: "Custom", url: "", model: "" },
+          local: { label: "On-device", url: "", model: "" }
         };
 
         var CREW = [
@@ -2766,8 +2802,10 @@
           oaiKey: typeof saved.oaiKey === "string" ? saved.oaiKey : "",
           fishKey: typeof saved.fishKey === "string" ? saved.fishKey : "",
           fishProxy: typeof saved.fishProxy === "string" ? saved.fishProxy : "",
-          mcp: mcpClean(saved.mcp)
+          mcp: mcpClean(saved.mcp),
+          localModel: localModelClean(saved.localModel)
         };
+        function localModelClean(v) { return v === "Llama-3.2-1B-Instruct-q4f16_1-MLC" ? v : "Qwen2.5-0.5B-Instruct-q4f16_1-MLC"; }
         /* MCP connectors: [{ label, url, token, allowed, on }] */
         function mcpLabel(s) { return String(s == null ? "" : s).replace(/\s+/g, "_").replace(/[^A-Za-z0-9_]/g, "").slice(0, 40); }
         function mcpClean(a) {
@@ -4098,7 +4136,7 @@
           if (!text && img) text = "What do you make of this?";
           if (!text) return false;
           var dp = img ? null : drawPrompt(text);
-          if (S.apiKey && isOffline()) { toast(OFFLINE_MSG); return false; }
+          if (S.apiKey && isOffline() && !(localHas() && !img && !dp)) { toast(OFFLINE_MSG); return false; }
           if (m === "chat") { lastUser = text; setSheet(true); if (/^stop\b/i.test(text)) { S.roast = false; S.trivia = false; } }
           stopVoice();
           markSeen(); rememberCmd(text);
@@ -4123,6 +4161,8 @@
             }, function (err) { bot({ r: "err", t: "**Couldn't make the picture.** " + err, ts: Date.now() }); });
             return;
           }
+          var loc = localRoute();
+          if (loc) { localRun(m, loc); return; }
           if (m === "chat" && S.brain === "crew" && S.apiKey) { crewRun(m); return; }
           typing(m, true);
           var done = function (reply) { typing(m, false); addMsg(m, { r: "bot", t: reply, ts: Date.now() }); next(m); };
@@ -4620,6 +4660,196 @@
           });
         }
 
+        /* ---------- on-device brain (WebLLM, experimental): one engine, loaded lazily, reused ---------- */
+        var LOCAL_SMALL = "Qwen2.5-0.5B-Instruct-q4f16_1-MLC";
+        var NO_GPU_MSG = "Your browser doesn't have WebGPU, so no on-device brain. Sorry, kid.";
+        var LOCAL = { engine: null, model: "", loading: null, loadingId: "", cached: false, lib: null, err: "", prog: null };
+        function localLabel(id) { return id === "Llama-3.2-1B-Instruct-q4f16_1-MLC" ? "Llama 3.2 1B" : "Qwen2.5 0.5B"; }
+        function localGpu() { return !!(navigator && navigator.gpu); }
+        function localReady() { return !!LOCAL.engine && LOCAL.model === S.localModel; }
+        function localHas() { return localGpu() && (localReady() || LOCAL.cached); }
+        /* "pick": on-device chosen; "offline": no signal but the model is downloaded */
+        function localRoute() {
+          if (S.provider === "local") return "pick";
+          if (isOffline() && localHas()) return "offline";
+          return "";
+        }
+        async function localLib() {
+          if (!LOCAL.lib) LOCAL.lib = import("https://esm.run/@mlc-ai/web-llm");
+          try { return await LOCAL.lib; } catch (e) { LOCAL.lib = null; throw e; }
+        }
+        function localProg(r) {
+          LOCAL.prog = r;
+          var pct = Math.max(0, Math.min(100, Math.round(((r && r.progress) || 0) * 100)));
+          $("local-bar").style.width = pct + "%";
+          $("local-bar-wrap").setAttribute("aria-valuenow", String(pct));
+          $("local-prog").textContent = (r && r.text) || "";
+          paintLocal();
+        }
+        async function localEngine() {
+          var id = S.localModel;
+          if (localReady()) return LOCAL.engine;
+          if (LOCAL.loading && LOCAL.loadingId === id) return LOCAL.loading;
+          if (!localGpu()) throw new Error(NO_GPU_MSG);
+          LOCAL.err = ""; LOCAL.loadingId = id; LOCAL.prog = { progress: 0, text: "Starting…" };
+          LOCAL.loading = (async function () {
+            var initProgressCallback = function (report) { localProg(report); };
+            if (LOCAL.engine) {
+              if (LOCAL.engine.setInitProgressCallback) LOCAL.engine.setInitProgressCallback(initProgressCallback);
+              await LOCAL.engine.reload(id);
+              return LOCAL.engine;
+            }
+            const webllm = await localLib();
+            return await webllm.CreateMLCEngine(id, { initProgressCallback: initProgressCallback });
+          })();
+          paintLocal();
+          try {
+            var eng = await LOCAL.loading;
+            LOCAL.engine = eng; LOCAL.model = id; LOCAL.cached = true;
+            return eng;
+          } catch (e) {
+            if (LOCAL.engine && LOCAL.model !== id) LOCAL.model = "";
+            LOCAL.err = localErr(e).replace(/\*\*/g, "");
+            throw e;
+          } finally {
+            LOCAL.loading = null; LOCAL.loadingId = ""; paintLocal();
+          }
+        }
+        async function localCheck() {
+          var id = S.localModel, hit = false;
+          try {
+            if (typeof caches !== "undefined") {
+              var ks = (await caches.keys()).filter(function (k) { return /^webllm/i.test(k); });
+              for (var i = 0; i < ks.length && !hit; i++) {
+                var reqs = await (await caches.open(ks[i])).keys();
+                hit = reqs.some(function (r) { return r.url.indexOf(id) >= 0; });
+              }
+            }
+          } catch (e) {}
+          if (id === S.localModel) { LOCAL.cached = hit || localReady(); paintLocal(); }
+          return LOCAL.cached;
+        }
+        async function localDelete() {
+          if (LOCAL.loading) { toast("Hang on, it's still downloading."); return; }
+          if (LOCAL.engine) { try { await LOCAL.engine.unload(); } catch (e) {} LOCAL.engine = null; LOCAL.model = ""; }
+          try {
+            if (typeof caches !== "undefined") {
+              var ks = (await caches.keys()).filter(function (k) { return /^webllm/i.test(k); });
+              await Promise.all(ks.map(function (k) { return caches.delete(k); }));
+            }
+          } catch (e) {}
+          LOCAL.cached = false; LOCAL.err = ""; LOCAL.prog = null; paintLocal();
+          toast("On-device model deleted.");
+        }
+        function paintLocal() {
+          var card = $("local-card"); if (!card) return;
+          card.hidden = S.provider !== "local";
+          var gpu = localGpu(), dl = $("local-dl"), del = $("local-del"), st = $("local-status"), row = $("local-prog-row"), txt = $("local-prog");
+          dl.disabled = !gpu || !!LOCAL.loading || localReady();
+          del.disabled = !!LOCAL.loading || !(LOCAL.cached || LOCAL.engine);
+          if (!gpu) { st.textContent = "No WebGPU"; row.hidden = false; $("local-bar-wrap").hidden = true; txt.textContent = NO_GPU_MSG; return; }
+          $("local-bar-wrap").hidden = false;
+          row.hidden = !LOCAL.loading && !LOCAL.err;
+          if (LOCAL.loading) { st.textContent = "Downloading " + Math.round(((LOCAL.prog && LOCAL.prog.progress) || 0) * 100) + "%"; return; }
+          if (LOCAL.err) { st.textContent = "Failed"; txt.textContent = LOCAL.err; return; }
+          st.textContent = localReady() ? "Ready · " + localLabel(S.localModel) + " loaded" : LOCAL.cached ? "Downloaded ✓ · wakes up when you chat" : "Not downloaded";
+        }
+        function localErr(e) {
+          var s = String((e && (e.message || e)) || "");
+          var tip = S.localModel !== LOCAL_SMALL ? " Switch to the Qwen2.5 0.5B model in Settings > AI, it's lighter." : " Close some apps and tabs and try again; Qwen2.5 0.5B is already the lightest.";
+          if (s === NO_GPU_MSG) return NO_GPU_MSG;
+          if (/memory|oom|allocat|too large|exceed/i.test(s)) { LOCAL.engine = null; LOCAL.model = ""; return "**My on-device brain ran outta memory.**" + tip; }
+          if (/device.*lost|lost.*device|gpu|webgpu|adapter/i.test(s)) { LOCAL.engine = null; LOCAL.model = ""; return "**The GPU gave out on me, kid.**" + tip; }
+          if (/import|module|fetch|network|load failed|failed to fetch/i.test(s)) return "**Couldn't load the on-device brain.** Its code and model files need a signal to load the first time." + tip;
+          return "**My on-device brain choked.** " + s.slice(0, 120) + tip;
+        }
+        /* a short system prompt (persona + memory, about 1200 chars) for the small model */
+        function localSystem(m) {
+          var bm = m === "chat" ? BRAINS[S.brain] || BRAINS.quick : null;
+          var clause = bm ? bm.clause : "";
+          var base = MODES[m].system(), mem = memoryClause();
+          var core = mem ? base.replace(mem, "") : base;
+          if (mem.length > 400) mem = mem.slice(0, 400).replace(/\s+\S*$/, "") + "…";
+          var room = Math.max(300, 1200 - mem.length - clause.length);
+          if (core.length > room) {
+            var cut = core.slice(0, room), dot = cut.lastIndexOf(". ");
+            core = dot > room * 0.6 ? cut.slice(0, dot + 1) : cut;
+          }
+          return core + mem + clause;
+        }
+        function localMessages(m) {
+          var hist = S.threads[m].filter(function (x) { return x && (x.r === "me" || x.r === "bot") && typeof x.t === "string" && x.t; });
+          var user = hist.pop() || { t: "" }, out = [];
+          hist.slice(-6).forEach(function (x) {
+            var role = x.r === "me" ? "user" : "assistant", t = role === "user" && (x.img || x.pic) ? x.t + " [photo]" : x.t;
+            if (out.length && out[out.length - 1].role === role) out[out.length - 1].content += "\n\n" + t; else out.push({ role: role, content: t });
+          });
+          if (out.length && out[out.length - 1].role === "user") out[out.length - 1].content += "\n\n" + user.t; else out.push({ role: "user", content: user.t });
+          return [{ role: "system", content: localSystem(m) }].concat(out);
+        }
+        async function localAsk(m, onTok) {
+          var eng = await localEngine();
+          var chunks = await eng.chat.completions.create({ messages: localMessages(m), temperature: 0.8, max_tokens: 300, stream: true });
+          var out = "";
+          for await (const ch of chunks) {
+            var d = ch && ch.choices && ch.choices[0] && ch.choices[0].delta && ch.choices[0].delta.content;
+            if (d) { out += d; onTok(out); }
+          }
+          return out;
+        }
+        function localRun(m, why) {
+          var th = S.threads[m], last = th[th.length - 1];
+          var reply = function (msg, wait) { typing(m, true); setTimeout(function () { typing(m, false); addMsg(m, msg); next(m); }, wait || 400); };
+          if (last && last.r === "me" && last.img) { reply({ r: "bot", t: "My on-device brain can't see pictures. Switch to Grok.", ts: Date.now() }); return; }
+          if (!localGpu()) { reply({ r: "err", t: NO_GPU_MSG, ts: Date.now() }); return; }
+          if (!localHas() && !LOCAL.loading) { reply({ r: "err", t: "**My on-device brain isn't downloaded yet.** Go to Settings > AI, pick On-device and tap Download model (use Wi-Fi).", ts: Date.now() }); return; }
+          var crew = m === "chat" && S.brain === "crew";
+          if (why === "offline") toast("No signal — using my on-device brain." + (crew ? " Just me, no crew." : ""));
+          else if (crew) toast("The Crew needs Grok. On-device it's just me, kid.");
+          typing(m, true, localReady() ? "" : "Wakin' up my on-device brain…");
+          var br = m === "chat" && !crew ? S.brain : "", live = null;
+          var strip = function (t) { return String(t).replace(/\[\[[\s\S]*?(\]\]|$)/g, "").trim(); };
+          localAsk(m, function (txt) {
+            if (!live) {
+              typing(m, false);
+              live = msgEl({ r: "bot", t: "", ts: Date.now() });
+              V[m].thread.insertBefore(live, typingEl[m] || null);
+            }
+            live.querySelector(".x-bub").innerHTML = fmt(strip(txt));
+            if (m === "chat") setCaption(strip(txt));
+            scrollDown(m, false);
+          }).then(function (c) {
+            if (live) live.remove();
+            typing(m, false);
+            var got = 0;
+            c = String(c || "").replace(/\[\[\s*remember\s*:\s*([\s\S]*?)\]\]/gi, function (_, f) { if (remember(f)) got++; return ""; });
+            c = strip(c).replace(/[ \t]+\n/g, "\n");
+            if (got) toast("🧠 Blarf will remember that");
+            if (!c) c = got ? "Got it, Boss. 🧠" : "Uh… I got nothin'. Ask me again.";
+            addMsg(m, { r: "bot", t: c, ts: Date.now(), brain: br && br !== "quick" ? br : undefined });
+            next(m);
+          }, function (e) {
+            if (live) live.remove();
+            typing(m, false);
+            addMsg(m, { r: "err", t: localErr(e), ts: Date.now() });
+            next(m);
+          });
+        }
+        (function () {
+          var sel = $("local-model");
+          sel.value = S.localModel;
+          sel.addEventListener("change", function () {
+            S.localModel = localModelClean(sel.value); save();
+            LOCAL.cached = false; LOCAL.err = ""; paintLocal(); paintStatus(); localCheck();
+          });
+          $("local-dl").addEventListener("click", function () {
+            if (!localGpu()) { toast(NO_GPU_MSG); return; }
+            localEngine().then(function () { toast("📱 On-device brain ready."); }, function () { toast("Download failed. See Settings > AI."); });
+          });
+          $("local-del").addEventListener("click", localDelete);
+          paintLocal(); localCheck();
+        })();
+
         /* ---------- The Crew: faces ---------- */
         function crewFace(id, size) {
           var INK = "#141a22";
@@ -5010,7 +5240,8 @@
         }
         function paintStatus() {
           var chip = $("status-chip"), p = PROVIDERS[S.provider] || PROVIDERS.xai;
-          if (S.apiKey) { chip.className = "chip chip--solid"; chip.textContent = "Live AI · " + p.label + " · " + ((S.model || "").trim() || p.model); }
+          if (S.provider === "local") { chip.className = "chip chip--solid"; chip.textContent = "On-device AI · " + localLabel(S.localModel); }
+          else if (S.apiKey) { chip.className = "chip chip--solid"; chip.textContent = "Live AI · " + p.label + " · " + ((S.model || "").trim() || p.model); }
           else { chip.className = "chip"; chip.textContent = "Offline mode – add an API key in Settings for full AI"; }
         }
 
@@ -5215,7 +5446,7 @@
         prov.addEventListener("change", function () {
           S.provider = prov.value; S.model = PROVIDERS[S.provider].model; modelIn.value = S.model;
           modelIn.placeholder = PROVIDERS[S.provider].model || "model-name";
-          $("row-url").hidden = S.provider !== "custom"; paintStatus(); save();
+          $("row-url").hidden = S.provider !== "custom"; paintStatus(); paintLocal(); save();
         });
         modelIn.addEventListener("input", function () { S.model = modelIn.value; paintStatus(); save(); });
         urlIn.addEventListener("input", function () { S.customUrl = urlIn.value; save(); });
@@ -5271,6 +5502,7 @@
           var p = PROVIDERS[S.provider] || PROVIDERS.xai;
           var url = S.provider === "custom" ? (S.customUrl || "").trim() : p.url;
           var model = (S.model || "").trim() || p.model;
+          if (S.provider === "local") { toast("On-device needs no key. Use Download model below."); return; }
           if (!S.apiKey) { toast("Add an API key first."); return; }
           if (!url) { toast("Add a URL for your custom provider."); return; }
           if (!model) { toast("Add a model name."); return; }
@@ -5847,7 +6079,7 @@
         /* IndexedDB answers late: restore any setting the other stores lost, then back-fill every store */
         KV.ready([SETKEY, STORE], function (got) {
           var fromIdb = parseJSON(got[SETKEY]) || parseJSON(got[STORE]) || {}, changed = false;
-          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch", "brain", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp"].forEach(function (f) {
+          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch", "brain", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel"].forEach(function (f) {
             if (saved[f] === undefined && fromIdb[f] !== undefined && fromIdb[f] !== "") { S[f] = fromIdb[f]; changed = true; }
           });
           S.chars = charsClean(S.chars);
@@ -5859,6 +6091,8 @@
           paintBrain();
           S.crewHeavy = !!S.crewHeavy; S.crewAgents = S.crewAgents === 16 ? 16 : 4;
           paintCrewHeavy();
+          S.localModel = localModelClean(S.localModel);
+          $("local-model").value = S.localModel; paintLocal(); localCheck();
           S.mcp = mcpClean(S.mcp);
           /* a cookie copy has no tokens: put back any the IndexedDB copy still holds */
           if (Array.isArray(fromIdb.mcp)) S.mcp.forEach(function (c) {
