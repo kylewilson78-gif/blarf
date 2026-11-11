@@ -705,6 +705,14 @@
       .x-crew__head > div { flex: 1; min-width: 0; }
       .x-crew__head .btn { min-height: var(--tap); }
       .x-crew__panel .x-gnote { padding-top: 0; margin-top: -6px; }
+      /* MCP connectors */
+      .x-row.x-mcp { flex-wrap: wrap; row-gap: 4px; padding-top: 6px; padding-bottom: 6px; }
+      .x-mcp .x-twoline small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .x-mcp__btns { display: flex; gap: 6px; flex: none; }
+      .x-mcp__btns .btn { min-height: var(--tap); padding-left: 12px; padding-right: 12px; }
+      .x-mcp__btns .btn[disabled] { opacity: 0.5; }
+      .x-mcp__presets { padding: 0 4px; }
+      .x-crew__panel .x-mcp__field { text-align: right; }
       .x-crew__panel .x-field[type="password"], .x-crew__panel #crew-vid { text-align: right; }
       .x-toast {
         position: fixed; left: 50%; top: calc(env(safe-area-inset-top) + 10px); z-index: 60;
@@ -1043,6 +1051,12 @@
               </div>
 
               <div>
+                <p class="x-glabel">Connectors</p>
+                <div class="x-group" id="mcp-group"></div>
+                <p class="x-gnote">Plug Blarf into MCP servers (Zapier, GitHub, Notion, your own). Grok calls them from xAI's side — needs xAI.</p>
+              </div>
+
+              <div>
                 <p class="x-glabel">Personality</p>
                 <div class="x-group">
                   <div class="x-row">
@@ -1270,6 +1284,43 @@
             <button class="btn x-test" id="crew-test" type="button">▶ Test voice</button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <div class="x-menu" id="mcp-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="mcp-title">
+      <button class="x-menu__scrim x-scrim" id="mcp-scrim" type="button" aria-label="Close" tabindex="-1"></button>
+      <div class="x-menu__panel x-crew__panel" id="mcp-panel">
+        <div class="x-grabber" aria-hidden="true"></div>
+        <div class="x-crew__head">
+          <span class="x-crew__emoji" aria-hidden="true">🔌</span>
+          <div><h3 id="mcp-title">Add connector</h3><small>Remote MCP server, called by xAI</small></div>
+          <button class="btn" id="mcp-cancel" type="button">Cancel</button>
+          <button class="btn" id="mcp-save" type="button">Save</button>
+        </div>
+        <div class="x-rowbtns x-mcp__presets" role="group" aria-label="Presets">
+          <button class="btn" type="button" data-mcp-preset="zapier">Zapier MCP</button>
+          <button class="btn" type="button" data-mcp-preset="github">GitHub MCP</button>
+          <button class="btn" type="button" data-mcp-preset="custom">Custom</button>
+        </div>
+        <div class="x-group">
+          <div class="x-row">
+            <label for="mcp-label">Name</label>
+            <input class="x-field x-mcp__field" id="mcp-label" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="my_server" />
+          </div>
+          <div class="x-row">
+            <label for="mcp-url">Server URL</label>
+            <input class="x-field x-mcp__field" id="mcp-url" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://…" />
+          </div>
+          <div class="x-row">
+            <label for="mcp-token">Token</label>
+            <input class="x-field x-mcp__field" id="mcp-token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Optional" />
+          </div>
+          <div class="x-row">
+            <label for="mcp-allowed">Allowed tools</label>
+            <input class="x-field x-mcp__field" id="mcp-allowed" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Optional, comma separated" />
+          </div>
+        </div>
+        <p class="x-gnote" id="mcp-hint">Name: letters, digits and underscores. URL must be https. The token is sent as the Authorization header and stays on this device.</p>
       </div>
     </div>
 
@@ -2151,7 +2202,7 @@
 
         /* ---------- storage: localStorage, then IndexedDB, then a cookie (never the API key); memory as a last resort ---------- */
         var SETKEY = "companion-settings";
-        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch", "brain", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents"];
+        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch", "brain", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp"];
         var SECRET_FIELDS = ["apiKey", "elevenKey", "oaiKey", "fishKey"];
         var KV = (function () {
           var mem = {}, idb = null, idbState = 0; /* 0 pending, 1 ok, -1 unavailable */
@@ -2183,8 +2234,15 @@
           /* the API key never goes in a cookie: strip it from anything written there */
           function ckSafe(v) {
             var o; try { o = JSON.parse(v); } catch (e) { return v; }
-            if (!o || typeof o !== "object" || !SECRET_FIELDS.some(function (f) { return f in o; })) return v;
-            SECRET_FIELDS.forEach(function (f) { delete o[f]; }); return JSON.stringify(o);
+            var mcpTok = o && typeof o === "object" && Array.isArray(o.mcp) && o.mcp.some(function (x) { return x && typeof x === "object" && "token" in x; });
+            if (!o || typeof o !== "object" || (!mcpTok && !SECRET_FIELDS.some(function (f) { return f in o; }))) return v;
+            SECRET_FIELDS.forEach(function (f) { delete o[f]; });
+            /* MCP connector tokens are keys too: the cookie keeps the list, never a token */
+            if (Array.isArray(o.mcp)) o.mcp = o.mcp.map(function (x) {
+              if (!x || typeof x !== "object") return x;
+              var c = {}; for (var k in x) if (k !== "token" && Object.prototype.hasOwnProperty.call(x, k)) c[k] = x[k]; return c;
+            });
+            return JSON.stringify(o);
           }
           var lsOK = lsSet("blarf-probe", "1"); lsDel("blarf-probe");
           var ckOK = ckSet("blarf-probe", "1"); ckDel("blarf-probe");
@@ -2360,8 +2418,17 @@
           elevenKey: typeof saved.elevenKey === "string" ? saved.elevenKey : "",
           oaiKey: typeof saved.oaiKey === "string" ? saved.oaiKey : "",
           fishKey: typeof saved.fishKey === "string" ? saved.fishKey : "",
-          fishProxy: typeof saved.fishProxy === "string" ? saved.fishProxy : ""
+          fishProxy: typeof saved.fishProxy === "string" ? saved.fishProxy : "",
+          mcp: mcpClean(saved.mcp)
         };
+        /* MCP connectors: [{ label, url, token, allowed, on }] */
+        function mcpLabel(s) { return String(s == null ? "" : s).replace(/\s+/g, "_").replace(/[^A-Za-z0-9_]/g, "").slice(0, 40); }
+        function mcpClean(a) {
+          if (!Array.isArray(a)) return [];
+          return a.filter(function (x) { return x && typeof x === "object" && typeof x.url === "string"; }).slice(0, 20).map(function (x) {
+            return { label: mcpLabel(x.label) || "server", url: String(x.url).trim().slice(0, 500), token: typeof x.token === "string" ? x.token : "", allowed: typeof x.allowed === "string" ? x.allowed.slice(0, 500) : "", on: x.on !== false };
+          });
+        }
         /* today's 3 goals: { day: 'YYYY-MM-DD', items: [{ t, done }] x3 } */
         function goalsDay() { var d = new Date(); return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2); }
         function goalsClean(g) {
@@ -3971,6 +4038,143 @@
           paintTools();
         })();
 
+        /* ---------- MCP connectors: remote MCP servers xAI calls for Grok ---------- */
+        function mcpOn() { return (S.mcp || []).filter(function (c) { return c && c.on && c.label && /^https:\/\//i.test(c.url || ""); }); }
+        function mcpTool(c) {
+          var t = { type: "mcp", server_url: c.url, server_label: c.label, server_description: c.label };
+          if (c.token && c.token.trim()) t.authorization = c.token.trim();
+          var al = String(c.allowed || "").split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+          if (al.length) t.allowed_tools = al;
+          return t;
+        }
+        function mcpTools() { return mcpOn().map(mcpTool); }
+        function mcpClause() {
+          var on = mcpOn(); if (!on.length) return "";
+          return " You're hooked up to Kyle's connectors (" + on.map(function (c) { return c.label; }).join(", ") + "). Use them when they'd actually get the job done.";
+        }
+        /* grey chip line for each MCP call in a Responses reply; anything unknown is skipped */
+        function mcpChips(m, data) {
+          try {
+            if (!V[m] || !V[m].thread || !data || !Array.isArray(data.output)) return;
+            data.output.forEach(function (it) {
+              if (!it || (it.type !== "mcp_call" && it.type !== "mcp_list_tools")) return;
+              var name = it.type === "mcp_call" ? toolStr(it.name, 40) || "tool" : "list_tools";
+              var el = doc.createElement("p");
+              el.className = "x-toolline is-done";
+              el.textContent = "🔌 " + (toolStr(it.server_label, 40) || "connector") + " · " + name + (it.error ? " ✕" : "");
+              V[m].thread.insertBefore(el, typingEl[m] || null);
+            });
+            scrollDown(m, true);
+          } catch (e) {}
+        }
+        function mcpHost(u) { try { return new URL(u).hostname; } catch (e) { return String(u || ""); } }
+        var mcpGroup = $("mcp-group"), mcpSheet = $("mcp-sheet"), mcpEdit = -1;
+        function paintMcp() {
+          if (!mcpGroup) return;
+          var list = Array.isArray(S.mcp) ? S.mcp : [];
+          mcpGroup.innerHTML = list.map(function (c, i) {
+            return '<div class="x-row x-mcp">' +
+              '<span class="x-twoline" id="lbl-mcp-' + i + '">🔌 ' + esc(c.label) + '<small>' + esc(mcpHost(c.url)) + '</small></span>' +
+              '<span class="x-mcp__btns">' +
+                '<button class="btn" type="button" data-mcp-test="' + i + '">Test</button>' +
+                '<button class="btn" type="button" data-mcp-edit="' + i + '" aria-haspopup="dialog">Edit</button>' +
+                '<button class="btn" type="button" data-mcp-del="' + i + '" aria-label="Delete ' + esc(c.label) + '">✕</button>' +
+              '</span>' +
+              '<button class="x-switch" type="button" role="switch" data-mcp-on="' + i + '" aria-checked="' + (c.on ? "true" : "false") + '" aria-labelledby="lbl-mcp-' + i + '"></button>' +
+              '</div>';
+          }).join("") + '<div class="x-row"><span>' + (list.length ? list.filter(function (c) { return c.on; }).length + " of " + list.length + " on" : "No connectors yet") + '</span><button class="btn" id="mcp-add" type="button" aria-haspopup="dialog">+ Add connector</button></div>';
+        }
+        var MCP_PRESETS = {
+          zapier: { label: "zapier", url: "", ph: "https://mcp.zapier.com/api/mcp/…", hint: "Paste your own server URL from mcp.zapier.com, plus the token if it gave you one." },
+          github: { label: "github", url: "https://api.githubcopilot.com/mcp/", ph: "https://api.githubcopilot.com/mcp/", hint: "Paste a GitHub personal access token as the token." },
+          custom: { label: "", url: "", ph: "https://…", hint: "Name: letters, digits and underscores. URL must be https. The token is sent as the Authorization header and stays on this device." }
+        };
+        function mcpPreset(k) {
+          var p = MCP_PRESETS[k] || MCP_PRESETS.custom;
+          $("mcp-label").value = p.label; $("mcp-url").value = p.url; $("mcp-url").placeholder = p.ph;
+          $("mcp-token").value = ""; $("mcp-allowed").value = "";
+          $("mcp-hint").textContent = p.hint;
+          $(p.url ? "mcp-token" : k === "custom" ? "mcp-label" : "mcp-url").focus({ preventScroll: true });
+        }
+        function mcpOpen(i) {
+          mcpEdit = i;
+          var c = i >= 0 ? S.mcp[i] : { label: "", url: "", token: "", allowed: "" };
+          $("mcp-title").textContent = i >= 0 ? "Edit connector" : "Add connector";
+          $("mcp-label").value = c.label; $("mcp-url").value = c.url; $("mcp-token").value = c.token || ""; $("mcp-allowed").value = c.allowed || "";
+          $("mcp-url").placeholder = "https://…"; $("mcp-hint").textContent = MCP_PRESETS.custom.hint;
+          layerSheet(mcpSheet, true);
+          $("mcp-panel").scrollTop = 0;
+          $("mcp-label").focus({ preventScroll: true });
+        }
+        function mcpClose() {
+          if (!mcpSheet.classList.contains("is-open")) return;
+          $("mcp-token").value = "";
+          layerSheet(mcpSheet, false);
+          var back = $("mcp-add"); if (back) back.focus({ preventScroll: true });
+        }
+        function mcpSave() {
+          var label = mcpLabel($("mcp-label").value), url = $("mcp-url").value.trim(), u = null;
+          if (!label) { toast("Give it a name: letters, digits, underscores."); $("mcp-label").focus(); return; }
+          try { u = new URL(url); } catch (e) {}
+          if (!u || u.protocol !== "https:") { toast("Server URL has to start with https://"); $("mcp-url").focus(); return; }
+          var taken = function (l) { return S.mcp.some(function (c, j) { return j !== mcpEdit && c.label === l; }); }, base = label, n = 2;
+          while (taken(label)) label = (base + "_" + n++).slice(0, 40);
+          var c = { label: label, url: url, token: $("mcp-token").value.trim(), allowed: $("mcp-allowed").value.split(",").map(function (s) { return s.trim(); }).filter(Boolean).join(", "), on: mcpEdit >= 0 ? S.mcp[mcpEdit].on : true };
+          if (mcpEdit >= 0) S.mcp[mcpEdit] = c; else S.mcp.push(c);
+          save(); paintMcp(); mcpClose();
+          toast("🔌 " + label + " saved." + (S.provider !== "xai" ? " Connectors need xAI." : ""));
+        }
+        function mcpTest(i, btn) {
+          var c = S.mcp[i]; if (!c) return;
+          if (S.provider !== "xai") { toast("Connectors need xAI. Switch the provider to Grok."); return; }
+          if (!S.apiKey.trim()) { toast("Add your xAI key first."); return; }
+          if (isOffline()) { toast(OFFLINE_MSG); return; }
+          var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+          var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 60000);
+          btn.disabled = true; btn.textContent = "Testing…";
+          var end = function (msg) { clearTimeout(timer); btn.disabled = false; btn.textContent = "Test"; toast(msg); };
+          fetch(XAI_RESPONSES, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: "Bearer " + S.apiKey.trim() },
+            body: JSON.stringify({ model: (S.model || "").trim() || PROVIDERS.xai.model, input: "List your available tools in one line.", tools: [mcpTool(c)] }),
+            signal: ctrl ? ctrl.signal : undefined
+          }).then(function (res) {
+            return res.text().then(function (txt) {
+              var data = null; try { data = JSON.parse(txt); } catch (e) {}
+              if (!res.ok) {
+                var em = data && data.error ? (typeof data.error === "string" ? data.error : data.error.message) : "";
+                end("🔌 " + c.label + " failed: " + res.status + (em ? " " + String(em).slice(0, 120) : ""));
+                return;
+              }
+              var t = String(xaiText(data) || "").replace(/\s+/g, " ").trim();
+              end("🔌 " + c.label + " OK" + (t ? ": " + t.slice(0, 80) : ""));
+            });
+          }, function (e) {
+            end("🔌 " + c.label + " failed: " + (e && e.name === "AbortError" ? "timed out" : "network error"));
+          });
+        }
+        if (mcpGroup) {
+          mcpGroup.addEventListener("click", function (e) {
+            var b = e.target.closest("button"); if (!b) return;
+            if (b.id === "mcp-add") { mcpOpen(-1); return; }
+            var d = b.dataset;
+            if (d.mcpOn != null) { var c = S.mcp[+d.mcpOn]; if (!c) return; c.on = !c.on; save(); paintMcp(); toast("🔌 " + c.label + (c.on ? " on." : " off.")); }
+            else if (d.mcpEdit != null) mcpOpen(+d.mcpEdit);
+            else if (d.mcpTest != null) mcpTest(+d.mcpTest, b);
+            else if (d.mcpDel != null) {
+              var x = S.mcp[+d.mcpDel]; if (!x || !confirm("Delete the " + x.label + " connector?")) return;
+              S.mcp.splice(+d.mcpDel, 1); save(); paintMcp(); toast("🔌 " + x.label + " deleted.");
+            }
+          });
+          $("mcp-label").addEventListener("input", function () { var v = mcpLabel(this.value); if (v !== this.value) this.value = v; });
+          [].slice.call(mcpSheet.querySelectorAll("[data-mcp-preset]")).forEach(function (b) { b.addEventListener("click", function () { mcpPreset(b.dataset.mcpPreset); }); });
+          $("mcp-save").addEventListener("click", mcpSave);
+          $("mcp-cancel").addEventListener("click", mcpClose);
+          $("mcp-scrim").addEventListener("click", mcpClose);
+          doc.addEventListener("keydown", function (e) { if (e.key === "Escape" && mcpSheet.classList.contains("is-open")) { e.stopImmediatePropagation(); mcpClose(); } }, true);
+          paintMcp();
+        }
+
         function askAI(m) {
           if (isOffline()) { toast(OFFLINE_MSG); return Promise.reject(OFFLINE_MSG); }
           var p = PROVIDERS[S.provider] || PROVIDERS.xai;
@@ -3997,8 +4201,9 @@
           if (xr) {
             url = XAI_RESPONSES;
             var fnTools = m === "chat" ? toolDefs() : [];
-            tools = (S.liveSearch !== false ? [{ type: "web_search" }, { type: "x_search" }] : []).concat(fnTools);
-            reqBody = { model: model, input: [{ role: "system", content: MODES[m].system() + VISION + MEM_ASK + LIVE_HINT + (fnTools.length ? TOOL_HINT : "") + brainClause }].concat(history) };
+            var mcpT = m === "chat" ? mcpTools() : [];
+            tools = (S.liveSearch !== false ? [{ type: "web_search" }, { type: "x_search" }] : []).concat(fnTools).concat(mcpT);
+            reqBody = { model: model, input: [{ role: "system", content: MODES[m].system() + VISION + MEM_ASK + LIVE_HINT + (fnTools.length ? TOOL_HINT : "") + (mcpT.length ? mcpClause() : "") + brainClause }].concat(history) };
             if (tools.length) reqBody.tools = tools; else tools = null;
             if (bm) reqBody.reasoning = { effort: bm.effort };
           } else {
@@ -4022,6 +4227,7 @@
                   if (res.status === 404) throw "Endpoint or model not found (404). Check the model name.";
                   throw "The server said " + res.status + (data && data.error && data.error.message ? ": " + String(data.error.message).slice(0, 120) : ".");
                 }
+                if (xr && data) mcpChips(m, data);
                 return data;
               });
             }, function (e) {
@@ -4162,7 +4368,7 @@
           if (tools && tools.length) b.tools = tools;
           return b;
         }
-        function crewPost(ep, body, signal) {
+        function crewPost(ep, body, signal, chipMode) {
           return fetch(ep.url, {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: "Bearer " + S.apiKey.trim() },
@@ -4177,6 +4383,7 @@
                 if (res.status === 404) throw "Endpoint or model not found (404). Check the model name.";
                 throw "The server said " + res.status + (data && data.error && data.error.message ? ": " + String(data.error.message).slice(0, 120) : ".");
               }
+              if (chipMode && ep.xr && data) mcpChips(chipMode, data);
               var c = ep.xr ? xaiText(data) : data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
               if (!c) throw "The reply came back empty.";
               return String(c);
@@ -4291,11 +4498,12 @@
             }).join("\n\n");
             panel.status(got + " of 4 answered · Blarf's reviewin'");
             typing(m, false); typing(m, true, "Blarf's reviewin' the crew's work…");
-            var sys = MODES.chat.system() + VISION + MEM_ASK +
+            var bossMcp = ep.xr ? mcpTools() : [];
+            var sys = MODES.chat.system() + VISION + MEM_ASK + (bossMcp.length ? mcpClause() : "") +
               " CREW BOSS MODE: You're the boss of this crew. Review their takes, call out anyone who's wrong or lazy (by name, in your voice), merge the best into one final answer for Kyle. Lead with the answer." +
               " If someone didn't answer, mention it in one grumpy aside (like \"Larf's off sick, figures.\") and work with whoever answered; if nobody did, answer it yourself. Ignore the earlier length limit, but keep it tight.";
             var user = "Kyle's message: " + h.text + "\n\nThe crew's takes:\n\n" + takes;
-            return crewPost(ep, crewBody(ep, ep.model, sys, [crewUser(user, h.img, ep.xr)], ep.xr ? "high" : null, null), sig(all));
+            return crewPost(ep, crewBody(ep, ep.model, sys, [crewUser(user, h.img, ep.xr)], ep.xr ? "high" : null, bossMcp.length ? bossMcp : null), sig(all), m);
           }).then(function (c) {
             clearTimeout(tAll);
             panel.status("✓ Blarf signed off");
@@ -5283,7 +5491,7 @@
         /* IndexedDB answers late: restore any setting the other stores lost, then back-fill every store */
         KV.ready([SETKEY, STORE], function (got) {
           var fromIdb = parseJSON(got[SETKEY]) || parseJSON(got[STORE]) || {}, changed = false;
-          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch", "brain", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents"].forEach(function (f) {
+          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch", "brain", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp"].forEach(function (f) {
             if (saved[f] === undefined && fromIdb[f] !== undefined && fromIdb[f] !== "") { S[f] = fromIdb[f]; changed = true; }
           });
           S.chars = charsClean(S.chars);
@@ -5295,6 +5503,13 @@
           paintBrain();
           S.crewHeavy = !!S.crewHeavy; S.crewAgents = S.crewAgents === 16 ? 16 : 4;
           paintCrewHeavy();
+          S.mcp = mcpClean(S.mcp);
+          /* a cookie copy has no tokens: put back any the IndexedDB copy still holds */
+          if (Array.isArray(fromIdb.mcp)) S.mcp.forEach(function (c) {
+            if (c.token) return;
+            fromIdb.mcp.forEach(function (x) { if (x && x.url === c.url && x.label === c.label && typeof x.token === "string" && x.token) { c.token = x.token; changed = true; } });
+          });
+          paintMcp();
           /* a streak restored late: count today against it, then repaint the outfit */
           if (saved.streakDay === undefined && typeof fromIdb.streakDay === "string" && fromIdb.streakDay) {
             S.streak = typeof S.streak === "number" ? S.streak : 0; streakTick();
