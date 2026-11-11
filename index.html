@@ -1048,6 +1048,25 @@
       }
       .x-seg__thumb.is-ready { transition: transform 360ms var(--x-spring), width 360ms var(--x-spring); }
 
+
+      /* five modes: sub-option row under the mode bar, suggestion chip, empty-state mode line */
+      .x-brain.has-sub { border-bottom-color: transparent; padding-bottom: 4px; }
+      .x-modesub { flex: none; display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 calc(16px + env(safe-area-inset-right)) 8px calc(16px + env(safe-area-inset-left)); border-bottom: 1px solid var(--stroke-secondary); }
+      .x-modesub[hidden] { display: none; }
+      .x-modesub .x-seg { border: 0; background: var(--fill-tertiary); }
+      .x-modesub .x-seg button { min-height: 32px; padding: 0 14px; font: var(--weight-medium) 13px/18px var(--sans); transition: background-color 200ms var(--ease-out), color 200ms var(--ease-out); }
+      .x-modesub__hint { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--type-caption); color: var(--text-secondary); }
+      .x-modesub__crew { font: var(--weight-medium) 13px/18px var(--sans); }
+      .x-modesub__off { min-height: 32px; padding: 0 12px; border: 0; border-radius: var(--r-pill); background: var(--fill-tertiary); font: var(--weight-medium) 13px/18px var(--sans); color: var(--text-primary); }
+      .x-suggest { display: flex; justify-content: center; padding: 6px 16px 0; }
+      .x-suggest[hidden] { display: none; }
+      .x-suggest__chip { display: inline-flex; align-items: center; border-radius: var(--r-pill); background: var(--fill-tertiary); border: 0.5px solid var(--stroke-secondary); box-shadow: 0 2px 8px rgb(0 0 0 / 0.08); animation: x-sugg-in 360ms var(--x-spring) both; }
+      .x-suggest__go { min-height: 36px; padding: 0 4px 0 14px; border: 0; background: none; font: var(--weight-medium) 14px/18px var(--sans); color: var(--text-primary); }
+      .x-suggest__x { width: 36px; height: 36px; border: 0; background: none; font-size: 18px; line-height: 1; color: var(--text-secondary); }
+      @keyframes x-sugg-in { from { opacity: 0; transform: translateY(6px) scale(0.96); } }
+      .x-empty__mode { margin: -6px 0 0; font: var(--type-caption); color: var(--text-secondary); }
+      @media (prefers-reduced-motion: reduce) { .x-suggest__chip { animation: none; } .x-modesub .x-seg button { transition: none; } }
+
       /* inset-grouped settings lists */
       .x-group, .x-menu__list { border-radius: var(--r-s); }
       .x-row + .x-row, .x-row + .x-prompt, .x-prompt + .x-row, .x-mem + .x-row, .x-mem-empty + .x-row, .x-mem > li, .x-mem-empty {
@@ -1369,7 +1388,7 @@
                     <span class="x-val" id="brain-now" role="status"></span>
                   </div>
                 </div>
-                <p class="x-gnote">Same Blarf, same memory, either brain. Deep Think and Expert always use the Think brain; photos use Vision. If OpenAI fails, Grok takes over. The OpenAI key also powers OpenAI voices and stays on this device.</p>
+                <p class="x-gnote">Same Blarf, same memory, either brain. Deep Think always uses the Think brain; photos and Observer use Vision. If OpenAI fails, Grok takes over. The OpenAI key also powers OpenAI voices and stays on this device.</p>
                 <div class="x-group" style="margin-top: 12px">
                   <div class="x-row">
                     <label for="set-elevenkey">ElevenLabs API key</label>
@@ -2685,7 +2704,7 @@
 
         /* ---------- storage: localStorage, then IndexedDB, then a cookie (never the API key); memory as a last resort ---------- */
         var SETKEY = "companion-settings";
-        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch", "brain", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel", "autoRoute", "voicePolish", "thinkProv", "thinkModel", "visionModel", "memAuto", "memMig", "embedModel"];
+        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch", "brain", "mode", "deepStrength", "obsSub", "crew", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel", "autoRoute", "voicePolish", "thinkProv", "thinkModel", "visionModel", "memAuto", "memMig", "embedModel"];
         var SECRET_FIELDS = ["apiKey", "elevenKey", "oaiKey", "fishKey"];
         var KV = (function () {
           var mem = {}, idb = null, idbState = 0; /* 0 pending, 1 ok, -1 unavailable */
@@ -2873,6 +2892,7 @@
           model: saved.model != null ? saved.model : "grok-4.7",
           liveSearch: saved.liveSearch != null ? !!saved.liveSearch : true,
           brain: ["quick", "deep", "expert", "gamer", "crew"].indexOf(saved.brain) >= 0 ? saved.brain : "quick",
+          mode: saved.mode, deepStrength: saved.deepStrength, obsSub: saved.obsSub, crew: !!saved.crew,
           crewHeavy: !!saved.crewHeavy,
           autoRoute: saved.autoRoute != null ? !!saved.autoRoute : true,
           voicePolish: !!saved.voicePolish,
@@ -3652,33 +3672,150 @@
           chat: {
             label: "Blarf", role: "Chill buddy", accent: "var(--x-blue1)",
             chips: ["How's my day looking?", "Hype me up", "Tell me something random", "I'm bored", "Roast me", "🎨 Draw"],
-            system: function (o) { return blarfCharacter({ len: SHORT_LEN, compact: o && o.compact }) + roastClause() + triviaClause(); },
+            system: function (o) { return modeSystem("chat", o); },
             greet: function () { return "Hey Boss 👋 I'm " + S.name + ". Chill mode: talk to me about anything. What's up?"; }
           },
           studio: {
             label: "Studio", role: "Music production coach", accent: "var(--chart-4)",
             chips: ["Give me a beat idea", "Chord progression in a minor key", "How do I make my 808 hit harder?", "Dubler 2 tips"],
-            system: function (o) { return blarfCharacter({ compact: o && o.compact, role: "Right now you're in Studio mode as Kyle's expert music production coach. Give concise, actionable steps: name real FL Studio tools (Channel Rack, Piano Roll, Mixer, Patcher, Fruity Limiter, Parametric EQ 2, Edison, Slicex), real chord progressions with chord names, mixing and mastering moves with numbers, Dubler 2 vocal-to-MIDI tips and Splice search ideas.", len: "Keep replies short and mobile-friendly: at most six numbered steps or a few sentences." }); },
+            system: function (o) { return modeSystem("studio", o); },
             greet: function () { return "Studio's open 🎛️ Ask me about FL Studio, mixing, 808s, chords, Dubler 2 or Splice. Or tap a tempo and roll a song starter above."; }
           },
           hustle: {
             label: "Hustle", role: "Startup coach", accent: "var(--fill-system-orange)",
             chips: ["Plan my top 3 for today", "Brainstorm app ideas", "Write a pitch line", "Keep me accountable"],
-            system: function (o) { return blarfCharacter({ compact: o && o.compact, role: "Right now you're in Hustle mode as Kyle's sharp startup and productivity coach for Big dreams and ambition, Inc. Be direct and accountability-focused: push for specifics, deadlines and the next concrete action, and cut fluff.", len: "Keep replies short and mobile-friendly, and end with one clear next step or one question." }); },
+            system: function (o) { return modeSystem("hustle", o); },
             greet: function () { return "Hustle mode 💼 Let's move Big dreams and ambition, Inc. forward. What's the one thing that matters most today?"; }
           }
         };
         var ORDER = ["chat", "studio", "hustle"];
         var CAM_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5A2 2 0 0 1 6 6.5h1.8l1.4-2h5.6l1.4 2H18a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.5"/></svg>';
         var VISION = " When Kyle sends a photo or screenshot (games, gear, tracks, screens, anything), look closely and react in character, then actually help (game strategy, gear advice, fixes).";
-        /* brain modes for text chat: reasoning effort, prompt clause, reply tag */
-        var BRAINS = {
-          quick: { label: "⚡ Quick", effort: "low", clause: "" },
-          deep: { label: "🧠 Deep Think", effort: "xhigh", long: true, clause: " DEEP THINK MODE: think it through properly. Give a careful, correct answer with the reasoning steps that matter, still in your voice. Longer replies are fine here." },
-          expert: { label: "🎓 Expert", effort: "high", long: true, clause: " EXPERT BLARF MODE: answer like a top specialist in the field: structured (short headers or numbered steps), precise numbers, real tools and names, tradeoffs, and a clear recommendation. Still grumpy Boston, but the substance is pro-level. Longer replies are fine." },
-          gamer: { label: "🎮 Gamer", effort: "low", clause: " GAMER MODE: you're Kyle's PS5/console gaming sidekick: strategy, builds, boss tips, walkthrough steps, settings, and trash talk. If he sends a screenshot, read it closely and tell him exactly what to do next." },
-          crew: { label: "👥 Crew", effort: "low", clause: "" }
+        /* ---------- Five cognitive modes: one Blarf, one memory, one shared recent history ---------- */
+        /* each mode: { id, label, emoji, role, toneClause, brainPolicy (talk|think|auto|vision), reasoningEffort, tools, liveSearch, starters } */
+        var COG = {
+          chill: {
+            id: "chill", label: "Chill", emoji: "😎", role: "Chill buddy", act: "nod",
+            toneClause: "CHILL MODE: you're just hangin' with Kyle. Be conversational and socially sharp: read his mood, react to what he actually said, riff, joke, ask how he's doin'. Relaxed, not a coach: don't turn small talk into a to-do list, a plan or productivity advice unless he asks for it.",
+            len: SHORT_LEN, brainPolicy: "auto", reasoningEffort: "low", tools: "all", liveSearch: true,
+            starters: ["What's good, Blarf?", "Tell me somethin' random", "Roast me, I can take it"],
+            blurb: "Chill mode. Just talk, kid."
+          },
+          studio: {
+            id: "studio", label: "Studio", emoji: "🎛️", role: "Studio collaborator", act: "proud",
+            toneClause: "STUDIO MODE: you're Kyle's creative and technical music collaborator, in the room with him. Get curious about the track: ask about the mix, the vibe, the reference, what's bugging him. Give practical production moves: real FL Studio tools (Channel Rack, Piano Roll, Mixer, Patcher, Fruity Limiter, Parametric EQ 2, Edison, Slicex), chord names, mixing and mastering moves with real numbers (Hz, dB, ms, ratios), Dubler 2 vocal-to-MIDI tips and Splice search ideas. If he sends a screenshot or photo of his mixer, DAW, plugin or meters, read it closely (levels, EQ curves, routing, clipping, panning) and tell him exactly what to change.",
+            len: "Keep replies short and mobile-friendly: at most six numbered steps or a few sentences, and ask one question about the track when it helps.",
+            brainPolicy: "auto", reasoningEffort: "low", tools: ["set_timer", "save_note", "save_lyric", "set_bpm", "start_beat", "calculate", "draw_image", "open_link"], liveSearch: true,
+            starters: ["My mix sounds muddy, fix it", "Gimme a dark chord progression", "Make my 808 hit harder"],
+            blurb: "Studio mode. Show me the mix."
+          },
+          hustle: {
+            id: "hustle", label: "Hustle", emoji: "💼", role: "Hustle coach", act: "onit",
+            toneClause: "HUSTLE MODE: you're Kyle's sharp startup and productivity coach for Big dreams and ambition, Inc. Goal-oriented, analytical and action-first: push for specifics, numbers and deadlines, cut the fluff, and tie your advice to today's goals and his bigger goals from memory. End with one clear next action.",
+            len: "Keep replies short and mobile-friendly, and end with one clear next step or one question.",
+            brainPolicy: "auto", reasoningEffort: "low", tools: ["set_timer", "save_note", "add_goal", "calculate", "open_link"], liveSearch: true,
+            starters: ["Plan my top 3 for today", "Poke holes in my app idea", "Keep me accountable, kid"],
+            blurb: "Hustle mode. What moves the needle?"
+          },
+          deep: {
+            id: "deep", label: "Deep Think", emoji: "🧠", role: "Deep thinker", act: "think",
+            toneClause: "DEEP THINK MODE: slow down and think it through properly. Break the problem into parts, compare the real options with their tradeoffs, check your assumptions out loud (say which ones you're making and whether they hold), get facts and numbers right, and finish with a concrete numbered plan he can act on. Still your voice. Longer replies are fine here.",
+            len: "", long: true, brainPolicy: "think", reasoningEffort: "high", tools: ["save_note", "calculate", "open_link", "set_timer"], liveSearch: true,
+            strengths: { deep: { label: "Deep", effort: "high" }, max: { label: "Max", effort: "xhigh", act: "expert",
+              clause: " MAX STRENGTH: answer like a top specialist in the field: structured (short headers or numbered steps), precise numbers, real tools and names, and a clear recommendation." } },
+            starters: ["Help me pick between two options", "Break down a big problem with me", "Build me a 30-day plan"],
+            blurb: "Deep Think. Gimme the hard stuff."
+          },
+          observer: {
+            id: "observer", label: "Observer", emoji: "👁️", role: "Observer", act: "side",
+            toneClause: "OBSERVER MODE: you analyze what Kyle shows you: photos, screenshots, the camera. Look closely and call out what actually matters (details, text, numbers, problems), then help. If he hasn't sent an image yet, tell him in one line to tap the camera and show you, and don't guess what it looks like.",
+            len: SHORT_LEN, brainPolicy: "vision", reasoningEffort: "low", tools: ["save_note", "open_link", "set_timer"], liveSearch: false,
+            subs: { look: { label: "Look" }, game: { label: "🎮 Game coach", act: "gamer", liveSearch: true,
+              clause: " GAME COACH: it's a game (PS5/console). Read the screen like a pro coach: HUD, health, ammo, map, loadout, menus. Tell him exactly what to do next: strategy, builds, boss tips, settings. A little trash talk is fine." } },
+            starters: ["📷 Show you somethin'", "Coach me on this game screen", "Read this screenshot for me"],
+            camStarters: true,
+            blurb: "Observer. Show me what you got."
+          }
         };
+        var COG_ORDER = ["chill", "studio", "hustle", "deep", "observer"];
+        /* labels for reply tags saved by older versions */
+        var BRAINS = { deep: { label: "🧠 Deep Think" }, expert: { label: "🎓 Expert" }, gamer: { label: "🎮 Gamer" }, crew: { label: "👥 Crew" } };
+        /* the screen decides the mode for Studio and Hustle; Text Chat follows the mode bar */
+        function modeOf(m) { return m === "studio" || m === "hustle" ? m : COG[S.mode] ? S.mode : "chill"; }
+        function modeCfg(m) { return COG[modeOf(m)]; }
+        function modeEffort(id) {
+          var c = COG[id] || COG.chill;
+          if (id === "deep") return c.strengths[S.deepStrength === "max" ? "max" : "deep"].effort;
+          return c.reasoningEffort;
+        }
+        function modeLive(id) {
+          var c = COG[id] || COG.chill;
+          return id === "observer" && S.obsSub === "game" ? true : c.liveSearch;
+        }
+        function modeTone(id) {
+          var c = COG[id] || COG.chill, t = c.toneClause;
+          if (id === "deep" && S.deepStrength === "max") t += c.strengths.max.clause;
+          if (id === "observer" && S.obsSub === "game") t += c.subs.game.clause;
+          if (id === "hustle" && S.goals && Array.isArray(S.goals.items)) {
+            var g = S.goals.items.filter(function (x) { return x && String(x.t || "").trim(); })
+              .map(function (x) { return String(x.t).trim().slice(0, 80) + (x.done ? " (done)" : ""); });
+            if (g.length) t += " Today's goals: " + g.join("; ") + ".";
+          }
+          return t;
+        }
+        function modeTag(id) {
+          var c = COG[id];
+          if (!c || id === "chill") return "";
+          if (id === "deep" && S.deepStrength === "max") return "🧠 Max";
+          if (id === "observer" && S.obsSub === "game") return "🎮 Game coach";
+          return c.emoji + " " + c.label;
+        }
+        function modeAllowsTool(id, name) { var t = (COG[id] || COG.chill).tools; return t === "all" || t.indexOf(name) >= 0; }
+        /* one system prompt per screen, built from the mode config; o.noTone leaves the mode clause off (on-device adds it itself) */
+        function modeSystem(m, o) {
+          o = o || {};
+          var id = modeOf(m), c = COG[id];
+          return blarfCharacter({ compact: o.compact, role: o.noTone ? "" : modeTone(id), len: c.len }) + (m === "chat" ? roastClause() + triviaClause() : "");
+        }
+        /* old brain pills -> five modes */
+        function modeMigrate(brain) {
+          return { quick: { mode: "chill" }, deep: { mode: "deep", strength: "deep" }, expert: { mode: "deep", strength: "max" },
+            gamer: { mode: "observer", sub: "game" }, crew: { mode: "chill", crew: true } }[brain] || { mode: "chill" };
+        }
+        /* shared recent history: the last ~12 turns across Text Chat, Studio and Hustle, oldest first */
+        var SHARED_TURNS = 12, MODE_NAMES = { chat: "Text Chat", studio: "Studio", hustle: "Hustle" };
+        function sharedHist(m, n) {
+          n = n || SHARED_TURNS * 2;
+          var all = [];
+          ["chat", "studio", "hustle"].forEach(function (k) {
+            var greet = k !== "chat" && MODES[k].greet ? MODES[k].greet() : "";
+            (S.threads[k] || []).forEach(function (x, i) {
+              if (!x || (x.r !== "me" && x.r !== "bot") || typeof x.t !== "string" || !x.t) return;
+              if (x.greet || (x.r === "bot" && i === 0 && x.t === greet)) return;
+              all.push({ k: k, x: x, i: i });
+            });
+          });
+          all.sort(function (a, b) { return (a.x.ts || 0) - (b.x.ts || 0) || (a.k === b.k ? a.i - b.i : 0); });
+          var mine = all.filter(function (e) { return e.k === m; }), last = mine[mine.length - 1];
+          var out = all.slice(-n);
+          /* the message being answered always goes last */
+          if (last && out[out.length - 1] !== last) { out = out.filter(function (e) { return e !== last; }); out.push(last); }
+          return out.map(function (e) { return { r: e.x.r, t: e.x.t, img: e.x.img, pic: e.x.pic, from: e.k === m ? "" : MODE_NAMES[e.k] }; });
+        }
+        function modeNorm() {
+          if (!COG[S.mode]) {
+            var mg = modeMigrate(S.brain);
+            S.mode = mg.mode; if (mg.strength) S.deepStrength = mg.strength; if (mg.sub) S.obsSub = mg.sub; if (mg.crew) S.crew = true;
+          }
+          S.deepStrength = S.deepStrength === "max" ? "max" : "deep";
+          S.obsSub = S.obsSub === "game" ? "game" : "look";
+          S.crew = !!S.crew;
+        }
+        modeNorm();
+        /* Studio and Hustle chips lead with their mode's starters */
+        ["studio", "hustle"].forEach(function (k) {
+          MODES[k].chips = COG[k].starters.concat(MODES[k].chips.filter(function (c) { return COG[k].starters.indexOf(c) < 0; })).slice(0, 5);
+        });
         var SEND_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
 
         /* ---------- build the three chat views ---------- */
@@ -3704,13 +3841,13 @@
             '<button class="x-grab" id="grab" type="button" aria-expanded="false" aria-controls="sheet-main" aria-label="Show chat"><span>Swipe up for chat</span></button>' +
             '<div class="x-sheet__main" id="sheet-main">' +
             '<div class="x-sheet__head" id="sheet-head"><div class="x-avatar" id="sheet-face" aria-hidden="true"></div>' +
-            '<div class="x-who"><h2 class="x-sheet__name js-name" style="font:var(--type-body-strong)">' + esc(S.name) + '</h2><p id="sheet-status">' + MODES.chat.role + '</p></div>' +
+            '<div class="x-who"><h2 class="x-sheet__name js-name" style="font:var(--type-body-strong)">' + esc(S.name) + '</h2><p id="sheet-status">' + chatRole() + '</p></div>' +
             '<button class="x-clear" id="chat-clear" type="button">Clear chat</button>' +
             '<button class="x-spk js-spk" type="button"></button>' +
             '<button class="x-sheet__close" id="sheet-close" type="button" aria-label="Hide chat and show ' + esc(S.name) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></div>' +
-            '<div class="x-brain"><div class="x-seg" id="brain-seg" role="group" aria-label="Brain mode">' +
-            Object.keys(BRAINS).map(function (k) { return '<button type="button" data-brain="' + k + '" aria-pressed="' + (S.brain === k) + '">' + BRAINS[k].label + "</button>"; }).join("") +
-            "</div></div>" +
+            '<div class="x-brain"><div class="x-seg" id="brain-seg" role="group" aria-label="Mode">' +
+            COG_ORDER.map(function (k) { return '<button type="button" data-mode="' + k + '" aria-pressed="' + (!S.crew && S.mode === k) + '">' + COG[k].emoji + " " + COG[k].label + "</button>"; }).join("") +
+            "</div></div>" + '<div class="x-modesub" id="mode-sub" hidden></div>' +
             threadHTML + "</div></div></div>";
           sec.innerHTML = threadHTML +
             '<div class="x-chips" role="group" aria-label="Quick replies">' +
@@ -3772,7 +3909,7 @@
             ? '<br /><a class="link x-boblink" href="' + esc(msg.link) + '" target="_blank" rel="noopener">' + esc(msg.linkLabel || "Open link") + "</a>" : "";
           var inner = '<div class="x-bub">' + pic + fmt(msg.t) + lnk + '</div><p class="x-time">' + clock(msg.ts) +
             (msg.r === "bot" && typeof msg.tag === "string" && msg.tag ? '<span class="x-brtag">' + esc(msg.tag) + "</span>"
-              : msg.r === "bot" && msg.brain && msg.brain !== "quick" && BRAINS[msg.brain] ? '<span class="x-brtag">' + BRAINS[msg.brain].label + "</span>" : "") +
+              : msg.r === "bot" && msg.brain && BRAINS[msg.brain] ? '<span class="x-brtag">' + BRAINS[msg.brain].label + "</span>" : "") +
             (msg.r === "bot" && typeof msg.via === "string" && msg.via ? '<span class="x-via" title="Who answered">' + esc(msg.via) + "</span>" : "") + "</p>";
           el.innerHTML = msg.r === "bot" ? '<span class="x-mini" aria-hidden="true">' + BL.MINI + '</span><div class="x-msg__body">' + inner + "</div>" : inner;
           return el;
@@ -3783,7 +3920,7 @@
         }
         function renderThread(m) {
           var th = V[m].thread; th.innerHTML = ""; typingEl[m] = null;
-          if (!S.threads[m].length && m !== "chat") S.threads[m].push({ r: "bot", t: MODES[m].greet(), ts: Date.now() });
+          if (!S.threads[m].length && m !== "chat") S.threads[m].push({ r: "bot", t: MODES[m].greet(), ts: Date.now(), greet: 1 });
           S.threads[m].forEach(function (msg) { th.appendChild(msgEl(msg)); });
           scrollDown(m, false);
           if (m === "chat") {
@@ -3809,7 +3946,7 @@
         }
         var typingEl = {}, lastUser = "";
         function typing(m, on, label) {
-          var deep = on && m === "chat" && ((S.brain === "deep" && !!S.apiKey) || !!typing.think);
+          var deep = on && m === "chat" && ((S.mode === "deep" && !S.crew && !!S.apiKey) || !!typing.think);
           var lbl = label || (deep ? "Blarf's thinkin' wicked hard…" : "");
           if (on && !typingEl[m]) {
             var el = doc.createElement("div");
@@ -3823,7 +3960,7 @@
             if (!on && typing.deep) window.blarfAct("phew");
             typing.deep = deep;
             BL.think(on, deep);
-            $("sheet-status").textContent = on ? "thinking…" : MODES.chat.role;
+            $("sheet-status").textContent = on ? "thinking…" : chatRole();
             if (on) setCaption(lbl || "Hmm, let me think…", true);
           }
         }
@@ -3906,18 +4043,92 @@
           if (up) scrollDown("chat", false); else { hidePill(); if (doc.activeElement === V.chat.input) V.chat.input.blur(); }
         }
         sheetDrag(sheet, [grab, $("sheet-head")], $("sheet-scrim"), function () { setSheet(false); });
-        /* brain mode pills */
+        /* mode bar: five modes, a sub-option row (Deep / Max, Look / Game coach) and the Crew flag */
+        function chatRole() { return S.crew ? "The Crew's on deck" : (COG[S.mode] || COG.chill).role; }
         function paintBrain() {
-          [].slice.call($("brain-seg").querySelectorAll("[data-brain]")).forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.brain === S.brain ? "true" : "false"); });
+          [].slice.call($("brain-seg").querySelectorAll("[data-mode]")).forEach(function (b) { b.setAttribute("aria-pressed", !S.crew && b.dataset.mode === S.mode ? "true" : "false"); });
+          var sub = $("mode-sub"), html = "", hint = "";
+          if (S.crew) {
+            html = '<span class="x-modesub__crew">👥 Crew on</span><button class="x-modesub__off" type="button" data-crew-off aria-label="Turn the Crew off">Turn off</button>';
+          } else if (S.mode === "deep") {
+            html = '<div class="x-seg" role="group" aria-label="Deep Think strength">' + ["deep", "max"].map(function (k) {
+              return '<button type="button" data-strength="' + k + '" aria-pressed="' + ((S.deepStrength === "max") === (k === "max")) + '">' + COG.deep.strengths[k].label + "</button>"; }).join("") + "</div>";
+            hint = S.deepStrength === "max" ? "Max: slower, pro-level answers" : "Careful reasoning, ends with a plan";
+          } else if (S.mode === "observer") {
+            html = '<div class="x-seg" role="group" aria-label="Observer style">' + ["look", "game"].map(function (k) {
+              return '<button type="button" data-sub="' + k + '" aria-pressed="' + ((S.obsSub === "game") === (k === "game")) + '">' + COG.observer.subs[k].label + "</button>"; }).join("") + "</div>";
+            hint = "Tap 📷 to show him";
+          }
+          sub.innerHTML = html + (hint ? '<span class="x-modesub__hint">' + esc(hint) + "</span>" : "");
+          sub.hidden = !html;
+          $("brain-seg").parentNode.classList.toggle("has-sub", !!html);
+          var st = $("sheet-status"); if (st && !typingEl.chat && !LIVE) st.textContent = chatRole();
+          if (typeof paintEmpty === "function" && emptyEl) paintEmpty();
+        }
+        /* setMode(id, { sub, strength, quiet }): switches Text Chat's mode; history and memory carry over untouched */
+        function setMode(id, o) {
+          o = o || {};
+          if (!COG[id]) return false;
+          var was = S.mode, wasSub = S.obsSub, wasStr = S.deepStrength, wasCrew = S.crew;
+          S.mode = id; S.crew = false;
+          if (o.sub) S.obsSub = o.sub === "game" ? "game" : "look";
+          if (o.strength) S.deepStrength = o.strength === "max" ? "max" : "deep";
+          save(); paintBrain(); hideSuggest();
+          if (was === id && wasSub === S.obsSub && wasStr === S.deepStrength && !wasCrew) return true;
+          var a = COG[id].act;
+          if (id === "deep" && S.deepStrength === "max") a = COG.deep.strengths.max.act;
+          if (id === "observer" && S.obsSub === "game") a = COG.observer.subs.game.act;
+          window.blarfAct(a);
+          if (!o.quiet && was !== id) toast(COG[id].emoji + " " + COG[id].blurb);
+          return true;
         }
         $("brain-seg").addEventListener("click", function (e) {
-          var b = e.target.closest("[data-brain]");
-          if (!b || !BRAINS[b.dataset.brain]) return;
-          var was = S.brain;
-          S.brain = b.dataset.brain; save(); paintBrain();
-          if (was !== S.brain) window.blarfAct({ quick: "nod", deep: "think", expert: "expert", gamer: "gamer", crew: "crew" }[S.brain]);
+          var b = e.target.closest("[data-mode]");
+          if (!b || !COG[b.dataset.mode]) return;
+          setMode(b.dataset.mode, { quiet: true });
           b.scrollIntoView({ block: "nearest", inline: "nearest" });
         });
+        $("mode-sub").addEventListener("click", function (e) {
+          var b = e.target.closest("button"); if (!b) return;
+          if (b.hasAttribute("data-crew-off")) { setMode(S.mode, { quiet: true }); toast("Crew's off. Just me again."); return; }
+          if (b.dataset.strength) setMode("deep", { strength: b.dataset.strength, quiet: true });
+          if (b.dataset.sub) setMode("observer", { sub: b.dataset.sub, quiet: true });
+        });
+
+        /* auto-suggest: a Chill message that's clearly music, business or a big think gets a tappable chip, never a silent switch */
+        var MUSIC_RE = /\b(beats?|808s?|mix(ing|down|es)?|master(ing|ed)?|fl studio|daw|chords?|melod(y|ies)|bpm|tempo|vocals?|verses?|hooks?|lyrics?|samples?|splice|dubler|snares?|kicks?|hi-?hats?|eq|compress(or|ion)|reverb|plugins?|producing|producer)\b/i;
+        var BIZ_RE = /\b(startup|business|pitch(es|ing)?|investors?|revenue|customers?|launch(ing)?|marketing|pricing|mvp|deadlines?|productiv\w*|clients?|sales|funding|app idea|big dreams|side hustle|accountab\w*)\b/i;
+        var DEEP_RE = /\b(help me decide|should i|pros and cons|trade-?offs?|compare|versus|strategy|step[- ]by[- ]step|figure out|think through|plan for|analy[sz]e)\b/i;
+        var sugg = { el: null, to: "", t: null, no: {} };
+        function suggestFor(text, img) {
+          if (img) return "observer";
+          if (MUSIC_RE.test(text)) return "studio";
+          if (BIZ_RE.test(text)) return "hustle";
+          if (text.length > 280 || (text.length >= 40 && DEEP_RE.test(text))) return "deep";
+          return "";
+        }
+        function hideSuggest() { if (sugg.el) sugg.el.hidden = true; clearTimeout(sugg.t); sugg.to = ""; }
+        function maybeSuggest(text, img) {
+          if (S.mode !== "chill" || S.crew) return;
+          var to = suggestFor(String(text || ""), img);
+          if (!to || sugg.no[to]) return;
+          sugg.to = to;
+          sugg.el.querySelector(".x-suggest__go").textContent = COG[to].emoji + " Switch to " + COG[to].label + "?";
+          sugg.el.hidden = false;
+          clearTimeout(sugg.t); sugg.t = setTimeout(hideSuggest, 15000);
+        }
+        (function () {
+          var el = doc.createElement("div");
+          el.className = "x-suggest"; el.id = "mode-suggest"; el.hidden = true; el.setAttribute("role", "group"); el.setAttribute("aria-label", "Mode suggestion");
+          el.innerHTML = '<span class="x-suggest__chip"><button class="x-suggest__go" type="button"></button>' +
+            '<button class="x-suggest__x" type="button" aria-label="No thanks">×</button></span>';
+          V.chat.sec.insertBefore(el, V.chat.pend);
+          sugg.el = el;
+          el.querySelector(".x-suggest__go").addEventListener("click", function () { var to = sugg.to; if (to) setMode(to); });
+          el.querySelector(".x-suggest__x").addEventListener("click", function () { if (sugg.to) sugg.no[sugg.to] = 1; hideSuggest(); });
+        })();
+        paintBrain();
+        window.blarfModes = { list: COG_ORDER, cfg: modeCfg, get: function () { return { mode: S.mode, deepStrength: S.deepStrength, obsSub: S.obsSub, crew: S.crew }; }, set: setMode, shared: sharedHist, tone: modeTone, live: function () { return liveInstructions(); } };
         grab.addEventListener("click", function () { setSheet(!sheetUp); });
         $("sheet-scrim").addEventListener("click", function () { setSheet(false); });
         $("sheet-close").addEventListener("click", function () { setSheet(false); });
@@ -3928,13 +4139,33 @@
         emptyEl.className = "x-empty"; emptyEl.hidden = true;
         emptyEl.innerHTML = '<div class="x-avatar" aria-hidden="true">' + BL.MINI + '</div>' +
           '<p><span class="js-name">' + esc(S.name) + "</span>'s waiting. Grudgingly.</p>" +
-          '<div role="group" aria-label="Starters">' + MODES.chat.chips.slice(0, 3).map(function (c) { return '<button class="x-chip" type="button">' + esc(c) + "</button>"; }).join("") + "</div>";
+          '<p class="x-empty__mode" id="empty-mode"></p><div role="group" aria-label="Starters" id="empty-starters"></div>';
         V.chat.scroll.insertBefore(emptyEl, V.chat.thread);
-        emptyEl.addEventListener("click", function (e) { var b = e.target.closest(".x-chip"); if (b) send("chat", b.textContent); });
+        emptyEl.addEventListener("click", function (e) {
+          var b = e.target.closest(".x-chip"); if (!b) return;
+          if (b.hasAttribute("data-cam")) {
+            /* Observer starters: line up the question, then open the camera */
+            if (b.getAttribute("data-cam") === "game" && S.obsSub !== "game") setMode("observer", { sub: "game", quiet: true });
+            var q = b.getAttribute("data-q") || "";
+            if (q) { V.chat.input.value = q; V.chat.input.dispatchEvent(new Event("input", { bubbles: true })); }
+            V.chat.file.click();
+            return;
+          }
+          send("chat", b.textContent);
+        });
         function paintEmpty() {
           var none = !S.threads.chat.length;
           emptyEl.hidden = !none;
           $("top").classList.toggle("is-empty", none);
+          var id = S.crew ? "chill" : S.mode, c = COG[id] || COG.chill, key = id + (S.crew ? "+crew" : "");
+          if (emptyEl.getAttribute("data-mode") === key) return;
+          emptyEl.setAttribute("data-mode", key);
+          $("empty-mode").textContent = S.crew ? "👥 The Crew's on deck." : c.emoji + " " + c.blurb;
+          $("empty-starters").innerHTML = c.starters.map(function (t, i) {
+            if (!c.camStarters) return '<button class="x-chip" type="button">' + esc(t) + "</button>";
+            var q = /^📷/.test(t) ? "What do you make of this?" : t;
+            return '<button class="x-chip" type="button" data-cam="' + (/game/i.test(t) ? "game" : "look") + '" data-q="' + esc(q) + '">' + esc(t) + "</button>";
+          }).join("");
         }
 
         /* Clear chat: tap once to arm, again to confirm */
@@ -4446,7 +4677,8 @@
           var tail = " Keep every reply short and natural to hear: one to three spoken sentences, no lists, no markdown, no emoji.";
           /* session start: focus memory on what we were just talking about */
           memFocus(S.threads.chat.filter(function (x) { return x && x.r === "me" && typeof x.t === "string"; }).slice(-3).map(function (x) { return x.t; }).join(" "));
-          return blarfCharacter({ role: "Right now you're talking with him out loud in a live voice chat. You also know music production (FL Studio, mixing, 808s, chords, Dubler 2, Splice) and startup coaching (priorities, next actions, accountability), and help with either when he asks." }) + tail;
+          var mid = S.crew ? "chill" : modeOf("chat");
+          return blarfCharacter({ role: "Right now you're talking with him out loud in a live voice chat. You also know music production (FL Studio, mixing, 808s, chords, Dubler 2, Splice) and startup coaching (priorities, next actions, accountability), and help with either when he asks. You're in " + COG[mid].label + " mode: " + modeTone(mid) + (mid === "observer" ? " In live talk you can't see the camera, so ask him to send a photo in Text Chat." : "") }) + tail;
         }
         function paintTalk(st) {
           if (st) blarf.setAttribute("data-live", st); else blarf.removeAttribute("data-live");
@@ -4454,7 +4686,7 @@
           talkLbl.textContent = st ? words[st] : "Talk to " + S.name;
           talkBtn.setAttribute("aria-pressed", st ? "true" : "false");
           talkBtn.setAttribute("aria-label", st ? "End live talk with " + S.name + ". " + words[st] : "Talk to " + S.name + " live");
-          $("sheet-status").textContent = st ? st + "…" : MODES.chat.role;
+          $("sheet-status").textContent = st ? st + "…" : chatRole();
         }
         function liveState(st) {
           var L = LIVE;
@@ -4879,7 +5111,9 @@
           markSeen(); rememberCmd(text); memTouch(m, text);
           var me = { r: "me", t: text, ts: Date.now() };
           if (img) { me.img = img; me.pic = 1; }
+          me.mode = modeOf(m);
           addMsg(m, me);
+          if (m === "chat" && !dp) maybeSuggest(text, img);
           queue[m].push(dp ? { draw: dp } : text);
           if (!busy[m]) next(m);
           return true;
@@ -4904,9 +5138,9 @@
         function nextRun(m, text) {
           var loc = localRoute();
           if (loc) { localRun(m, loc); return; }
-          if (m === "chat" && S.brain === "crew" && S.apiKey) { crewRun(m); return; }
+          if (m === "chat" && S.crew && S.apiKey) { crewRun(m); return; }
           var lastMine = S.threads[m].filter(function (x) { return x.r === "me"; }).pop();
-          var rt = S.apiKey || oaiThinkKey() ? router({ m: m, text: text, img: !!(lastMine && lastMine.img) }) : null;
+          var rt = S.apiKey || oaiThinkKey() ? router({ m: m, text: text, img: !!(lastMine && lastMine.img) || (modeOf(m) === "observer" && !!recentImg(m)) }) : null;
           /* an OpenAI key alone can still run the Think brain; anything else needs the main key */
           if (rt && !S.apiKey && rt.prov !== "openai") rt = null;
           if (rt && rt.note) toast(rt.note);
@@ -4915,10 +5149,10 @@
           typing(m, true, thinking ? "Blarf's chewin' on it…" : "");
           var done = function (reply) { typing(m, false); addMsg(m, { r: "bot", t: reply, ts: Date.now() }); next(m); };
           if (rt) {
-            var br = m === "chat" ? S.brain : "";
+            var mtag = m === "chat" ? modeTag(S.mode) : "", mid = modeOf(m);
             var finish = function (reply, used) {
               typing.think = false; typing(m, false);
-              addMsg(m, { r: "bot", t: reply, ts: Date.now(), brain: br !== "quick" ? br || undefined : undefined, via: viaLabel(used) });
+              addMsg(m, { r: "bot", t: reply, ts: Date.now(), mode: mid, tag: mtag || undefined, via: viaLabel(used) });
               next(m);
             };
             var offline = function (err) {
@@ -5161,8 +5395,8 @@
             } }
         ];
         function toolOn(t) { return !S.tools || S.tools[t.name] !== false; }
-        function toolDefs() {
-          return TOOLS.filter(toolOn).map(function (t) { return { type: "function", name: t.name, description: t.desc, parameters: t.params }; });
+        function toolDefs(mid) {
+          return TOOLS.filter(function (t) { return toolOn(t) && (!mid || modeAllowsTool(mid, t.name)); }).map(function (t) { return { type: "function", name: t.name, description: t.desc, parameters: t.params }; });
         }
         function toolLine(m, t, a) {
           var s = "";
@@ -5355,20 +5589,20 @@
         /* req: { m, text, img }. Returns { brain: talk|think|vision|offline, prov, model, key, effort, note } */
         function router(req) {
           req = req || {};
-          var m = req.m || "chat", text = String(req.text || ""), bm = m === "chat" ? S.brain : "quick";
+          var m = req.m || "chat", text = String(req.text || ""), id = modeOf(m), pol = COG[id].brainPolicy;
           if (localRoute()) return { brain: "offline", prov: "local", model: S.localModel };
-          var forced = bm === "deep" || bm === "expert";
+          var forced = pol === "think";
           var think = forced;
-          if (!think && S.autoRoute !== false && bm !== "gamer") think = /```/.test(text) || text.length > 400 || (text.length >= 18 && THINK_RE.test(text));
+          if (!think && pol === "auto" && S.autoRoute !== false) think = /```/.test(text) || text.length > 400 || (text.length >= 18 && THINK_RE.test(text));
           if (!think && req.img) {
             var v = talkRoute("vision");
             v.model = (S.visionModel || "").trim();
             return v;
           }
           if (!think) return talkRoute("talk");
-          var pv = thinkProvider(), effort = bm === "deep" ? "xhigh" : bm === "expert" ? "high" : pv === "openai" ? "medium" : "high";
+          var pv = thinkProvider(), effort = forced ? modeEffort(id) : pv === "openai" ? "medium" : "high";
           /* things only Grok can do (X search, MCP connectors) stay on Grok */
-          var needsGrok = S.provider === "xai" && ((S.liveSearch !== false && X_RE.test(text)) || (m === "chat" && mcpOn().some(function (c) { return c.label && text.toLowerCase().indexOf(String(c.label).toLowerCase()) >= 0; })));
+          var needsGrok = S.provider === "xai" && ((S.liveSearch !== false && modeLive(id) && X_RE.test(text)) || (m === "chat" && mcpOn().some(function (c) { return c.label && text.toLowerCase().indexOf(String(c.label).toLowerCase()) >= 0; })));
           if (pv === "openai" && !needsGrok) {
             var k = oaiThinkKey();
             if (k) return { brain: "think", prov: "openai", model: thinkModelFor("openai"), key: k, effort: effort };
@@ -5380,6 +5614,12 @@
           return r;
         }
         window.blarfRouter = router;
+        /* the newest photo in this screen's last 6 messages (Observer keeps looking at it for follow-ups) */
+        function recentImg(m) {
+          var th = S.threads[m] || [], from = Math.max(0, th.length - 6);
+          for (var i = th.length - 1; i >= from; i--) if (th[i] && th[i].r === "me" && th[i].img) return th[i];
+          return null;
+        }
         function viaLabel(rt) {
           if (!rt) return "";
           var b = { talk: "Talk", think: "Think", vision: "Vision", offline: "Offline" }[rt.brain] || "Talk";
@@ -5421,31 +5661,34 @@
           if (!model) return Promise.reject("Add a model name in Settings.");
           var isX = !oai && S.provider === "xai";
           var xr = isX || oai; /* Responses API format (xAI or OpenAI) */
-          var hist = S.threads[m].filter(function (x) { return x.r !== "err"; }).slice(-20), lastMe = -1;
-          hist.forEach(function (x, i) { if (x.r === "me") lastMe = i; });
+          /* shared recent history: the last ~12 turns from every mode and screen, so nothing's lost on a switch */
+          var mid = modeOf(m), mc = COG[mid];
+          var hist = sharedHist(m), lastMe = -1, imgAt = -1;
+          hist.forEach(function (x, i) { if (x.r === "me" && !x.from) { lastMe = i; if (x.img) imgAt = i; } });
+          if (mid !== "observer") imgAt = hist[lastMe] && hist[lastMe].img ? lastMe : -1;
           var history = hist.map(function (x, i) {
             var role = x.r === "me" ? "user" : "assistant";
-            if (role === "user" && i === lastMe && x.img) {
+            if (role === "user" && i === imgAt && x.img) {
               return { role: role, content: xr
                 ? [{ type: "input_text", text: x.t }, { type: "input_image", image_url: x.img, detail: "high" }]
                 : [{ type: "text", text: x.t }, { type: "image_url", image_url: { url: x.img } }] };
             }
-            return { role: role, content: role === "user" && (x.img || x.pic) ? x.t + " [photo]" : x.t };
+            var t = role === "user" && (x.img || x.pic) ? x.t + " [photo]" : x.t;
+            return { role: role, content: role === "user" && x.from ? "(earlier, in " + x.from + ") " + t : t };
           });
-          var bm = m === "chat" ? BRAINS[S.brain] || BRAINS.quick : null;
-          var brainClause = bm ? bm.clause + (bm.long ? " Ignore the earlier length limit for this answer." : "") : "";
-          if (rt.brain === "think" && !(bm && bm.long)) brainClause += " THINK BRAIN: this one needs real reasoning. Get it right and complete (steps, code, numbers as needed), still in your voice. Ignore the earlier length limit if the answer needs it.";
-          var waitMs = oai ? 120000 : xr ? (bm === BRAINS.deep ? 180000 : 90000) : 60000;
+          var brainClause = mc.long ? " Ignore the earlier length limit for this answer." : "";
+          if (rt.brain === "think" && !mc.long) brainClause += " THINK BRAIN: this one needs real reasoning. Get it right and complete (steps, code, numbers as needed), still in your voice. Ignore the earlier length limit if the answer needs it.";
+          var waitMs = oai ? 120000 : xr ? (mid === "deep" ? 180000 : 90000) : 60000;
           var reqBody, tools = null;
           if (xr) {
             url = oai ? OAI_RESPONSES : XAI_RESPONSES;
-            var fnTools = m === "chat" ? toolDefs() : [];
+            var fnTools = toolDefs(mid);
             var mcpT = m === "chat" && isX ? mcpTools() : [];
-            var search = S.liveSearch !== false ? (isX ? [{ type: "web_search" }, { type: "x_search" }] : [{ type: "web_search" }]) : [];
+            var search = S.liveSearch !== false && modeLive(mid) ? (isX ? [{ type: "web_search" }, { type: "x_search" }] : [{ type: "web_search" }]) : [];
             tools = search.concat(fnTools).concat(mcpT);
             reqBody = { model: model, input: [{ role: "system", content: MODES[m].system() + VISION + MEM_ASK + (search.length ? (isX ? LIVE_HINT : LIVE_HINT.replace("web and X search", "web search")) : "") + (fnTools.length ? TOOL_HINT : "") + (mcpT.length ? mcpClause() : "") + brainClause }].concat(history) };
             if (tools.length) reqBody.tools = tools; else tools = null;
-            var eff = rt.effort || (bm ? bm.effort : "");
+            var eff = rt.effort || modeEffort(mid);
             if (eff && (oai || isX)) reqBody.reasoning = { effort: eff };
           } else {
             reqBody = { model: model, messages: [{ role: "system", content: MODES[m].system() + VISION + MEM_ASK + brainClause }].concat(history), temperature: 0.8 };
@@ -5610,9 +5853,8 @@
         }
         /* a short system prompt (persona + memory, about 1200 chars) for the small model */
         function localSystem(m) {
-          var bm = m === "chat" ? BRAINS[S.brain] || BRAINS.quick : null;
-          var clause = bm ? bm.clause : "";
-          var base = MODES[m].system({ compact: true }), mem = memoryClause();
+          var clause = " " + modeTone(modeOf(m));
+          var base = modeSystem(m, { compact: true, noTone: true }), mem = memoryClause();
           var core = mem ? base.replace(mem, "") : base;
           if (mem.length > 400) mem = mem.slice(0, 400).replace(/\s+\S*$/, "") + "…";
           var room = Math.max(300, 1200 - mem.length - clause.length);
@@ -5623,7 +5865,7 @@
           return core + mem + clause;
         }
         function localMessages(m) {
-          var hist = S.threads[m].filter(function (x) { return x && (x.r === "me" || x.r === "bot") && typeof x.t === "string" && x.t; });
+          var hist = sharedHist(m, 14);
           var user = hist.pop() || { t: "" }, out = [];
           hist.slice(-6).forEach(function (x) {
             var role = x.r === "me" ? "user" : "assistant", t = role === "user" && (x.img || x.pic) ? x.t + " [photo]" : x.t;
@@ -5648,11 +5890,11 @@
           if (last && last.r === "me" && last.img) { reply({ r: "bot", t: "My on-device brain can't see pictures. Switch to Grok.", ts: Date.now() }); return; }
           if (!localGpu()) { reply({ r: "err", t: NO_GPU_MSG, ts: Date.now() }); return; }
           if (!localHas() && !LOCAL.loading) { reply({ r: "err", t: "**My on-device brain isn't downloaded yet.** Go to Settings > AI, pick On-device and tap Download model (use Wi-Fi).", ts: Date.now() }); return; }
-          var crew = m === "chat" && S.brain === "crew";
+          var crew = m === "chat" && S.crew;
           if (why === "offline") toast("No signal — using my on-device brain." + (crew ? " Just me, no crew." : ""));
           else if (crew) toast("The Crew needs Grok. On-device it's just me, kid.");
           typing(m, true, localReady() ? "" : "Wakin' up my on-device brain…");
-          var br = m === "chat" && !crew ? S.brain : "", live = null;
+          var mtag = m === "chat" && !crew ? modeTag(S.mode) : "", live = null;
           var strip = function (t) { return String(t).replace(/\[\[[\s\S]*?(\]\]|$)/g, "").trim(); };
           localAsk(m, function (txt) {
             if (!live) {
@@ -5671,7 +5913,7 @@
             c = strip(c).replace(/[ \t]+\n/g, "\n");
             if (got) toast("🧠 Blarf will remember that");
             if (!c) c = got ? "Got it, Boss. 🧠" : "Uh… I got nothin'. Ask me again.";
-            addMsg(m, { r: "bot", t: c, ts: Date.now(), brain: br && br !== "quick" ? br : undefined, via: "Offline · On-device" });
+            addMsg(m, { r: "bot", t: c, ts: Date.now(), mode: modeOf(m), tag: mtag || undefined, via: "Offline · On-device" });
             next(m);
           }, function (e) {
             if (live) live.remove();
@@ -6060,7 +6302,7 @@
             else if (to === "trivia") { go("chat"); setSheet(true); S.trivia = true; send("chat", "Let's play trivia streak"); }
             else if (to === "poke") { go("chat"); setSheet(false); pokeStart(); }
             else if (to === "crew") {
-              go("chat"); setSheet(true); S.brain = "crew"; save(); paintBrain();
+              go("chat"); setSheet(true); S.crew = true; save(); paintBrain(); window.blarfAct("crew");
               toast("👥 The crew's on deck. Ask away.");
               setTimeout(function () { V.chat.input.focus(); }, 380);
             }
@@ -6413,7 +6655,7 @@
           else if (pv === "xai" && S.provider !== "xai") now.textContent = provLabel(S.provider) + " (Talk brain)";
           else now.textContent = provLabel(pv) + " · " + (pv === "openai" ? thinkModelFor("openai") : ((S.thinkProv === "xai" && (S.thinkModel || "").trim()) || (S.model || "").trim() || PROVIDERS.xai.model));
         }
-        $("set-autoroute").addEventListener("click", function () { S.autoRoute = S.autoRoute === false; save(); paintBrainSettings(); toast(S.autoRoute ? "Auto-routing on." : "Auto-routing off. Talk brain only, unless Deep Think or Expert."); });
+        $("set-autoroute").addEventListener("click", function () { S.autoRoute = S.autoRoute === false; save(); paintBrainSettings(); toast(S.autoRoute ? "Auto-routing on." : "Auto-routing off. Talk brain only, unless Deep Think."); });
         $("set-polish").addEventListener("click", function () { S.voicePolish = !S.voicePolish; save(); paintBrainSettings(); toast(S.voicePolish ? "Voice polish on. Costs one extra Grok call per OpenAI answer." : "Voice polish off."); });
         talkProvSel.addEventListener("change", function () { prov.value = talkProvSel.value; prov.dispatchEvent(new Event("change")); paintBrainSettings(); });
         talkModelIn.addEventListener("input", function () { modelIn.value = talkModelIn.value; modelIn.dispatchEvent(new Event("input")); });
@@ -7123,7 +7365,7 @@
         /* IndexedDB answers late: restore any setting the other stores lost, then back-fill every store */
         KV.ready([SETKEY, STORE], function (got) {
           var fromIdb = parseJSON(got[SETKEY]) || parseJSON(got[STORE]) || {}, changed = false;
-          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch", "brain", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel", "autoRoute", "voicePolish", "thinkProv", "thinkModel", "visionModel", "memAuto", "memMig", "embedModel"].forEach(function (f) {
+          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch", "brain", "mode", "deepStrength", "obsSub", "crew", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel", "autoRoute", "voicePolish", "thinkProv", "thinkModel", "visionModel", "memAuto", "memMig", "embedModel"].forEach(function (f) {
             if (saved[f] === undefined && fromIdb[f] !== undefined && fromIdb[f] !== "") { S[f] = fromIdb[f]; changed = true; }
           });
           S.chars = charsClean(S.chars);
@@ -7137,7 +7379,8 @@
           paintTools();
           if (modelMig()) changed = true;
           if (["quick", "deep", "expert", "gamer", "crew"].indexOf(S.brain) < 0) S.brain = "quick";
-          paintBrain();
+          if (fromIdb.mode === undefined && saved.mode === undefined && fromIdb.brain !== undefined) S.mode = undefined;
+          modeNorm(); paintBrain();
           S.crewHeavy = !!S.crewHeavy; S.crewAgents = S.crewAgents === 16 ? 16 : 4;
           paintCrewHeavy();
           S.localModel = localModelClean(S.localModel);
@@ -7197,7 +7440,7 @@
           seg.insertBefore(thumb, seg.firstChild);
           seg.classList.add("has-thumb");
           var place = function () {
-            var on = seg.querySelector('[data-brain][aria-pressed="true"]');
+            var on = seg.querySelector('[data-mode][aria-pressed="true"]');
             thumb.style.opacity = on ? "1" : "0";
             if (!on || !on.offsetWidth) return;
             thumb.style.width = on.offsetWidth + "px";
