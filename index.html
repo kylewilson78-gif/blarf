@@ -646,6 +646,36 @@
       .x-mem > li > button:hover { color: var(--text-primary); }
       .x-mem-empty { font: var(--type-small); color: var(--text-secondary); padding: 12px 16px; background: linear-gradient(var(--stroke-secondary), var(--stroke-secondary)) 16px 0 / calc(100% - 16px) 1px no-repeat; }
       .x-mem-empty[hidden] { display: none; }
+      /* P1b memory list */
+      .x-mem-tabs { padding-top: 8px; padding-bottom: 8px; }
+      .x-mem-tabs .x-seg { display: flex; width: 100%; background: var(--fill-tertiary); border: 0; }
+      .x-mem-tabs .x-seg button { flex: 1 1 0; min-width: 0; padding: 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font: var(--weight-medium) 13px/18px var(--sans); }
+      .x-mem-search > .x-field { flex: 1; text-align: left; color: var(--text-primary); }
+      .x-mem > li.x-mi { align-items: flex-start; gap: 10px; padding: 0 2px 0 16px; touch-action: pan-y; transition: transform 220ms var(--ease-out), opacity 200ms var(--ease-out); }
+      .x-mem > li.x-mi.is-armed { box-shadow: inset -4px 0 0 var(--fill-system-red); }
+      .x-mem > li.x-mi.is-gone { opacity: 0; transform: translateX(-40%); }
+      .x-mi__dot { flex: none; width: 9px; height: 9px; margin-top: 18px; border-radius: 50%; background: var(--text-tertiary); }
+      .x-mi__dot.is-hi { background: var(--fill-system-green); }
+      .x-mi__dot.is-mid { background: #ffcc00; }
+      .x-mi__body { flex: 1; min-width: 0; display: grid; gap: 2px; padding: 11px 0 10px; }
+      .x-mi__t { font: var(--type-body); overflow-wrap: anywhere; cursor: pointer; border-radius: 4px; }
+      .x-mi__t:focus-visible { outline: 2px solid var(--x-blue1, currentColor); outline-offset: 2px; }
+      .x-mi.is-proj .x-mi__t { font-weight: var(--weight-bold); }
+      .x-mi__dir { font: var(--type-small); color: var(--text-primary); opacity: 0.85; overflow-wrap: anywhere; }
+      .x-mi__open { margin: 2px 0 0; padding: 0 0 0 16px; font: var(--type-small); color: var(--text-secondary); }
+      .x-mi__open li { overflow-wrap: anywhere; }
+      .x-mi__open li.is-dec { list-style: "✓ "; }
+      .x-mi__meta { font: var(--type-caption); color: var(--text-secondary); }
+      .x-mi.is-old .x-mi__t { text-decoration: line-through; color: var(--text-secondary); }
+      .x-mi.is-old .x-mi__dot { opacity: 0.4; }
+      .x-mem > li.x-mi > .x-mi__btn { flex: none; width: 40px; height: var(--tap); border: 0; background: none; color: var(--text-secondary); font: var(--type-body); line-height: 1; }
+      .x-mem > li.x-mi > .x-mi__btn.is-x { font: var(--type-heading); }
+      .x-mem > li.x-mi > .x-mi__btn:hover { color: var(--text-primary); }
+      .x-mi__edit { display: grid; gap: 8px; }
+      .x-mi__edit .x-field { width: 100%; text-align: left; color: var(--text-primary); font: var(--type-body); resize: vertical; }
+      .x-mi__editbtns { display: flex; gap: 8px; justify-content: flex-end; }
+      .x-mem-add[hidden] { display: none; }
+      @media (prefers-reduced-motion: reduce) { .x-mem > li.x-mi { transition: none; } .x-mem > li.x-mi.is-gone { transform: none; } }
       .x-mem-add > .x-field { text-align: left; color: var(--text-primary); }
       .x-mem + .x-row, .x-mem-empty + .x-row { background: linear-gradient(var(--stroke-secondary), var(--stroke-secondary)) 16px 0 / calc(100% - 16px) 1px no-repeat; }
       .x-keybtns .btn { min-height: var(--tap); }
@@ -1434,18 +1464,38 @@
                 <p class="x-glabel">Memory</p>
                 <div class="x-group">
                   <div class="x-row">
-                    <span>What Blarf remembers</span>
+                    <span class="x-twoline" id="lbl-memauto">Learn from chats<small>Picks up your projects, taste and facts as you talk</small></span>
+                    <button class="x-switch" id="set-memauto" type="button" role="switch" aria-checked="true" aria-labelledby="lbl-memauto"></button>
+                  </div>
+                  <div class="x-row">
+                    <span class="x-twoline">What Blarf remembers<small id="mem-sum">0 personal · 0 projects · 0 facts · 0 moments</small></span>
                     <span class="x-val" id="mem-count">0</span>
                   </div>
-                  <ul class="x-mem" id="mem-list"></ul>
+                  <div class="x-row x-mem-tabs">
+                    <div class="x-seg" id="mem-seg" role="group" aria-label="Kind of memory">
+                      <button type="button" data-kind="personal" data-label="Personal" aria-pressed="true">Personal</button><button type="button" data-kind="project" data-label="Projects" aria-pressed="false">Projects</button><button type="button" data-kind="semantic" data-label="Knowledge" aria-pressed="false">Knowledge</button><button type="button" data-kind="episodic" data-label="Moments" aria-pressed="false">Moments</button>
+                    </div>
+                  </div>
+                  <div class="x-row x-mem-search">
+                    <input class="x-field" id="mem-q" type="search" maxlength="60" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Search memories" placeholder="Search memories" />
+                  </div>
+                  <ul class="x-mem" id="mem-list" aria-live="polite"></ul>
                   <p class="x-mem-empty" id="mem-empty">Nothin' saved yet. Tell me somethin' worth rememberin'.</p>
                   <form class="x-row x-mem-add" id="mem-form">
-                    <input class="x-field" id="mem-in" maxlength="200" autocomplete="off" aria-label="Add something for Blarf to remember" placeholder="Add something for Blarf to remember" />
+                    <input class="x-field" id="mem-in" maxlength="200" autocomplete="off" aria-label="Add something for Blarf to remember" placeholder="Add something about you" />
                     <button class="btn" type="submit">Add</button>
                   </form>
                   <button class="x-danger" id="mem-clear" type="button">Forget everything</button>
                 </div>
-                <p class="x-gnote" id="mem-note">Stays on this device. Only sent to your AI provider as part of the prompt.</p>
+                <p class="x-gnote" id="mem-note">Stays on this device.</p>
+                <p class="x-gnote">Tap a memory to edit it, swipe left to forget it, ⌛ marks it outdated. The dot is how sure Blarf is.</p>
+                <div class="x-group" style="margin-top: 12px">
+                  <div class="x-row">
+                    <label for="set-embmodel">Embedding model</label>
+                    <input class="x-field" id="set-embmodel" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="text-embedding-3-small" />
+                  </div>
+                </div>
+                <p class="x-gnote" id="emb-note"></p>
               </div>
 
               <div>
@@ -2635,7 +2685,7 @@
 
         /* ---------- storage: localStorage, then IndexedDB, then a cookie (never the API key); memory as a last resort ---------- */
         var SETKEY = "companion-settings";
-        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch", "brain", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel", "autoRoute", "voicePolish", "thinkProv", "thinkModel", "visionModel"];
+        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch", "brain", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel", "autoRoute", "voicePolish", "thinkProv", "thinkModel", "visionModel", "memAuto", "memMig", "embedModel"];
         var SECRET_FIELDS = ["apiKey", "elevenKey", "oaiKey", "fishKey"];
         var KV = (function () {
           var mem = {}, idb = null, idbState = 0; /* 0 pending, 1 ok, -1 unavailable */
@@ -2846,6 +2896,9 @@
           swear: saved.swear != null ? !!saved.swear : true,
           gaze: saved.gaze != null ? !!saved.gaze : false,
           memory: Array.isArray(saved.memory) ? saved.memory.filter(function (n) { return n && typeof n.t === "string"; }) : [],
+          memAuto: saved.memAuto !== false,
+          memMig: !!saved.memMig,
+          embedModel: typeof saved.embedModel === "string" ? saved.embedModel : "",
           lastSeen: typeof saved.lastSeen === "string" ? saved.lastSeen : "",
           streak: typeof saved.streak === "number" && saved.streak >= 0 ? Math.floor(saved.streak) : 0,
           streakDay: typeof saved.streakDay === "string" ? saved.streakDay : "",
@@ -2920,26 +2973,652 @@
             : "";
         }
 
-        /* ---------- on-device memory of Kyle ---------- */
+        /* ---------- Blarf memory (P1b): four kinds, all on this device in IndexedDB "blarfMem" ----------
+           personal (taste, style, habits) · project (name, direction, decisions, open items, status) ·
+           semantic (facts from chats) · episodic (timestamped 1-2 line session summaries).
+           Only the text sent to Kyle's own AI provider (extraction, embeddings) ever leaves the device. */
         var MEM_MAX = 40, MEM_LEN = 200, prevSeen = S.lastSeen;
+        var MEM_KINDS = ["personal", "project", "semantic", "episodic"];
+        var MEM_CAP = { personal: 160, project: 40, semantic: 260, episodic: 120 };
+        var MEM_CLAUSE_MAX = 1500, MEM_PICK = 8, MEM_IDLE = 10 * 60000;
+        var EMB_DEFAULT = "text-embedding-3-small", EMB_URL = "https://api.openai.com/v1/embeddings", EMB_DIMS = 256;
+        var MEM = { items: [], emb: {}, ready: false, ver: 1, ctx: null, curQ: "", qv: {}, embErr: "", embOffUntil: 0, embBusy: false };
         function memKey(t) { return String(t).toLowerCase().replace(/[\s.!?,;:]+$/g, "").replace(/\s+/g, " ").trim(); }
-        /* returns true when a new note was stored */
-        function remember(t) {
+        function memNow() { return new Date().toISOString(); }
+        function memId(p) { return (p || "m") + "-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+        function memClip(t, n) {
+          t = String(t == null ? "" : t).replace(/\s+/g, " ").trim();
+          return t.length > n ? t.slice(0, n - 1).replace(/\s+\S*$/, "").trim() + "…" : t;
+        }
+        function memHash(s) { var h = 5381; s = String(s); for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
+        function memAutoOn() { return S.memAuto !== false; }
+        function memEmbModel() { return String(S.embedModel || "").trim() || EMB_DEFAULT; }
+        function memArr(a, n) {
+          return (Array.isArray(a) ? a : []).map(function (x) { return memClip(x, 120); }).filter(Boolean).slice(0, n || 12);
+        }
+        function memNorm(o) {
+          if (!o || typeof o !== "object" || MEM_KINDS.indexOf(o.kind) < 0 || typeof o.text !== "string" || !o.text.trim()) return null;
+          var c = Number(o.confidence);
+          var it = {
+            id: typeof o.id === "string" && o.id ? o.id : memId(o.kind.charAt(0)),
+            kind: o.kind, text: memClip(o.text, o.kind === "episodic" ? 260 : 200),
+            project: typeof o.project === "string" ? o.project : "",
+            topic: typeof o.topic === "string" ? memClip(o.topic, 24).toLowerCase() : "",
+            confidence: isFinite(c) ? Math.max(0, Math.min(1, c)) : 0.6,
+            count: Math.max(1, Math.floor(Number(o.count) || 1)),
+            firstSeen: typeof o.firstSeen === "string" ? o.firstSeen : memNow(),
+            lastSeen: typeof o.lastSeen === "string" ? o.lastSeen : memNow(),
+            source: o.source && typeof o.source === "object" ? { date: String(o.source.date || ""), via: memClip(o.source.via || "", 30), msg: memClip(o.source.msg || "", 140) } : { date: memNow(), via: "", msg: "" },
+            status: o.status === "outdated" ? "outdated" : "active"
+          };
+          if (o.kind === "project") {
+            var p = o.p && typeof o.p === "object" ? o.p : {};
+            it.p = { name: memClip(p.name || o.text, 60), direction: memClip(p.direction || "", 240), decisions: memArr(p.decisions, 10), open: memArr(p.open, 10),
+              state: ["active", "paused", "done"].indexOf(p.state) >= 0 ? p.state : "active" };
+            it.text = it.p.name;
+          }
+          if (o.kind === "episodic") { it.draft = !!o.draft; if (o.end) it.end = String(o.end); if (Array.isArray(o.modes)) it.modes = o.modes.slice(0, 4).map(String); }
+          if (o.outdatedBy) it.outdatedBy = String(o.outdatedBy);
+          return it;
+        }
+
+        /* storage: IndexedDB first; localStorage if the browser won't give us IndexedDB (no embeddings then) */
+        var MEMDB = (function () {
+          var db = null, state = 0, waiters = [], LSK = "blarfMem-items", lsT = null;
+          function open(cb) {
+            if (state) { cb(); return; }
+            waiters.push(cb); if (waiters.length > 1) return;
+            var settled = false;
+            function done(ok) { if (settled) return; settled = true; state = ok ? 1 : -1; var w = waiters; waiters = []; w.forEach(function (f) { try { f(); } catch (e) {} }); }
+            try {
+              if (typeof indexedDB === "undefined" || !indexedDB) { done(false); return; }
+              var rq = indexedDB.open("blarfMem", 1);
+              rq.onupgradeneeded = function () {
+                var d = rq.result;
+                if (!d.objectStoreNames.contains("items")) d.createObjectStore("items", { keyPath: "id" });
+                if (!d.objectStoreNames.contains("embeds")) d.createObjectStore("embeds", { keyPath: "id" });
+                if (!d.objectStoreNames.contains("meta")) d.createObjectStore("meta");
+              };
+              rq.onsuccess = function () { db = rq.result; done(true); };
+              rq.onerror = rq.onblocked = function () { done(false); };
+              setTimeout(function () { done(!!db); }, 4000);
+            } catch (e) { done(false); }
+          }
+          function store(name, mode) { return db.transaction(name, mode).objectStore(name); }
+          function lsAll() { try { var a = JSON.parse(localStorage.getItem(LSK) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+          function lsFlush() { clearTimeout(lsT); lsT = setTimeout(function () { try { localStorage.setItem(LSK, JSON.stringify(MEM.items)); } catch (e) {} }, 150); }
+          return {
+            ok: function () { return state === 1; },
+            all: function (name, cb) {
+              open(function () {
+                if (state !== 1) { cb(name === "items" ? lsAll() : []); return; }
+                try { var r = store(name, "readonly").getAll(); r.onsuccess = function () { cb(r.result || []); }; r.onerror = function () { cb([]); }; } catch (e) { cb([]); }
+              });
+            },
+            put: function (name, obj, key) {
+              open(function () {
+                if (state !== 1) { if (name === "items") lsFlush(); return; }
+                try { if (key !== undefined) store(name, "readwrite").put(obj, key); else store(name, "readwrite").put(obj); } catch (e) {}
+              });
+            },
+            del: function (name, id) {
+              open(function () {
+                if (state !== 1) { if (name === "items") lsFlush(); return; }
+                try { store(name, "readwrite")["delete"](id); } catch (e) {}
+              });
+            },
+            clear: function () {
+              open(function () {
+                try { localStorage.removeItem(LSK); } catch (e) {}
+                if (state !== 1) return;
+                ["items", "embeds"].forEach(function (n) { try { store(n, "readwrite").clear(); } catch (e) {} });
+              });
+            }
+          };
+        })();
+        function memChanged(it) {
+          MEM.ver++; MEM.ctx = null;
+          if (it) MEMDB.put("items", it);
+          memRepaint();
+        }
+        function memRepaint() {
+          if (memRepaint.t) return;
+          memRepaint.t = setTimeout(function () { memRepaint.t = 0; if (typeof paintMemory === "function") paintMemory(); }, 30);
+        }
+        function memActive(kind) { return MEM.items.filter(function (it) { return it.status === "active" && (!kind || it.kind === kind); }); }
+        function memGet(id) { for (var i = 0; i < MEM.items.length; i++) if (MEM.items[i].id === id) return MEM.items[i]; return null; }
+        function memRemove(id) {
+          var it = memGet(id); if (!it) return false;
+          MEM.items.splice(MEM.items.indexOf(it), 1);
+          delete MEM.emb[id]; MEMDB.del("items", id); MEMDB.del("embeds", id);
+          memChanged(null); return true;
+        }
+        /* drop the weakest items once a kind passes its cap: outdated first, then low confidence and stale */
+        function memTrim(kind) {
+          var list = MEM.items.filter(function (it) { return it.kind === kind; });
+          var over = list.length - MEM_CAP[kind]; if (over <= 0) return;
+          list.sort(function (a, b) {
+            if ((a.status === "outdated") !== (b.status === "outdated")) return a.status === "outdated" ? -1 : 1;
+            return (a.confidence * Math.log(1 + a.count) + Date.parse(a.lastSeen) / 1e13) - (b.confidence * Math.log(1 + b.count) + Date.parse(b.lastSeen) / 1e13);
+          });
+          list.slice(0, over).forEach(function (it) { memRemove(it.id); });
+        }
+
+        /* text tools shared by merge and retrieval */
+        var MEM_STOP = {};
+        ("a an the and or but if then so to of in on at by for with from as is are was were be been being am i im i'm me my mine he him his she her they them their it its this that these those " +
+          "you your yours we our us do does did doing have has had having not no yes just really very kind sort like about into over out up down off than too also can could would should will " +
+          "kyle boss blarf wants want likes like prefers prefer loves love getting got get gonna wanna thing things stuff some any all more most much many one ones").split(" ").forEach(function (w) { MEM_STOP[w] = 1; });
+        function memStem(w) {
+          if (w.length > 5 && /ing$/.test(w)) return w.slice(0, -3);
+          if (w.length > 4 && /ed$/.test(w)) return w.slice(0, -2);
+          if (w.length > 4 && /ies$/.test(w)) return w.slice(0, -3) + "y";
+          if (w.length > 3 && /[^s]s$/.test(w)) return w.slice(0, -1);
+          return w;
+        }
+        function memToks(s) {
+          var out = [];
+          String(s || "").toLowerCase().replace(/[’']s\b/g, "").split(/[^a-z0-9]+/).forEach(function (w) {
+            if (w.length < 2 || MEM_STOP[w]) return;
+            out.push(memStem(w));
+          });
+          return out;
+        }
+        function memDoc(it) {
+          if (it.kind === "project" && it.p) return [it.p.name, it.p.direction, it.p.decisions.join(" "), it.p.open.join(" "), it.topic].join(" ");
+          return it.text + (it.topic ? " " + it.topic : "");
+        }
+        function memTokCache(it) {
+          var d = memDoc(it), h = memHash(d);
+          if (!it._tk || it._tkh !== h) {
+            Object.defineProperty(it, "_tk", { value: memToks(d), writable: true, enumerable: false, configurable: true });
+            Object.defineProperty(it, "_tkh", { value: h, writable: true, enumerable: false, configurable: true });
+          }
+          return it._tk;
+        }
+        function memSim(a, b) {
+          var A = {}, B = {}, inter = 0, na = 0, nb = 0;
+          memToks(a).forEach(function (w) { if (!A[w]) { A[w] = 1; na++; } });
+          memToks(b).forEach(function (w) { if (!B[w]) { B[w] = 1; nb++; if (A[w]) inter++; } });
+          if (!na || !nb) return memKey(a) === memKey(b) ? 1 : 0;
+          return inter / (na + nb - inter);
+        }
+        function memFindProject(name) {
+          var k = memKey(name), best = null, bs = 0;
+          MEM.items.forEach(function (it) {
+            if (it.kind !== "project" || !it.p) return;
+            var s = memKey(it.p.name) === k ? 1 : memSim(it.p.name, name);
+            if (s > bs) { bs = s; best = it; }
+          });
+          return bs >= 0.6 ? best : null;
+        }
+        function memFindSame(kind, text) {
+          var k = memKey(text), best = null, bs = 0;
+          MEM.items.forEach(function (it) {
+            if (it.kind !== kind || it.status !== "active") return;
+            var s = memKey(it.text) === k ? 1 : memSim(it.text, text);
+            if (s > bs) { bs = s; best = it; }
+          });
+          return bs >= 0.72 ? best : null;
+        }
+        /* a contradiction rarely shares many words with what it replaces: same kind, same topic, some overlap */
+        function memFindLoose(kind, text, topic) {
+          var best = null, bs = 0;
+          MEM.items.forEach(function (it) {
+            if (it.kind !== kind || it.status !== "active") return;
+            var s = memSim(it.text, text) + (topic && it.topic === String(topic).toLowerCase() ? 0.15 : 0);
+            if (s > bs) { bs = s; best = it; }
+          });
+          return bs >= 0.4 ? best : null;
+        }
+        function memUnion(a, b, n) {
+          var seen = {}, out = [];
+          (a || []).concat(b || []).forEach(function (x) { var k = memKey(x); if (k && !seen[k]) { seen[k] = 1; out.push(x); } });
+          return out.slice(-(n || 10));
+        }
+        function memReinforce(it, conf, src, text) {
+          it.count = (it.count || 1) + 1;
+          var c = Math.max(it.confidence, isFinite(conf) ? conf : 0);
+          it.confidence = Math.round(Math.min(0.99, c + (1 - c) * 0.3) * 100) / 100;
+          it.lastSeen = memNow(); it.status = "active";
+          if (text && text !== it.text && it.kind !== "project") it.text = memClip(text, 200);
+          if (src && src.msg) it.source.last = memClip(src.msg, 140);
+          memChanged(it);
+          return it;
+        }
+        function memAddItem(o) {
+          var it = memNorm(o); if (!it) return null;
+          MEM.items.push(it); memChanged(it); memTrim(it.kind);
+          return it;
+        }
+        /* the one merge path: extraction, [[remember:]], "remember that…", Settings and migration all go through here.
+           c: { kind, text, confidence, topic, project, op: new|same|update|contradict, id, direction, decisions, open, done, status }
+           returns { it, how: "added"|"reinforced"|"updated"|"replaced"|"skipped" } */
+        function memUpsert(c, src, opts) {
+          opts = opts || {};
+          if (!c || typeof c !== "object") return { it: null, how: "skipped" };
+          var kind = MEM_KINDS.indexOf(c.kind) >= 0 ? c.kind : c.kind === "fact" || c.kind === "knowledge" ? "semantic" : c.kind === "preference" ? "personal" : "";
+          var text = memClip(c.kind === "project" ? (c.name || c.project || c.text) : c.text, 200);
+          if (!kind || kind === "episodic" || text.length < 2) return { it: null, how: "skipped" };
+          var conf = Number(c.confidence); if (!isFinite(conf)) conf = 0.6;
+          conf = Math.max(0.05, Math.min(0.99, conf));
+          src = { date: memNow(), via: (src && src.via) || "chat", msg: (src && src.msg) || "" };
+          var proj = null;
+          if (kind !== "project" && c.project && typeof c.project === "string") proj = memFindProject(c.project);
+          if (kind === "project") {
+            var pit = (c.id && memGet(c.id)) || memFindProject(text);
+            if (pit && pit.kind === "project") {
+              var p = pit.p;
+              if (c.direction && memKey(c.direction) !== memKey(p.direction)) p.direction = memClip(c.direction, 240);
+              p.decisions = memUnion(p.decisions, memArr(c.decisions), 10);
+              var done = memArr(c.done).map(memKey);
+              p.open = memUnion(p.open, memArr(c.open), 10).filter(function (x) { return done.indexOf(memKey(x)) < 0 && !done.some(function (d) { return memSim(d, x) >= 0.7; }); });
+              if (["active", "paused", "done"].indexOf(c.status) >= 0) p.state = c.status;
+              if (c.topic && !pit.topic) pit.topic = memClip(c.topic, 24).toLowerCase();
+              if (opts.noReinforce) return { it: pit, how: "skipped" };
+              memReinforce(pit, conf, src);
+              return { it: pit, how: "updated" };
+            }
+            var np = memAddItem({ kind: "project", text: text, confidence: conf, topic: c.topic || "", source: src,
+              p: { name: text, direction: c.direction || "", decisions: c.decisions, open: c.open, state: c.status } });
+            if (np) memLinkTopic(np);
+            return { it: np, how: "added" };
+          }
+          var old = c.id ? memGet(c.id) : null;
+          if (old && (old.kind !== kind && !(old.kind === "personal" || old.kind === "semantic"))) old = null;
+          var op = String(c.op || "new").toLowerCase();
+          if (op === "contradict" || op === "replace") {
+            var victim = old || memFindSame(kind, text) || memFindLoose(kind, text, c.topic);
+            var fresh = memAddItem({ kind: kind, text: text, confidence: conf, topic: c.topic || (victim && victim.topic) || "", project: proj ? proj.id : victim ? victim.project : "", source: src });
+            if (victim && fresh && victim !== fresh) { victim.status = "outdated"; victim.outdatedBy = fresh.id; memChanged(victim); }
+            return { it: fresh, how: victim ? "replaced" : "added" };
+          }
+          var same = old && old.status === "active" ? old : memFindSame(kind, text);
+          if (!same && old && op === "same") same = old;
+          if (same) {
+            if (opts.noReinforce) return { it: same, how: "skipped" };
+            memReinforce(same, conf, src, op === "update" ? text : "");
+            if (proj && !same.project) same.project = proj.id;
+            return { it: same, how: "reinforced" };
+          }
+          var it = memAddItem({ kind: kind, text: text, confidence: conf, topic: c.topic || "", project: proj ? proj.id : "", source: src,
+            firstSeen: opts.firstSeen, lastSeen: opts.firstSeen });
+          return { it: it, how: "added" };
+        }
+        /* "Memphis beat" project ↔ his music taste: same topic links them */
+        function memLinkTopic(pit) {
+          if (!pit.topic) return;
+          memActive("personal").forEach(function (x) { if (x.topic === pit.topic && !x.project) { x.project = pit.id; MEMDB.put("items", x); } });
+        }
+        function memConsistent(it) { return it.kind === "personal" && it.count >= 3; }
+        function memSaid(it) { return it.kind === "episodic" ? "" : it.count >= 3 ? "consistent" : it.count === 2 ? "said twice" : "said once"; }
+
+        /* returns true when a new note was stored ([[remember:]], "remember that…", save_note, Settings) */
+        function remember(t, kind) {
           t = String(t || "").replace(/\s+/g, " ").trim().replace(/[\s.!?,;:]+$/, "").trim();
           if (t.length < 2) return false;
           if (t.length > MEM_LEN) t = t.slice(0, MEM_LEN - 1).trim() + "…";
-          var k = memKey(t);
-          if (S.memory.some(function (n) { return memKey(n.t) === k; })) return false;
-          S.memory.push({ t: t, d: new Date().toISOString() });
-          while (S.memory.length > MEM_MAX) S.memory.shift();
-          save();
-          if (typeof paintMemory === "function") paintMemory();
-          return true;
+          var r = memUpsert({ kind: kind || "personal", text: t, confidence: 0.95, op: "new" }, { via: "you said remember", msg: t });
+          return r.how === "added";
         }
         function rememberCmd(text) {
           var mm = String(text || "").trim().match(/^(hey blarf,?\s*)?(please\s+)?remember( that)?\s+(.{3,})/i);
           if (mm && remember(mm[4].replace(/[\s.!?,;:]+$/, ""))) toast("🧠 Blarf will remember that");
         }
+        /* old flat notes (S.memory) become personal items, once */
+        function memMigrate() {
+          if (S.memMig || !Array.isArray(S.memory) || !S.memory.length) return 0;
+          var n = 0;
+          S.memory.forEach(function (x) {
+            if (!x || typeof x.t !== "string") return;
+            var r = memUpsert({ kind: "personal", text: x.t, confidence: 0.9 }, { via: "old memory", msg: "" }, { noReinforce: true, firstSeen: typeof x.d === "string" ? x.d : undefined });
+            if (r.how === "added") n++;
+          });
+          S.memMig = true; save();
+          return n;
+        }
+        function memLoad() {
+          MEMDB.all("items", function (rows) {
+            var have = {};
+            MEM.items.forEach(function (it) { have[it.id] = 1; });
+            rows.forEach(function (r) { var it = memNorm(r); if (it && !have[it.id]) MEM.items.push(it); });
+            MEMDB.all("embeds", function (es) {
+              es.forEach(function (e) { if (e && e.id && Array.isArray(e.v)) MEM.emb[e.id] = e; });
+              MEM.ready = true; memMigrate(); MEM.ver++; MEM.ctx = null; memRepaint();
+              setTimeout(memEpisodeRepair, 6000);
+            });
+          });
+        }
+
+        /* ---------- retrieval: OpenAI embeddings when there's a key, else on-device BM25; plus recency, confidence ---------- */
+        function memCos(a, b) {
+          if (!a || !b || a.length !== b.length) return 0;
+          var d = 0, x = 0, y = 0;
+          for (var i = 0; i < a.length; i++) { d += a[i] * b[i]; x += a[i] * a[i]; y += b[i] * b[i]; }
+          return x && y ? d / Math.sqrt(x * y) : 0;
+        }
+        function memVec(it) {
+          var e = MEM.emb[it.id], d = memDoc(it);
+          return e && e.m === memEmbModel() && e.h === memHash(d) ? e.v : null;
+        }
+        function memScoreAll(query, qv) {
+          var items = memActive(), q = memToks(query), N = items.length || 1, df = {}, avg = 0, now = Date.now();
+          items.forEach(function (it) {
+            var tk = memTokCache(it), seen = {}; avg += tk.length;
+            tk.forEach(function (w) { if (!seen[w]) { seen[w] = 1; df[w] = (df[w] || 0) + 1; } });
+          });
+          avg = avg / N || 1;
+          var raw = items.map(function (it) {
+            var tk = it._tk, tf = {}, bm = 0;
+            tk.forEach(function (w) { tf[w] = (tf[w] || 0) + 1; });
+            q.forEach(function (w) {
+              if (!tf[w]) return;
+              var idf = Math.log(1 + (N - df[w] + 0.5) / (df[w] + 0.5));
+              bm += idf * (tf[w] * 2.2) / (tf[w] + 1.2 * (0.25 + 0.75 * tk.length / avg));
+            });
+            return bm;
+          });
+          var maxBm = Math.max.apply(null, raw.concat([0.0001]));
+          return items.map(function (it, i) {
+            var days = Math.max(0, (now - Date.parse(it.lastSeen || it.firstSeen)) / 86400000) || 0;
+            var rec = Math.exp(-days / (it.kind === "episodic" ? 5 : 30));
+            var bm = raw[i] / maxBm, v = qv ? memVec(it) : null, cos = v ? Math.max(0, memCos(qv, v)) : -1;
+            var rel = cos >= 0 ? 0.35 * bm + 0.65 * Math.max(0, (cos - 0.15) / 0.55) : bm;
+            var s = 0.62 * rel + 0.14 * rec + 0.12 * it.confidence + (memConsistent(it) ? 0.08 : 0) + Math.min(0.04, it.count * 0.01);
+            return { it: it, s: s, rel: rel };
+          });
+        }
+        /* top ~8: active projects he mentioned or touched lately and his consistent preferences always ride along */
+        function memPick(query, qv, n) {
+          n = n || MEM_PICK;
+          var scored = memScoreAll(query, qv), out = [], seen = {}, ql = " " + String(query || "").toLowerCase() + " ", now = Date.now();
+          function add(x) { if (x && !seen[x.it.id] && out.length < n) { seen[x.it.id] = 1; out.push(x); } }
+          var projs = scored.filter(function (x) {
+            if (x.it.kind !== "project" || !x.it.p || x.it.p.state === "done") return false;
+            var named = memToks(x.it.p.name).some(function (w) { return w.length > 2 && ql.indexOf(w) >= 0; });
+            return named || x.rel > 0.35 || now - Date.parse(x.it.lastSeen) < 7 * 86400000;
+          }).sort(function (a, b) { return (b.rel - a.rel) || (Date.parse(b.it.lastSeen) - Date.parse(a.it.lastSeen)); });
+          projs.slice(0, 3).forEach(add);
+          scored.filter(function (x) { return memConsistent(x.it); })
+            .sort(function (a, b) { return (b.rel - a.rel) || (b.it.count * b.it.confidence - a.it.count * a.it.confidence); })
+            .slice(0, 3).forEach(add);
+          /* a picked project brings its linked taste along */
+          out.slice().forEach(function (x) {
+            if (x.it.kind !== "project") return;
+            scored.filter(function (y) { return y.it.kind === "personal" && (y.it.project === x.it.id || (x.it.topic && y.it.topic === x.it.topic)); })
+              .sort(function (a, b) { return b.s - a.s; }).slice(0, 1).forEach(add);
+          });
+          var hasQ = memToks(query).length > 0;
+          scored.filter(function (x) { return !hasQ || x.rel > 0.08 || x.it.kind === "episodic"; })
+            .sort(function (a, b) { return b.s - a.s; }).forEach(add);
+          if (out.length < n) scored.sort(function (a, b) { return b.s - a.s; }).forEach(add);
+          return out.map(function (x) { return x.it; });
+        }
+        function memEmbedOK() { return !!oaiKeyForMem() && Date.now() > MEM.embOffUntil && !isOffline(); }
+        function oaiKeyForMem() { return typeof oaiThinkKey === "function" ? oaiThinkKey() : ""; }
+        function memEmbFetch(texts, ms) {
+          var model = memEmbModel(), body = { model: model, input: texts };
+          if (/^text-embedding-3/.test(model)) body.dimensions = EMB_DIMS;
+          var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+          var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, ms || 15000);
+          return fetch(EMB_URL, { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + oaiKeyForMem() }, body: JSON.stringify(body), signal: ctrl ? ctrl.signal : undefined })
+            .then(function (res) {
+              clearTimeout(timer);
+              return res.text().then(function (txt) {
+                var d = null; try { d = JSON.parse(txt); } catch (e) {}
+                if (!res.ok) {
+                  MEM.embErr = res.status === 401 || res.status === 403 ? "OpenAI rejected the key for embeddings." : res.status === 404 || res.status === 400 ? "Embedding model \"" + model + "\" not found." : "Embeddings failed (" + res.status + ").";
+                  MEM.embOffUntil = Date.now() + 10 * 60000; memRepaint();
+                  throw MEM.embErr;
+                }
+                MEM.embErr = "";
+                var rows = d && Array.isArray(d.data) ? d.data : [];
+                return texts.map(function (_, i) {
+                  var r = rows.filter(function (x) { return x && x.index === i; })[0] || rows[i];
+                  return r && Array.isArray(r.embedding) ? r.embedding.map(function (v) { return Math.round(v * 1e4) / 1e4; }) : null;
+                });
+              });
+            }, function (e) { clearTimeout(timer); throw e; });
+        }
+        /* background: embed items that have no vector for the current model, 64 at a time */
+        function memEmbedBackfill() {
+          if (MEM.embBusy || !memEmbedOK()) return;
+          var need = memActive().filter(function (it) { return !memVec(it); }).slice(0, 64);
+          if (!need.length) return;
+          MEM.embBusy = true;
+          var docs = need.map(memDoc), model = memEmbModel();
+          memEmbFetch(docs, 20000).then(function (vs) {
+            need.forEach(function (it, i) {
+              if (!vs[i]) return;
+              var e = { id: it.id, m: model, h: memHash(docs[i]), v: vs[i] };
+              MEM.emb[it.id] = e; MEMDB.put("embeds", e);
+            });
+            MEM.embBusy = false; MEM.ctx = null;
+            if (need.length === 64) setTimeout(memEmbedBackfill, 500);
+          }, function () { MEM.embBusy = false; });
+        }
+        /* before each reply: pick memories for this message. Never rejects; waits at most ~1.8 s for the query embedding. */
+        function memPrepare(text) {
+          var q = memClip(text, 600);
+          MEM.curQ = q;
+          var local = function () { MEM.ctx = { q: q, ver: MEM.ver, picks: memPick(q, null) }; };
+          if (!MEM.items.length || !memEmbedOK() || !q) { local(); return Promise.resolve(); }
+          memEmbedBackfill();
+          var key = memEmbModel() + "|" + q;
+          if (MEM.qv[key]) { MEM.ctx = { q: q, ver: MEM.ver, picks: memPick(q, MEM.qv[key]) }; return Promise.resolve(); }
+          var gate = new Promise(function (res) { setTimeout(res, 1800); });
+          var get = memEmbFetch([q], 6000).then(function (vs) {
+            if (vs[0]) {
+              var ks = Object.keys(MEM.qv); if (ks.length > 20) delete MEM.qv[ks[0]];
+              MEM.qv[key] = vs[0];
+            }
+          }, function () {});
+          return Promise.race([get, gate]).then(function () {
+            var qv = MEM.qv[key];
+            MEM.ctx = { q: q, ver: MEM.ver, picks: memPick(q, qv || null) };
+          });
+        }
+        /* synchronous focus for prompts built without a message (live talk at session start) */
+        function memFocus(q) { MEM.curQ = memClip(q, 600); MEM.ctx = null; }
+        function memContextPicks() {
+          var q = MEM.curQ || lastUser || "";
+          if (MEM.ctx && MEM.ctx.q === memClip(q, 600) && MEM.ctx.ver === MEM.ver) return MEM.ctx.picks;
+          var picks = memPick(q, null);
+          MEM.ctx = { q: memClip(q, 600), ver: MEM.ver, picks: picks };
+          return picks;
+        }
+        function memShortDate(iso) {
+          var d = new Date(iso); if (isNaN(d)) return "";
+          return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+        }
+        function memLine(it) {
+          if (it.kind === "project" && it.p) {
+            var p = it.p, s = p.name + (p.state !== "active" ? " (" + p.state + ")" : "");
+            if (p.direction) s += " — direction: " + p.direction;
+            if (p.decisions.length) s += "; decided: " + p.decisions.slice(-3).join(", ");
+            if (p.open.length) s += "; still open: " + p.open.slice(0, 3).join(", ");
+            return memClip(s, 300) + " (last touched " + memShortDate(it.lastSeen) + ")";
+          }
+          if (it.kind === "episodic") return memShortDate(it.firstSeen) + ": " + memClip(it.text, 200);
+          if (it.kind === "personal") return (memConsistent(it) ? "consistently: " : it.count === 1 && it.confidence < 0.8 ? "said once: " : "") + it.text;
+          return it.text;
+        }
+        /* the memory slice of every prompt: bounded to ~1500 chars */
+        function memNotes(picks) {
+          var groups = [["project", "Active projects"], ["personal", "About Kyle"], ["semantic", "Things he's told you"], ["episodic", "Recent moments"]];
+          var budget = MEM_CLAUSE_MAX, out = [];
+          groups.forEach(function (g) {
+            var lines = [];
+            picks.forEach(function (it) {
+              if (it.kind !== g[0]) return;
+              var l = memLine(it), cost = l.length + 2 + (lines.length ? 0 : g[1].length + 3);
+              if (cost > budget) return;
+              budget -= cost; lines.push(l);
+            });
+            if (lines.length) out.push(g[1] + ": " + lines.join("; "));
+          });
+          return out.join(". ");
+        }
+        var MEM_ASK = " You keep a memory of Kyle. When he tells you something worth remembering long-term (projects, goals, wins, struggles, preferences, people, tracks he's working on, deadlines), add at the very end of your reply one line per fact in the exact form [[remember: short fact in third person]]. Use it sparingly, only for genuinely durable facts.";
+        function memoryClause() {
+          var notes = memNotes(memContextPicks());
+          if (!notes) return timeMood().clause;
+          var now = new Date();
+          var s = " What you remember about Kyle (bring these up naturally when relevant, e.g. ask how that track or project is going; \"consistently\" means he's said it again and again, \"said once\" means go easy; don't list them): " + notes +
+            ". Today is " + now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" }) + ".";
+          var last = prevSeen ? Date.parse(prevSeen) : NaN;
+          if (!isNaN(last) && now - last > 12 * 3600000) s += " It's been a while since you last talked (" + gapText(now - last) + "); greet him accordingly.";
+          return s + timeMood().clause;
+        }
+
+        /* ---------- extraction: after a text exchange, the cheap Talk brain pulls memories out as JSON (background, debounced) ---------- */
+        var MEMX = { timer: null, busy: false, done: {}, again: false };
+        function memQueue(m) {
+          if (!memAutoOn() || ["chat", "studio", "hustle"].indexOf(m) < 0) return;
+          clearTimeout(MEMX.timer);
+          MEMX.timer = setTimeout(function () { memExtract(m); }, 2500);
+        }
+        /* one cheap JSON-ish call on the Talk brain; resolves "" when there's no way to ask */
+        function memTalk(sys, user, ms) {
+          if (isOffline()) return Promise.resolve("");
+          var url, headers = { "Content-Type": "application/json" }, body, rsp = false;
+          var key = (S.apiKey || "").trim();
+          if (S.provider === "xai" && key) {
+            url = XAI_RESPONSES; rsp = true;
+            body = { model: (S.model || "").trim() || PROVIDERS.xai.model, input: [{ role: "system", content: sys }, { role: "user", content: user }], reasoning: { effort: "low" } };
+          } else if ((S.provider === "openai" || S.provider === "custom") && key) {
+            url = S.provider === "custom" ? (S.customUrl || "").trim() : PROVIDERS.openai.url;
+            if (!url) return Promise.resolve("");
+            body = { model: (S.model || "").trim() || PROVIDERS[S.provider].model, messages: [{ role: "system", content: sys }, { role: "user", content: user }], temperature: 0.2 };
+            if (S.provider === "openai") body.response_format = { type: "json_object" };
+          } else if (oaiKeyForMem()) {
+            key = oaiKeyForMem(); url = PROVIDERS.openai.url;
+            body = { model: PROVIDERS.openai.model, messages: [{ role: "system", content: sys }, { role: "user", content: user }], temperature: 0.2, response_format: { type: "json_object" } };
+          } else return Promise.resolve("");
+          headers.Authorization = "Bearer " + key;
+          var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+          var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, ms || 45000);
+          return fetch(url, { method: "POST", headers: headers, body: JSON.stringify(body), signal: ctrl ? ctrl.signal : undefined }).then(function (res) {
+            clearTimeout(timer);
+            if (!res.ok) return "";
+            return res.json().then(function (d) {
+              if (rsp) return String(xaiText(d) || "").replace(/\n\nSources: [^\n]*$/, "");
+              return String((d && d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content) || "");
+            });
+          }).catch(function () { clearTimeout(timer); return ""; });
+        }
+        function memParseJSON(s) {
+          s = String(s || "").replace(/```(?:json)?/gi, "").trim();
+          var a = s.indexOf("{"), b = s.lastIndexOf("}");
+          var a2 = s.indexOf("["), b2 = s.lastIndexOf("]");
+          var o = null;
+          try { if (a >= 0 && b > a) o = JSON.parse(s.slice(a, b + 1)); } catch (e) { o = null; }
+          if (!o) { try { if (a2 >= 0 && b2 > a2) o = { memories: JSON.parse(s.slice(a2, b2 + 1)) }; } catch (e) { o = null; } }
+          if (Array.isArray(o)) o = { memories: o };
+          return o && typeof o === "object" ? o : null;
+        }
+        var MEMX_SYS = "You maintain the long-term memory of Kyle (a music producer and startup founder) for his companion app. Read the latest exchange and output ONLY a JSON object: {\"memories\":[...]}. " +
+          "Each memory: {\"kind\":\"personal|project|semantic\",\"text\":\"short third-person fact, max 140 chars\",\"topic\":\"one word e.g. music, business, health, family, tech, food\",\"confidence\":0.0-1.0,\"project\":\"name of the project it belongs to, or null\",\"op\":\"new|same|update|contradict\",\"id\":\"id of the known memory it repeats/updates/contradicts, else null\"}. " +
+          "Kinds: personal = his preferences, taste, style, habits, interests, people in his life. project = something ongoing he's making or building; for projects use {\"kind\":\"project\",\"name\":\"short project name\",\"direction\":\"creative direction / vision\",\"decisions\":[...],\"open\":[unfinished items],\"done\":[items now finished],\"status\":\"active|paused|done\",\"topic\":..., \"confidence\":..., \"op\":..., \"id\":...}. semantic = durable facts about his world (gear, business, deadlines, places) worth recalling later. " +
+          "Rules: only Kyle's own durable info; never Blarf's jokes, general trivia, or one-off chit-chat. op=same when he repeats a known memory (copy its id); op=update to refine one; op=contradict when it replaces an older one that's no longer true (give that id). Lower confidence for guesses and offhand remarks. At most 6 items; {\"memories\":[]} when nothing's worth keeping.";
+        function memExtract(m) {
+          if (!memAutoOn()) return;
+          if (MEMX.busy) { MEMX.again = m; return; }
+          var th = (S.threads[m] || []).filter(function (x) { return x && (x.r === "me" || x.r === "bot") && typeof x.t === "string"; });
+          var since = MEMX.done[m] || 0, fresh = th.filter(function (x) { return (x.ts || 0) > since; });
+          if (!fresh.some(function (x) { return x.r === "me"; })) return;
+          var convo = th.slice(-Math.max(4, Math.min(8, fresh.length + 2))).map(function (x) {
+            return (x.r === "me" ? "Kyle: " : "Blarf: ") + memClip(x.t, x.r === "me" ? 700 : 400);
+          }).join("\n");
+          var lastTs = th[th.length - 1].ts || Date.now();
+          var mine = fresh.filter(function (x) { return x.r === "me"; }).map(function (x) { return x.t; }).join(" ");
+          var known = memPick(mine, null, 16).filter(function (it) { return it.kind !== "episodic"; });
+          memActive("project").forEach(function (p) { if (known.indexOf(p) < 0 && known.length < 22) known.push(p); });
+          var kn = known.map(function (it) { return "[" + it.id + "] " + it.kind + ": " + (it.kind === "project" ? memLine(it) : it.text) + (it.kind === "personal" ? " (" + memSaid(it) + ")" : ""); }).join("\n");
+          var user = "Known memories:\n" + (kn || "(none yet)") + "\n\nLatest exchange (" + (MODES[m] ? MODES[m].label : m) + " mode):\n" + convo;
+          MEMX.busy = true;
+          var finish = function () {
+            MEMX.busy = false;
+            if (MEMX.again) { var a = MEMX.again; MEMX.again = false; memQueue(a); }
+          };
+          memTalk(MEMX_SYS, user, 45000).then(function (raw) {
+            var o = memParseJSON(raw);
+            if (!raw) { finish(); return; }
+            MEMX.done[m] = lastTs;
+            var list = o && Array.isArray(o.memories) ? o.memories.slice(0, 8) : [];
+            var src = { via: m === "chat" ? "chat" : MODES[m] ? MODES[m].label.toLowerCase() : m, msg: memClip(mine, 140) };
+            /* projects first so facts in the same batch can link to them */
+            list.sort(function (a, b) { return (b && b.kind === "project" ? 1 : 0) - (a && a.kind === "project" ? 1 : 0); });
+            list.forEach(function (c) { try { memUpsert(c, src); } catch (e) {} });
+            finish();
+          }, finish);
+        }
+        window.blarfMem = {
+          get items() { return MEM.items; }, upsert: memUpsert, pick: memPick, clause: function () { return memoryClause(); }, prepare: memPrepare,
+          extract: memExtract, parse: memParseJSON, remove: memRemove, toks: memToks, episode: function (f) { return memEpisode(f); }, state: MEM
+        };
+
+        /* ---------- episodic: a session ends on page hide or 10 min idle; it leaves a 1-2 line summary ---------- */
+        var SESS = null;
+        function memTouch(m, text) {
+          var now = Date.now();
+          if (SESS && now - SESS.last > MEM_IDLE) memEpisode(true);
+          if (!SESS) SESS = { id: "ep-" + now.toString(36), start: now, last: now, n: 0, modes: {}, saved: 0 };
+          SESS.last = now; SESS.n++; SESS.modes[m] = 1;
+          clearTimeout(memTouch.t);
+          memTouch.t = setTimeout(function () { memEpisode(true); }, MEM_IDLE);
+        }
+        function memSessMsgs(start, end, modes) {
+          var out = [];
+          (modes || ["chat", "studio", "hustle"]).forEach(function (k) {
+            (S.threads[k] || []).forEach(function (x) {
+              if (x && (x.r === "me" || x.r === "bot") && typeof x.t === "string" && x.ts >= start - 1000 && x.ts <= end + 120000) out.push({ k: k, r: x.r, t: x.t, ts: x.ts });
+            });
+          });
+          return out.sort(function (a, b) { return a.ts - b.ts; });
+        }
+        function memLocalSummary(msgs, modes) {
+          var mine = msgs.filter(function (x) { return x.r === "me"; }).map(function (x) { return memClip(x.t, 70); });
+          var where = modes.map(function (k) { return MODES[k] ? (k === "chat" ? "chat" : MODES[k].label) : k; }).join(" + ");
+          return "Talked in " + where + " (" + mine.length + " message" + (mine.length === 1 ? "" : "s") + "): " + mine.slice(0, 2).map(function (t) { return "“" + t + "”"; }).join(", ") + (mine.length > 2 ? " and more" : "") + ".";
+        }
+        function memEpisodeSave(id, start, end, modes, text, draft) {
+          var it = memGet(id);
+          if (it) { it.text = memClip(text, 260); it.lastSeen = new Date(end).toISOString(); it.end = it.lastSeen; it.draft = !!draft; it.modes = modes; memChanged(it); return it; }
+          return memAddItem({ id: id, kind: "episodic", text: text, confidence: 0.7, firstSeen: new Date(start).toISOString(), lastSeen: new Date(end).toISOString(),
+            end: new Date(end).toISOString(), modes: modes, draft: !!draft, source: { date: new Date(start).toISOString(), via: modes.join("+"), msg: "" } });
+        }
+        function memSummarize(msgs) {
+          var convo = msgs.slice(-24).map(function (x) { return (x.r === "me" ? "Kyle: " : "Blarf: ") + memClip(x.t, 300); }).join("\n");
+          return memTalk("Summarize this chat session between Kyle and his companion Blarf in 1-2 short lines: third person, past tense, concrete (what he worked on, decided, felt, asked for). No preamble, no quotes, max 220 characters.", convo, 30000)
+            .then(function (t) { t = memClip(String(t || "").replace(/^["“]|["”]$/g, "").replace(/[*_#`]/g, ""), 260); return t.length > 10 ? t : ""; });
+        }
+        /* final=true: the session is over (idle); false: page hidden, write a draft now in case we never come back */
+        function memEpisode(final) {
+          var s = SESS; if (!s) return null;
+          if (final) { SESS = null; clearTimeout(memTouch.t); }
+          if (s.n < 2 || !memAutoOn()) return null;
+          var modes = Object.keys(s.modes), msgs = memSessMsgs(s.start, s.last, modes);
+          if (!msgs.some(function (x) { return x.r === "me"; })) return null;
+          var it = memEpisodeSave(s.id, s.start, s.last, modes, memLocalSummary(msgs, modes), true);
+          if (final && it) memSummarize(msgs).then(function (t) { if (t) memEpisodeSave(s.id, s.start, s.last, modes, t, false); });
+          return it;
+        }
+        /* drafts left by a page that closed mid-session get a proper summary on the next visit */
+        function memEpisodeRepair() {
+          if (!memAutoOn()) return;
+          MEM.items.filter(function (it) { return it.kind === "episodic" && it.draft && (!SESS || SESS.id !== it.id); }).slice(-2).forEach(function (it) {
+            var msgs = memSessMsgs(Date.parse(it.firstSeen), Date.parse(it.end || it.lastSeen), it.modes);
+            if (msgs.length < 2) { it.draft = false; memChanged(it); return; }
+            memSummarize(msgs).then(function (t) { if (t) { it.text = t; it.draft = false; memChanged(it); } });
+          });
+        }
+        doc.addEventListener("visibilitychange", function () {
+          if (doc.hidden) memEpisode(false);
+          else if (SESS && Date.now() - SESS.last > MEM_IDLE) memEpisode(true);
+        });
+        window.addEventListener("pagehide", function () { memEpisode(false); });
+        memLoad();
         function markSeen() { prevSeen = S.lastSeen; S.lastSeen = new Date().toISOString(); save(); }
         function gapText(ms) {
           var h = Math.round(ms / 3600000);
@@ -2950,17 +3629,6 @@
           if (d < 60) return w + " weeks";
           var mo = Math.round(d / 30);
           return mo + " month" + (mo === 1 ? "" : "s");
-        }
-        var MEM_ASK = " You keep a memory of Kyle. When he tells you something worth remembering long-term (projects, goals, wins, struggles, preferences, people, tracks he's working on, deadlines), add at the very end of your reply one line per fact in the exact form [[remember: short fact in third person]]. Use it sparingly, only for genuinely durable facts.";
-        function memoryClause() {
-          if (!S.memory.length) return timeMood().clause;
-          var notes = S.memory.slice(-25).reverse().map(function (n) { return n.t; }).join("; ");
-          var now = new Date();
-          var s = " What you remember about Kyle (bring these up naturally when relevant, e.g. ask how that track or project is going; don't list them): " + notes +
-            ". Today is " + now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" }) + ".";
-          var last = prevSeen ? Date.parse(prevSeen) : NaN;
-          if (!isNaN(last) && now - last > 12 * 3600000) s += " It's been a while since you last talked (" + gapText(now - last) + "); greet him accordingly.";
-          return s + timeMood().clause;
         }
         /* ---------- Personality Engine: ONE character sheet for every model and path (text, Studio, Hustle, Crew review, on-device, live talk) ----------
            ctx: { role: mode job, len: length rule, live: spoken, compact: small on-device model }. S.sysPrompt replaces the base persona; memory, time mood and the swear rule always ride along. */
@@ -3130,6 +3798,7 @@
           V[m].thread.insertBefore(msgEl(msg), typingEl[m] || null);
           if (m === "chat") paintEmpty();
           save(); scrollDown(m, true);
+          if (msg.r === "bot" && !msg.img) memQueue(m);
           if (msg.r === "bot") {
             var willSpeak = speakAs("blarf", msg.t);
             if (m === "chat") { BL.say(msg.t, lastUser, willSpeak); setCaption(msg.t); }
@@ -3775,6 +4444,8 @@
         function noop() {}
         function liveInstructions() {
           var tail = " Keep every reply short and natural to hear: one to three spoken sentences, no lists, no markdown, no emoji.";
+          /* session start: focus memory on what we were just talking about */
+          memFocus(S.threads.chat.filter(function (x) { return x && x.r === "me" && typeof x.t === "string"; }).slice(-3).map(function (x) { return x.t; }).join(" "));
           return blarfCharacter({ role: "Right now you're talking with him out loud in a live voice chat. You also know music production (FL Studio, mixing, 808s, chords, Dubler 2, Splice) and startup coaching (priorities, next actions, accountability), and help with either when he asks." }) + tail;
         }
         function paintTalk(st) {
@@ -3966,7 +4637,7 @@
           else if (t === "conversation.item.input_audio_transcription.delta") { L.user += ev.delta || ""; if (L.user.trim()) setCaption("“" + L.user.trim() + "”", true); }
           else if (t === "conversation.item.input_audio_transcription.completed") {
             var u = String(ev.transcript || L.user || "").trim(); L.user = "";
-            if (u) { lastUser = u; markSeen(); rememberCmd(u); liveLog("me", u); }
+            if (u) { lastUser = u; markSeen(); rememberCmd(u); memTouch("chat", u); liveLog("me", u); }
           }
           else if (t === "error") {
             var m = ev.error && (ev.error.message || ev.error.code) || ev.message;
@@ -4205,7 +4876,7 @@
           if (S.apiKey && isOffline() && !(localHas() && !img && !dp)) { toast(OFFLINE_MSG); return false; }
           if (m === "chat") { lastUser = text; setSheet(true); if (/^stop\b/i.test(text)) { S.roast = false; S.trivia = false; } }
           stopVoice();
-          markSeen(); rememberCmd(text);
+          markSeen(); rememberCmd(text); memTouch(m, text);
           var me = { r: "me", t: text, ts: Date.now() };
           if (img) { me.img = img; me.pic = 1; }
           addMsg(m, me);
@@ -4227,6 +4898,10 @@
             }, function (err) { bot({ r: "err", t: "**Couldn't make the picture.** " + err, ts: Date.now() }); });
             return;
           }
+          /* pick this message's memories first (embeddings wait ~1.8 s max), then answer */
+          memPrepare(text).then(function () { nextRun(m, text); });
+        }
+        function nextRun(m, text) {
           var loc = localRoute();
           if (loc) { localRun(m, loc); return; }
           if (m === "chat" && S.brain === "crew" && S.apiKey) { crewRun(m); return; }
@@ -4414,7 +5089,7 @@
               var t = toolStr(a.text); if (!t) return "error: empty note";
               if (!remember(t)) return "already saved";
               toast("🧠 Blarf will remember that");
-              return "note saved (" + S.memory.length + "/" + MEM_MAX + ")";
+              return "note saved (" + memActive("personal").length + " personal memories)";
             } },
           { name: "add_goal", label: "Goals", emoji: "🎯", desc: "Adds to today's 3 goals in Hustle",
             params: { type: "object", properties: { text: { type: "string", description: "The goal" } }, required: ["text"] },
@@ -5859,44 +6534,209 @@
           setTimeout(function () { clearBtn.textContent = "Clear all chats"; $("clear-note").textContent = "Deletes the history in Blarf, Studio and Hustle."; }, 2000);
         });
 
-        /* ---------- memory settings ---------- */
-        var memList = $("mem-list"), memIn = $("mem-in"), memClear = $("mem-clear"), memArm = null;
-        var MEM_NOTE = "Stays on this device. Only sent to your AI provider as part of the prompt.";
-        function paintMemory() {
-          memList.textContent = "";
-          S.memory.slice().reverse().forEach(function (n) {
-            var li = doc.createElement("li"), sp = doc.createElement("span"), x = doc.createElement("button");
-            sp.textContent = n.t;
-            x.type = "button"; x.textContent = "×"; x.setAttribute("aria-label", "Forget this");
-            x.addEventListener("click", function () {
-              var i = S.memory.indexOf(n); if (i > -1) S.memory.splice(i, 1);
-              save(); paintMemory();
-            });
-            li.appendChild(sp); li.appendChild(x); memList.appendChild(li);
+        /* ---------- memory settings: Personal / Projects / Knowledge / Moments ---------- */
+        var memList = $("mem-list"), memIn = $("mem-in"), memClear = $("mem-clear"), memArm = null, memQ = $("mem-q"), memTab = "personal", memEditing = "";
+        var MEM_NOTE = "Stays on this device. Only the text Blarf learns from goes to your own AI provider (and to OpenAI for smarter search if you added a key).";
+        var MEM_TAB_EMPTY = {
+          personal: "Nothin' about you yet. Tell me what you like, kid.",
+          project: "No projects yet. Tell me what you're cookin'.",
+          semantic: "No facts saved yet.",
+          episodic: "No moments yet. Chat a bit and I'll jot down what we talked about."
+        };
+        var MEM_TAB_ADD = { personal: "Add something about you", project: "New project name", semantic: "Add a fact for Blarf to know" };
+        var memReduce = function () { return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); };
+        function memDotCls(c) { return c >= 0.8 ? "is-hi" : c >= 0.5 ? "is-mid" : "is-lo"; }
+        function memMeta(it) {
+          var bits = [];
+          if (it.status === "outdated") bits.push("outdated");
+          else if (it.kind !== "episodic" && it.kind !== "project") bits.push(memSaid(it));
+          if (it.kind === "project" && it.p) bits.push(it.p.state);
+          if (it.kind === "episodic") {
+            var d = new Date(it.firstSeen);
+            bits.push(isNaN(d) ? "" : d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }) + " · " + d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }));
+            if (it.draft) bits.push("summary pending");
+          } else {
+            bits.push((it.kind === "project" ? "touched " : "") + memShortDate(it.kind === "project" ? it.lastSeen : it.firstSeen));
+            if (it.source && it.source.via) bits.push(it.source.via);
+          }
+          if (it.project && it.kind !== "project") { var pj = memGet(it.project); if (pj && pj.p) bits.push("🎛 " + pj.p.name); }
+          return bits.filter(Boolean).join(" · ");
+        }
+        function memMatches(it, q) {
+          if (!q) return true;
+          var hay = (memDoc(it) + " " + (it.topic || "")).toLowerCase();
+          return q.toLowerCase().split(/\s+/).filter(Boolean).every(function (w) { return hay.indexOf(w) >= 0; });
+        }
+        function memBtn(label, txt, fn, cls) {
+          var b = doc.createElement("button");
+          b.type = "button"; b.className = "x-mi__btn" + (cls ? " " + cls : ""); b.textContent = txt; b.setAttribute("aria-label", label); b.title = label;
+          b.addEventListener("click", function (e) { e.stopPropagation(); fn(); });
+          return b;
+        }
+        function memForget(it, li) {
+          var go = function () { memRemove(it.id); toast("Forgot it."); };
+          if (li && !memReduce()) { li.classList.add("is-gone"); setTimeout(go, 200); } else go();
+        }
+        function memToggleOld(it) {
+          it.status = it.status === "outdated" ? "active" : "outdated";
+          if (it.status === "active") delete it.outdatedBy;
+          memChanged(it);
+          toast(it.status === "outdated" ? "Marked outdated. Blarf won't bring it up." : "Back in play.");
+        }
+        /* swipe left to forget (touch/pen), like Mail */
+        function memSwipe(li, it) {
+          var x0 = 0, y0 = 0, dx = 0, on = false, locked = "";
+          li.addEventListener("pointerdown", function (e) {
+            if (e.pointerType === "mouse" || memEditing) return;
+            on = true; locked = ""; dx = 0; x0 = e.clientX; y0 = e.clientY;
           });
-          $("mem-count").textContent = S.memory.length;
-          $("mem-empty").hidden = S.memory.length > 0;
-          memList.hidden = !S.memory.length;
-          memClear.hidden = !S.memory.length && !memArm;
+          li.addEventListener("pointermove", function (e) {
+            if (!on) return;
+            var mx = e.clientX - x0, my = e.clientY - y0;
+            if (!locked) { if (Math.abs(mx) > 8 || Math.abs(my) > 8) locked = Math.abs(mx) > Math.abs(my) ? "x" : "y"; else return; }
+            if (locked !== "x") return;
+            dx = Math.min(0, mx);
+            li.style.transform = "translateX(" + dx + "px)";
+            li.classList.toggle("is-armed", dx < -80);
+          });
+          var end = function () {
+            if (!on) return; on = false;
+            if (locked === "x" && dx < -80) { memForget(it, li); return; }
+            li.style.transform = ""; li.classList.remove("is-armed");
+          };
+          li.addEventListener("pointerup", end); li.addEventListener("pointercancel", end);
+        }
+        function memEditOpen(it, li) {
+          memEditing = it.id;
+          var body = li.querySelector(".x-mi__body"); body.textContent = "";
+          var f = doc.createElement("form"); f.className = "x-mi__edit";
+          var mk = function (tag, val, ph, lbl) {
+            var el = doc.createElement(tag); el.className = "x-field"; el.value = val || ""; el.placeholder = ph; el.setAttribute("aria-label", lbl);
+            if (tag === "textarea") el.rows = 3; else el.maxLength = 240;
+            f.appendChild(el); return el;
+          };
+          var a, b, c;
+          if (it.kind === "project") {
+            a = mk("input", it.p.name, "Project name", "Project name");
+            b = mk("input", it.p.direction, "Creative direction", "Creative direction");
+            c = mk("textarea", it.p.open.join("\n"), "Open items, one per line", "Open items, one per line");
+          } else a = mk("textarea", it.text, "What Blarf remembers", "Edit memory");
+          var row = doc.createElement("div"); row.className = "x-mi__editbtns";
+          var cancel = doc.createElement("button"); cancel.type = "button"; cancel.className = "btn"; cancel.textContent = "Cancel";
+          var ok = doc.createElement("button"); ok.type = "submit"; ok.className = "btn"; ok.textContent = "Save";
+          row.appendChild(cancel); row.appendChild(ok); f.appendChild(row);
+          body.appendChild(f);
+          cancel.addEventListener("click", function () { memEditing = ""; paintMemory(); });
+          f.addEventListener("keydown", function (e) { if (e.key === "Escape") { e.stopPropagation(); memEditing = ""; paintMemory(); } });
+          f.addEventListener("submit", function (e) {
+            e.preventDefault();
+            var t = memClip(a.value, it.kind === "episodic" ? 260 : 200);
+            if (!t) { memEditing = ""; memForget(it, null); return; }
+            if (it.kind === "project") {
+              it.p.name = memClip(t, 60); it.text = it.p.name; it.p.direction = memClip(b.value, 240);
+              it.p.open = c.value.split(/\n+/).map(function (x) { return memClip(x, 120); }).filter(Boolean).slice(0, 10);
+            } else it.text = t;
+            it.confidence = Math.max(it.confidence, 0.9); it.source.via = it.source.via || "edited";
+            memEditing = ""; memChanged(it); toast("Saved.");
+          });
+          setTimeout(function () { try { a.focus(); } catch (e) {} }, 30);
+        }
+        function memProjectBody(it, body) {
+          var p = it.p;
+          if (p.direction) { var d = doc.createElement("span"); d.className = "x-mi__dir"; d.textContent = p.direction; body.appendChild(d); }
+          if (p.open.length || p.decisions.length) {
+            var ul = doc.createElement("ul"); ul.className = "x-mi__open";
+            p.open.forEach(function (x) { var l = doc.createElement("li"); l.textContent = x; ul.appendChild(l); });
+            p.decisions.slice(-3).forEach(function (x) { var l = doc.createElement("li"); l.className = "is-dec"; l.textContent = x; ul.appendChild(l); });
+            body.appendChild(ul);
+          }
+        }
+        function paintMemory() {
+          if (!memList) return;
+          if (memEditing && memGet(memEditing)) return; /* don't yank the field out from under his thumbs */
+          memEditing = "";
+          var q = memQ ? memQ.value.trim() : "";
+          var all = MEM.items.filter(function (it) { return it.kind === memTab && memMatches(it, q); });
+          all.sort(function (a, b) {
+            if ((a.status === "outdated") !== (b.status === "outdated")) return a.status === "outdated" ? 1 : -1;
+            return Date.parse(b.lastSeen) - Date.parse(a.lastSeen);
+          });
+          memList.textContent = "";
+          all.slice(0, 200).forEach(function (it) {
+            var li = doc.createElement("li"); li.className = "x-mi" + (it.status === "outdated" ? " is-old" : "") + (it.kind === "project" ? " is-proj" : "");
+            li.setAttribute("data-id", it.id);
+            var dot = doc.createElement("i"); dot.className = "x-mi__dot " + memDotCls(it.confidence);
+            dot.title = "Confidence " + Math.round(it.confidence * 100) + "%"; dot.setAttribute("aria-hidden", "true");
+            var body = doc.createElement("div"); body.className = "x-mi__body";
+            var t = doc.createElement("span"); t.className = "x-mi__t"; t.textContent = it.text;
+            t.setAttribute("role", "button"); t.tabIndex = 0;
+            t.setAttribute("aria-label", "Edit: " + it.text + ". Confidence " + Math.round(it.confidence * 100) + " percent. " + memMeta(it));
+            t.addEventListener("click", function () { memEditOpen(it, li); });
+            t.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); memEditOpen(it, li); } });
+            body.appendChild(t);
+            if (it.kind === "project" && it.p) memProjectBody(it, body);
+            var meta = doc.createElement("small"); meta.className = "x-mi__meta"; meta.textContent = memMeta(it); body.appendChild(meta);
+            li.appendChild(dot); li.appendChild(body);
+            if (it.kind !== "episodic") li.appendChild(memBtn(it.status === "outdated" ? "Mark current again" : "Mark outdated", it.status === "outdated" ? "↺" : "⌛", function () { memToggleOld(it); }));
+            li.appendChild(memBtn("Forget this", "×", function () { memForget(it, li); }, "is-x"));
+            memSwipe(li, it);
+            memList.appendChild(li);
+          });
+          var c = { personal: 0, project: 0, semantic: 0, episodic: 0 };
+          MEM.items.forEach(function (it) { if (it.status === "active") c[it.kind]++; });
+          $("mem-count").textContent = MEM.items.length;
+          $("mem-sum").textContent = c.personal + " personal · " + c.project + " project" + (c.project === 1 ? "" : "s") + " · " + c.semantic + " fact" + (c.semantic === 1 ? "" : "s") + " · " + c.episodic + " moment" + (c.episodic === 1 ? "" : "s");
+          var e = $("mem-empty");
+          e.textContent = q ? "Nothin' matches “" + q + "”." : MEM_TAB_EMPTY[memTab];
+          e.hidden = all.length > 0;
+          memList.hidden = !all.length;
+          $("mem-form").hidden = memTab === "episodic";
+          memIn.placeholder = MEM_TAB_ADD[memTab] || ""; memIn.setAttribute("aria-label", MEM_TAB_ADD[memTab] || "Add");
+          memClear.hidden = !MEM.items.length && !S.memory.length && !memArm;
+          [].forEach.call(doc.querySelectorAll("#mem-seg [data-kind]"), function (b) {
+            var k = b.getAttribute("data-kind");
+            b.setAttribute("aria-pressed", k === memTab ? "true" : "false");
+            b.setAttribute("aria-label", b.getAttribute("data-label") + ", " + c[k]);
+          });
+          $("set-memauto").setAttribute("aria-checked", memAutoOn() ? "true" : "false");
+          var en = $("emb-note");
+          if (en) en.textContent = MEM.embErr ? "⚠️ " + MEM.embErr + " Using on-device search for now." :
+            oaiKeyForMem() ? "Smart recall is on: your OpenAI key embeds memories (cached on this device)." : "No OpenAI key, so recall uses on-device keyword search. Add one in Settings > Brain for smarter recall.";
+        }
+        [].forEach.call(doc.querySelectorAll("#mem-seg [data-kind]"), function (b) {
+          b.addEventListener("click", function () { memTab = b.getAttribute("data-kind"); memEditing = ""; paintMemory(); });
+        });
+        if (memQ) memQ.addEventListener("input", function () { memEditing = ""; paintMemory(); });
+        $("set-memauto").addEventListener("click", function () {
+          S.memAuto = !memAutoOn(); save(); paintMemory();
+          toast(S.memAuto ? "🧠 Auto-learning on." : "Auto-learning off. Blarf only remembers what you tell him to.");
+        });
+        var embIn = $("set-embmodel");
+        if (embIn) {
+          embIn.placeholder = EMB_DEFAULT; embIn.value = S.embedModel || "";
+          embIn.addEventListener("change", function () { S.embedModel = embIn.value.trim(); MEM.embErr = ""; MEM.embOffUntil = 0; MEM.ctx = null; save(); paintMemory(); });
         }
         $("mem-form").addEventListener("submit", function (e) {
           e.preventDefault();
           var v = memIn.value.trim(); if (!v) return;
-          if (remember(v)) toast("🧠 Blarf will remember that"); else toast("Already remembered");
+          var r = memUpsert({ kind: memTab, text: v, name: v, confidence: 0.95, op: "new" }, { via: "added by you", msg: v });
+          toast(r.how === "added" ? "🧠 Blarf will remember that" : r.how === "skipped" ? "Couldn't save that." : "Already remembered");
           memIn.value = "";
         });
         function memReset() { memClear.textContent = "Forget everything"; $("mem-note").textContent = MEM_NOTE; }
         memClear.addEventListener("click", function () {
           if (!memArm) {
             memClear.textContent = "Tap again to forget everything";
-            $("mem-note").textContent = "This can't be undone.";
+            $("mem-note").textContent = "All " + MEM.items.length + " memories, gone for good. This can't be undone.";
             memArm = setTimeout(function () { memArm = null; memReset(); }, 3000);
             return;
           }
           clearTimeout(memArm); memArm = null;
-          S.memory = []; save(); memReset(); paintMemory();
+          MEM.items = []; MEM.emb = {}; MEM.qv = {}; MEMDB.clear(); SESS = null;
+          S.memory = []; S.memMig = true; save(); memReset(); memChanged(null);
           toast(S.name + " forgot everything.");
         });
+        memReset();
         paintMemory();
 
         /* ---------- studio tools ---------- */
@@ -6283,7 +7123,7 @@
         /* IndexedDB answers late: restore any setting the other stores lost, then back-fill every store */
         KV.ready([SETKEY, STORE], function (got) {
           var fromIdb = parseJSON(got[SETKEY]) || parseJSON(got[STORE]) || {}, changed = false;
-          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch", "brain", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel", "autoRoute", "voicePolish", "thinkProv", "thinkModel", "visionModel"].forEach(function (f) {
+          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch", "brain", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel", "autoRoute", "voicePolish", "thinkProv", "thinkModel", "visionModel", "memAuto", "memMig", "embedModel"].forEach(function (f) {
             if (saved[f] === undefined && fromIdb[f] !== undefined && fromIdb[f] !== "") { S[f] = fromIdb[f]; changed = true; }
           });
           S.chars = charsClean(S.chars);
@@ -6291,6 +7131,8 @@
           S.autoRoute = S.autoRoute !== false; S.voicePolish = !!S.voicePolish;
           if (S.thinkProv !== "openai" && S.thinkProv !== "xai") S.thinkProv = "auto";
           paintBrainSettings();
+          S.memAuto = S.memAuto !== false; S.memMig = !!S.memMig; if (typeof S.embedModel !== "string") S.embedModel = "";
+          if ($("set-embmodel")) $("set-embmodel").value = S.embedModel; paintMemory();
           if (!S.tools || typeof S.tools !== "object") S.tools = { studio: true, hustle: true };
           paintTools();
           if (modelMig()) changed = true;
@@ -6323,6 +7165,7 @@
             });
             S.memory = Object.keys(seen).map(function (k) { return seen[k]; })
               .sort(function (a, b) { return String(a.d).localeCompare(String(b.d)); }).slice(-MEM_MAX);
+            if (MEM.ready) memMigrate();
             paintMemory();
           }
           if (saved.lastSeen === undefined && typeof fromIdb.lastSeen === "string" && fromIdb.lastSeen && !S.lastSeen) { S.lastSeen = fromIdb.lastSeen; prevSeen = S.lastSeen; }
