@@ -103,12 +103,13 @@
 
       /* press feedback */
       button:not(.x-wake):not(.x-menu__scrim):not(.x-talk), a.btn {
-        transition: scale 150ms ease, opacity 150ms ease, transform var(--dur-quick) var(--ease-out),
+        transition: scale 120ms ease, opacity 120ms ease, transform var(--dur-quick) var(--ease-out),
           background-color var(--dur-quick) var(--ease-out), color var(--dur-quick) var(--ease-out),
           border-color var(--dur-quick) var(--ease-out), box-shadow var(--dur-quick) var(--ease-out);
       }
       .x-talk.x-talk { transition: opacity 320ms var(--ease-out), transform 320ms var(--ease-out), scale 150ms ease; }
-      button:not(.x-wake):not(.x-menu__scrim):not(:disabled):active, a.btn:active { scale: 0.96; opacity: 0.85; }
+      button:not(.x-wake):not(.x-menu__scrim):not(:disabled):active, a.btn:active, .x-tool summary:active { scale: 0.97; opacity: 0.85; }
+      .x-tool summary { transition: scale 120ms ease, opacity 120ms ease; }
       .x-spk[aria-pressed="false"]:active { opacity: 0.5; }
       @media (prefers-reduced-motion: reduce) {
         button:not(.x-wake):not(.x-menu__scrim):not(:disabled):active, a.btn:active { scale: none; }
@@ -874,6 +875,202 @@
       .x-install .x-sheet__close { color: var(--x-ink-on-dark); }
       @media (prefers-reduced-motion: reduce) { .x-install { animation: none; } }
     </style>
+    <style>
+      /* ---------- iOS polish pass: type scale, sheets, chat, pills, lists, toasts ---------- */
+      :root {
+        --x-spring: cubic-bezier(0.32, 0.72, 0, 1);
+        --x-bounce: cubic-bezier(0.34, 1.32, 0.64, 1);
+        --x-sheet-ms: 420ms;
+        --x-sheet-r: 10px;
+        --x-bub-r: 18px;
+        --x-bub-tail: 6px;
+        --x-material: blur(20px) saturate(180%);
+        --x-large-title: var(--weight-bold) 34px/41px var(--sans);
+        --x-title: var(--weight-bold) 28px/34px var(--sans);
+        --x-headline: var(--weight-bold) 17px/22px var(--sans);
+        --x-body: var(--weight-regular) 17px/22px var(--sans);
+        --x-subhead: var(--weight-regular) 15px/20px var(--sans);
+        --x-footnote: var(--weight-regular) 13px/18px var(--sans);
+      }
+      .x-app, .x-ovl__panel { --x-me-fill: color-mix(in srgb, var(--x-accent) 60%, #000); }
+
+      /* sheets: 10px top corners, grabber, spring */
+      .x-sheet, .x-ovl__panel, .x-menu__panel { border-radius: var(--x-sheet-r) var(--x-sheet-r) 0 0; }
+      .x-sheet { transition: transform var(--x-sheet-ms) var(--x-spring); box-shadow: 0 -0.5px 0 var(--stroke-primary), 0 -12px 40px rgb(0 0 0 / 0.35); }
+      .x-ovl__panel, .x-menu__panel { transition: transform var(--x-sheet-ms) var(--x-spring); box-shadow: 0 -0.5px 0 var(--stroke-primary), 0 -12px 40px rgb(0 0 0 / 0.3); }
+      .x-scrim { transition: opacity var(--x-sheet-ms) var(--x-spring); }
+      .is-spring { transition: transform var(--x-sheet-ms) var(--x-spring) !important; }
+      .x-grabber { padding: 6px 0 8px; }
+      .x-grabber::before, .x-grab::before { width: 36px; height: 5px; border-radius: 2.5px; background: var(--transparent-primary); }
+      .x-grab { min-height: var(--tap); gap: 8px; }
+
+      /* frosted headers, solid where blur is missing */
+      .x-sheet__head, .x-ovl .x-top, .x-crew__panel .x-crew__head {
+        background: var(--mat-regular); -webkit-backdrop-filter: var(--x-material); backdrop-filter: var(--x-material);
+      }
+      .x-sheet__head { padding-top: 0; padding-bottom: 8px; border-bottom: 0.5px solid var(--stroke-primary); }
+      .x-ovl .x-top { border-bottom: 0.5px solid var(--stroke-primary); }
+      .x-crew__panel .x-crew__head {
+        position: sticky; top: 0; z-index: 2; padding: 8px 16px;
+        margin: 0 calc(-16px - env(safe-area-inset-right)) 0 calc(-16px - env(safe-area-inset-left));
+        padding-inline: calc(16px + env(safe-area-inset-left)) calc(16px + env(safe-area-inset-right));
+        border-bottom: 0.5px solid var(--stroke-primary);
+      }
+      @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+        .x-sheet__head, .x-ovl .x-top, .x-crew__panel .x-crew__head, .x-composer { background: var(--fill-primary-on); }
+        .x-toast { background: var(--fill-tertiary); }
+      }
+
+      /* type scale */
+      .x-settings > h2 { font: var(--x-large-title); letter-spacing: 0.01em; padding-top: 8px; }
+      .x-crew__head h3 { font: var(--x-title); }
+      .x-sheet__head .x-sheet__name { font: var(--x-headline) !important; }
+      .x-who h1 { font: var(--x-headline); }
+      .x-who p { font: var(--x-footnote); }
+      .x-glabel { font: var(--x-headline); color: var(--text-primary); text-transform: none; letter-spacing: 0; padding: 0 16px 8px; }
+      .x-gnote { font: var(--x-footnote); padding: 8px 16px 0; }
+      .x-twoline small, .x-crew__head small { font: var(--x-footnote); }
+      .x-row, .x-prompt, .x-composer, .x-mem-add { font-size: 17px; }
+      .x-row > label, .x-row > span, .x-row > .x-val, .x-prompt > label, .x-mem > li > span,
+      .x-crew__row .x-twoline, .x-menu__item, .x-steps, .x-danger { font: var(--x-body); }
+      .x-danger { font-weight: var(--weight-medium); }
+      .x-row > .x-keynote { font: var(--x-subhead); }
+      .x-time { font: var(--x-footnote); margin: 4px 8px 8px; }
+
+      /* 8-pt rhythm and 44px targets */
+      .x-scroll { padding-top: 16px; }
+      .x-settings { gap: 32px; padding-bottom: 32px; }
+      .btn, .x-row .btn, .x-pill button, .x-crew__head .btn { min-height: var(--tap); }
+      .x-pill { padding: 4px; gap: 4px; }
+      .x-pill button { padding: 0 16px; }
+      .x-row > .x-twoline { padding-block: 8px; }
+      .x-menu__item { min-height: var(--tap); padding-block: 4px; }
+      .x-menu__item + .x-menu__item { border-top: 0; background: linear-gradient(var(--stroke-secondary), var(--stroke-secondary)) 52px 0 / calc(100% - 52px) 1px no-repeat; }
+
+      /* press feedback on rows and chips too */
+      .x-menu__item:active, button.x-crew__row:active, .x-chip:active { background-color: var(--hover-wash); }
+
+      /* chat bubbles */
+      .x-thread { gap: 2px; }
+      .x-msg { animation: x-msg-in 180ms var(--ease-out) both; }
+      @keyframes x-msg-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+      .x-bub { padding: 8px 14px; border-radius: var(--x-bub-r); border-bottom-left-radius: var(--x-bub-tail); font: var(--x-body); }
+      .x-msg--me .x-bub { background: var(--x-me-fill); color: #fff; border-radius: var(--x-bub-r); border-bottom-right-radius: var(--x-bub-tail); }
+      .x-msg--me + .x-msg--me .x-bub { border-top-right-radius: var(--x-bub-tail); }
+      .x-msg--bot + .x-msg--bot .x-bub, .x-msg--bot + .x-msg--bot .x-crewp { border-top-left-radius: var(--x-bub-tail); }
+      .x-msg--me:has(+ .x-msg--me) .x-time { display: none; }
+      .x-msg--bot:has(+ .x-msg--bot) .x-time:not(:has(.x-brtag)) { display: none; }
+      .x-msg--bot:has(+ .x-msg--bot) > .x-mini { visibility: hidden; }
+      .x-crewp { border-radius: var(--x-bub-r); border-bottom-left-radius: var(--x-bub-tail); }
+
+      /* typing: three bouncing dots in a bubble */
+      .x-typing .x-bub { align-items: center; gap: 5px; padding: 12px 14px; min-height: 38px; }
+      .x-typing i { width: 8px; height: 8px; animation: x-dot 1.2s ease-in-out infinite; }
+      .x-typing i:nth-child(2) { animation-delay: 0.15s; }
+      .x-typing i:nth-child(3) { animation-delay: 0.3s; }
+      @keyframes x-dot { 0%, 60%, 100% { transform: translateY(0); opacity: 0.45; } 30% { transform: translateY(-4px); opacity: 1; } }
+
+      /* composer: frosted, safe-area padded, pill field, send scales in */
+      .x-composer {
+        position: sticky; bottom: 0; z-index: 2; gap: 8px;
+        padding: 8px calc(8px + env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left));
+        background: var(--mat-regular); -webkit-backdrop-filter: var(--x-material); backdrop-filter: var(--x-material);
+        border-top: 0.5px solid var(--stroke-primary);
+      }
+      .x-app.is-kb .x-composer, .x-ovl.is-kb .x-composer { padding-bottom: 8px; }
+      .x-input { border-radius: var(--r-pill); padding: 10px 16px; background: var(--fill-tertiary); border: 0.5px solid var(--stroke-primary); }
+      .x-input:focus { border-color: var(--stroke-primary); box-shadow: 0 0 0 1px var(--x-accent); }
+      .x-cam { border: 0; background: var(--fill-tertiary); }
+      form.x-composer button.x-send.x-send {
+        padding: 5px; background: var(--x-me-fill); background-clip: content-box; color: #fff;
+        transition: transform 280ms var(--x-bounce), opacity 160ms var(--ease-out), scale 120ms ease;
+      }
+      form.x-composer button.x-send.x-send svg { width: 18px; height: 18px; }
+      form.x-composer button.x-send.x-send:disabled { opacity: 0; transform: scale(0.4); pointer-events: none; }
+      .x-chips { padding-block: 8px 0; }
+      .x-chip { font: var(--weight-medium) 15px/20px var(--sans); border-width: 0.5px; background: var(--fill-tertiary); }
+
+      /* brain-mode pills: segmented with a sliding highlight, edge fades */
+      .x-brain {
+        padding-block: 8px;
+        -webkit-mask-image: linear-gradient(to right, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+        mask-image: linear-gradient(to right, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+      }
+      .x-brain .x-seg { position: relative; padding: 2px; border: 0; border-radius: var(--r-pill); background: var(--fill-tertiary); }
+      .x-brain .x-seg button { position: relative; z-index: 1; padding: 0 16px; font: var(--weight-medium) 13px/18px var(--sans); color: var(--text-secondary); transition: color 200ms var(--ease-out), scale 120ms ease, opacity 120ms ease; }
+      .x-brain .x-seg button[aria-pressed="true"] { color: var(--text-primary-on); }
+      /* the active pill fills in once the highlight has slid under it, so its text always sits on a solid fill */
+      .x-seg.has-thumb button[aria-pressed="true"] { background: var(--fill-primary); transition: color 200ms var(--ease-out), background-color 1ms linear 340ms, scale 120ms ease, opacity 120ms ease; }
+      .x-seg__thumb {
+        position: absolute; z-index: 0; top: 2px; bottom: 2px; left: 0; width: 0; border-radius: var(--r-pill);
+        background: var(--fill-primary); box-shadow: 0 3px 8px rgb(0 0 0 / 0.16), 0 1px 1px rgb(0 0 0 / 0.06);
+        pointer-events: none;
+      }
+      .x-seg__thumb.is-ready { transition: transform 360ms var(--x-spring), width 360ms var(--x-spring); }
+
+      /* inset-grouped settings lists */
+      .x-group, .x-menu__list { border-radius: var(--r-s); }
+      .x-row + .x-row, .x-row + .x-prompt, .x-prompt + .x-row, .x-mem + .x-row, .x-mem-empty + .x-row, .x-mem > li, .x-mem-empty {
+        background-size: calc(100% - 16px) 0.5px;
+      }
+      .x-crew__row::after, .x-menu__item[data-go]::after {
+        content: ""; flex: none; width: 8px; height: 8px; margin: 0 4px 0 auto;
+        border-right: 2px solid var(--text-tertiary); border-top: 2px solid var(--text-tertiary); transform: rotate(45deg);
+      }
+      .x-crew__row::after { margin-left: 0; }
+      .x-switch::before { transition: background 240ms var(--ease-out); }
+      .x-switch::after { box-shadow: 0 3px 8px rgb(0 0 0 / 0.15), 0 3px 1px rgb(0 0 0 / 0.06); transition: transform 280ms var(--x-spring); }
+
+      /* loading and empty states */
+      .x-skel { display: grid; gap: 8px; padding: 4px 0; }
+      .x-skel i {
+        display: block; height: 12px; border-radius: 6px;
+        background: linear-gradient(90deg, var(--fill-tertiary) 25%, color-mix(in srgb, var(--fill-tertiary), var(--text-primary) 14%) 50%, var(--fill-tertiary) 75%) 0 0 / 200% 100%;
+        animation: x-shimmer 1.4s linear infinite;
+      }
+      .x-skel i:nth-child(2) { width: 88%; }
+      .x-skel i:nth-child(3) { width: 60%; }
+      @keyframes x-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+      .x-crewp__m:not(.is-done):not(.is-fail) .x-crewp__face { animation: x-pulse 1.4s ease-in-out infinite; }
+      @keyframes x-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+      .x-empty { gap: 16px; padding: 48px 16px 16px; }
+      .x-empty p { font: var(--weight-bold) 22px/28px var(--sans); }
+      .x-mem-empty { font: var(--x-subhead); padding: 16px; }
+
+      /* toast: frosted capsule under the safe area, springs down */
+      .x-toast {
+        top: calc(env(safe-area-inset-top) + 8px); padding: 12px 20px; border-radius: var(--r-pill);
+        background: var(--mat-agent); color: var(--text-primary); border: 0.5px solid var(--stroke-primary);
+        -webkit-backdrop-filter: var(--x-material); backdrop-filter: var(--x-material);
+        font: var(--weight-medium) 15px/20px var(--sans); box-shadow: 0 8px 32px rgb(0 0 0 / 0.3);
+        transform: translate(-50%, calc(-100% - 16px - env(safe-area-inset-top)));
+        transition: transform 460ms var(--x-bounce), opacity 200ms var(--ease-out);
+      }
+      .x-toast.is-on { transform: translate(-50%, 0); }
+
+      /* more contrast: solid surfaces, firmer lines and text */
+      @media (prefers-contrast: more) {
+        :root {
+          --text-secondary: light-dark(#3a3a3c, #d1d1d6);
+          --stroke-primary: light-dark(#1d1d1f99, #f5f5f799);
+          --stroke-secondary: light-dark(#1d1d1f59, #f5f5f759);
+          --mat-regular: var(--fill-primary-on);
+          --mat-agent: var(--fill-primary-on);
+        }
+        .x-app, .x-ovl__panel { --x-me-fill: color-mix(in srgb, var(--x-accent) 42%, #000); }
+        .x-bub, .x-crewp, .x-input, .x-group, .x-menu__list { border: 1px solid var(--stroke-primary); }
+        .x-switch::before { box-shadow: inset 0 0 0 1px var(--stroke-primary); }
+        .x-brain .x-seg button[aria-pressed="true"] { font-weight: var(--weight-bold); }
+      }
+
+      /* reduced motion: no springs, bounces or shimmer */
+      @media (prefers-reduced-motion: reduce) {
+        .x-sheet, .x-ovl__panel, .x-menu__panel, .x-scrim, .is-spring, .x-toast, .x-seg__thumb.is-ready,
+        form.x-composer button.x-send.x-send, .x-switch::after, .x-switch::before { transition-duration: 1ms !important; }
+        .x-msg, .x-typing i, .x-skel i, .x-crewp__m .x-crewp__face { animation: none !important; }
+        .x-hero, .x-caption { transition-duration: 1ms; }
+      }
+    </style>
   </head>
   <body>
     <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
@@ -1155,7 +1352,7 @@
                     <span class="x-val" id="mem-count">0</span>
                   </div>
                   <ul class="x-mem" id="mem-list"></ul>
-                  <p class="x-mem-empty" id="mem-empty">Nothing yet. Tell him "remember that…" or just chat.</p>
+                  <p class="x-mem-empty" id="mem-empty">Nothin' saved yet. Tell me somethin' worth rememberin'.</p>
                   <form class="x-row x-mem-add" id="mem-form">
                     <input class="x-field" id="mem-in" maxlength="200" autocomplete="off" aria-label="Add something for Blarf to remember" placeholder="Add something for Blarf to remember" />
                     <button class="btn" type="submit">Add</button>
@@ -2864,7 +3061,7 @@
           caption.setAttribute("aria-label", caption.textContent + ". Open chat");
         }
         /* ---------- bottom sheets: grabber, drag down to dismiss, spring back ---------- */
-        var SHEET_MS = 280, dragSup = false;
+        var SHEET_MS = 420, dragSup = false;
         function calm() { return !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches); }
         doc.addEventListener("click", function (e) { if (dragSup) { e.preventDefault(); e.stopPropagation(); } }, true);
         function sheetDrag(panel, handles, scrim, dismiss) {
@@ -4241,7 +4438,7 @@
               '</span>' +
               '<button class="x-switch" type="button" role="switch" data-mcp-on="' + i + '" aria-checked="' + (c.on ? "true" : "false") + '" aria-labelledby="lbl-mcp-' + i + '"></button>' +
               '</div>';
-          }).join("") + '<div class="x-row"><span>' + (list.length ? list.filter(function (c) { return c.on; }).length + " of " + list.length + " on" : "No connectors yet") + '</span><button class="btn" id="mcp-add" type="button" aria-haspopup="dialog">+ Add connector</button></div>';
+          }).join("") + '<div class="x-row"><span>' + (list.length ? list.filter(function (c) { return c.on; }).length + " of " + list.length + " on" : "No connectors. Blarf's flyin' solo.") + '</span><button class="btn" id="mcp-add" type="button" aria-haspopup="dialog">+ Add connector</button></div>';
         }
         var MCP_PRESETS = {
           zapier: { label: "zapier", url: "", ph: "https://mcp.zapier.com/api/mcp/…", hint: "Paste your own server URL from mcp.zapier.com, plus the token if it gave you one." },
@@ -4589,7 +4786,7 @@
             ansEl.hidden = !open;
             if (!open) return;
             var c = crewMember(open), a = ans[open];
-            ansEl.innerHTML = "<b>" + esc(c.name + " · " + c.role) + "</b>" + (a ? fmt(a.t) : "Still thinkin'…");
+            ansEl.innerHTML = "<b>" + esc(c.name + " · " + c.role) + "</b>" + (a ? fmt(a.t) : '<span class="x-skel" role="status" aria-label="Still thinkin\'…"><i></i><i></i><i></i></span>');
             scrollDown(m, true);
           }
           el.querySelector(".x-crewp__row").addEventListener("click", function (e) {
@@ -5703,6 +5900,35 @@
         setSheet(false);
         paintIdentity(); paintStatus();
         go("chat"); /* always land on Blarf's face */
+      })();
+    </script>
+    <script>
+      /* iOS polish: sliding highlight behind the active brain pill, light haptics on primary actions */
+      (function () {
+        var seg = document.getElementById("brain-seg");
+        if (seg) {
+          var thumb = document.createElement("span");
+          thumb.className = "x-seg__thumb"; thumb.setAttribute("aria-hidden", "true");
+          seg.insertBefore(thumb, seg.firstChild);
+          seg.classList.add("has-thumb");
+          var place = function () {
+            var on = seg.querySelector('[data-brain][aria-pressed="true"]');
+            thumb.style.opacity = on ? "1" : "0";
+            if (!on || !on.offsetWidth) return;
+            thumb.style.width = on.offsetWidth + "px";
+            thumb.style.transform = "translateX(" + on.offsetLeft + "px)";
+          };
+          place();
+          requestAnimationFrame(function () { place(); requestAnimationFrame(function () { thumb.classList.add("is-ready"); }); });
+          if (window.MutationObserver) new MutationObserver(place).observe(seg, { subtree: true, attributes: true, attributeFilter: ["aria-pressed"] });
+          if (window.ResizeObserver) new ResizeObserver(place).observe(seg);
+          if (document.fonts && document.fonts.ready) document.fonts.ready.then(place);
+        }
+        var PRIMARY = ".x-send, .x-chip, .x-cta, #mcp-save, #crew-done, #beat-play, #key-test, #voice-test, #crew-test, #pill-copy, #pill-speak";
+        document.addEventListener("click", function (e) {
+          var t = e.target.closest && e.target.closest(PRIMARY);
+          if (t && navigator.vibrate) { try { navigator.vibrate(8); } catch (err) {} }
+        });
       })();
     </script>
     <script>
