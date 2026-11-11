@@ -442,6 +442,13 @@
       .x-pend__lbl { font: var(--type-small); color: var(--text-secondary); }
       .x-pend__x { width: var(--tap); height: var(--tap); border: 0; border-radius: 50%; background: none; color: var(--text-primary); font: var(--weight-medium) 20px/1 var(--sans); display: grid; place-items: center; cursor: pointer; }
       .x-bubimg { display: block; max-width: min(220px, 100%); height: auto; border-radius: var(--r-s); margin: 2px 0 8px; }
+      .x-bubimg.x-genimg { max-width: min(300px, 100%); cursor: zoom-in; }
+      .x-lbox { position: fixed; inset: 0; z-index: 55; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: calc(env(safe-area-inset-top) + 56px) var(--gutter) calc(env(safe-area-inset-bottom) + 24px); background: rgba(0, 0, 0, 0.88); }
+      .x-lbox[hidden] { display: none; }
+      .x-lbox img { max-width: 100%; max-height: calc(100% - 64px); object-fit: contain; border-radius: var(--r-s); }
+      .x-lbox__bar { display: flex; gap: 8px; }
+      .x-lbox__bar .btn { min-height: var(--tap); background: var(--fill-primary-on); color: var(--text-primary); }
+      .x-lbox__x { position: absolute; top: calc(env(safe-area-inset-top) + 8px); right: calc(env(safe-area-inset-right) + 12px); width: var(--tap); height: var(--tap); border: 0; border-radius: var(--r-pill); background: rgba(255, 255, 255, 0.16); color: #fff; font: var(--type-heading); line-height: 1; cursor: pointer; }
 
 
       /* tool cards */
@@ -1088,6 +1095,10 @@
     </div>
 
     <div class="x-toast" id="toast" role="status" aria-live="polite"></div>
+    <div class="x-lbox" id="lbox" role="dialog" aria-modal="true" aria-label="Blarf's picture" hidden>
+      <button class="x-lbox__x" id="lbox-x" type="button" aria-label="Close">×</button>
+      <div class="x-lbox__bar"><button class="btn" id="lbox-save" type="button">Save / Share</button></div>
+    </div>
     <div class="x-pill" id="bub-pill" role="menu" aria-label="Message actions" hidden>
       <button type="button" role="menuitem" id="pill-copy">Copy</button>
       <button type="button" role="menuitem" id="pill-speak">Speak again</button>
@@ -2232,7 +2243,7 @@
         var MODES = {
           chat: {
             label: "Blarf", role: "Chill buddy", accent: "var(--x-blue1)",
-            chips: ["How's my day looking?", "Hype me up", "Tell me something random", "I'm bored", "Roast me"],
+            chips: ["How's my day looking?", "Hype me up", "Tell me something random", "I'm bored", "Roast me", "🎨 Draw"],
             system: function () {
               var p = personaPrompt();
               if (p) return "Your name is " + S.name + ". " + p + " Keep replies short and mobile-friendly: one to four short sentences or a tight list." + memoryClause() + swearClause() + roastClause() + triviaClause();
@@ -2350,7 +2361,8 @@
         function msgEl(msg) {
           var el = doc.createElement("div");
           el.className = "x-msg" + (msg.r === "me" ? " x-msg--me" : msg.r === "err" ? " x-msg--err" : " x-msg--bot");
-          var pic = msg.r === "me" && typeof msg.img === "string" && /^data:image\//.test(msg.img) ? '<img class="x-bubimg" src="' + esc(msg.img) + '" alt="Photo you sent" />' : "";
+          var pic = msg.r === "me" && typeof msg.img === "string" && /^data:image\//.test(msg.img) ? '<img class="x-bubimg" src="' + esc(msg.img) + '" alt="Photo you sent" />'
+            : msg.r === "bot" && typeof msg.img === "string" && /^(data:image\/|https:\/\/)/.test(msg.img) ? '<img class="x-bubimg x-genimg" src="' + esc(msg.img) + '" alt="Picture Blarf made" role="button" tabindex="0" />' : "";
           var inner = '<div class="x-bub">' + pic + fmt(msg.t) + '</div><p class="x-time">' + clock(msg.ts) +
             (msg.r === "bot" && msg.brain && msg.brain !== "quick" && BRAINS[msg.brain] ? '<span class="x-brtag">' + BRAINS[msg.brain].label + "</span>" : "") + "</p>";
           el.innerHTML = msg.r === "bot" ? '<span class="x-mini" aria-hidden="true">' + BL.MINI + '</span><div class="x-msg__body">' + inner + "</div>" : inner;
@@ -2383,19 +2395,20 @@
           }
         }
         var typingEl = {}, lastUser = "";
-        function typing(m, on) {
+        function typing(m, on, label) {
           var deep = on && m === "chat" && S.brain === "deep" && !!S.apiKey;
+          var lbl = label || (deep ? "Blarf's thinkin' wicked hard…" : "");
           if (on && !typingEl[m]) {
             var el = doc.createElement("div");
-            el.className = "x-msg x-msg--bot x-typing"; el.setAttribute("aria-label", deep ? "Blarf's thinkin' wicked hard…" : S.name + " is typing");
+            el.className = "x-msg x-msg--bot x-typing"; el.setAttribute("aria-label", lbl || S.name + " is typing");
             el.innerHTML = '<span class="x-mini" aria-hidden="true">' + BL.MINI + '</span><div class="x-msg__body"><div class="x-bub"><i></i><i></i><i></i>' +
-              (deep ? '<span class="x-typing__lbl">Blarf\'s thinkin\' wicked hard…</span>' : "") + "</div></div>";
+              (lbl ? '<span class="x-typing__lbl">' + esc(lbl) + "</span>" : "") + "</div></div>";
             V[m].thread.appendChild(el); typingEl[m] = el; scrollDown(m, true);
           } else if (!on && typingEl[m]) { typingEl[m].remove(); typingEl[m] = null; }
           if (m === "chat") {
             BL.think(on, deep);
             $("sheet-status").textContent = on ? "thinking…" : MODES.chat.role;
-            if (on) setCaption(deep ? "Blarf's thinkin' wicked hard…" : "Hmm, let me think…", true);
+            if (on) setCaption(lbl || "Hmm, let me think…", true);
           }
         }
 
@@ -3331,10 +3344,23 @@
         window.addEventListener("offline", function () { toast(OFFLINE_MSG); });
         window.addEventListener("online", function () { toast("Back online"); });
         if (isOffline()) toast(OFFLINE_MSG);
+        var DRAW_RX = /^(draw|paint|sketch|generate|create|make)( me)?( an?| the)? (image|picture|pic|drawing|art|logo|cover|album art|poster|wallpaper)\b/i;
+        function drawPrompt(text) {
+          if (/^\/(img|draw) /i.test(text)) return text.replace(/^\/(img|draw) /i, "").trim();
+          if (!DRAW_RX.test(text)) return null;
+          var p = text.replace(DRAW_RX, "").replace(/^\s*(of\b|:|-)\s*/i, "").trim();
+          return p || text;
+        }
         function send(m, text, img) {
           text = (text || "").trim();
+          if (!img && text === "🎨 Draw") {
+            var vi = V[m].input; vi.value = "/draw "; vi.dispatchEvent(new Event("input", { bubbles: true })); vi.focus();
+            try { vi.setSelectionRange(vi.value.length, vi.value.length); } catch (e) {}
+            return false;
+          }
           if (!text && img) text = "What do you make of this?";
           if (!text) return false;
+          var dp = img ? null : drawPrompt(text);
           if (S.apiKey && isOffline()) { toast(OFFLINE_MSG); return false; }
           if (m === "chat") { lastUser = text; setSheet(true); if (/^stop\b/i.test(text)) { S.roast = false; S.trivia = false; } }
           stopVoice();
@@ -3342,14 +3368,25 @@
           var me = { r: "me", t: text, ts: Date.now() };
           if (img) { me.img = img; me.pic = 1; }
           addMsg(m, me);
-          queue[m].push(text);
+          queue[m].push(dp ? { draw: dp } : text);
           if (!busy[m]) next(m);
           return true;
         }
+        var DRAW_CAPS = ["There. Frame it or don't, I don't care.", "Wicked pissah, if I do say so myself.", "Took me forever. You're welcome, kid.", "Don't say I never did nothin' for ya.", "Museum quality. The Gahdner can call me.", "Best I could do with what you gave me, pal."];
         function next(m) {
           var text = queue[m].shift();
           if (text == null) { busy[m] = false; return; }
-          busy[m] = true; typing(m, true);
+          busy[m] = true;
+          if (typeof text === "object") {
+            var bot = function (msg) { typing(m, false); addMsg(m, msg); next(m); };
+            if (S.provider !== "xai" || !S.apiKey) { typing(m, true); setTimeout(function () { bot({ r: "bot", t: "Image gen needs Grok as the provider, kid.", ts: Date.now() }); }, 500); return; }
+            typing(m, true, "Blarf's paintin'… don't rush an artist");
+            genImage(text.draw).then(function (src) {
+              bot({ r: "bot", t: DRAW_CAPS[Math.floor(Math.random() * DRAW_CAPS.length)], img: src, ts: Date.now() });
+            }, function (err) { bot({ r: "err", t: "**Couldn't make the picture.** " + err, ts: Date.now() }); });
+            return;
+          }
+          typing(m, true);
           var done = function (reply) { typing(m, false); addMsg(m, { r: "bot", t: reply, ts: Date.now() }); next(m); };
           if (S.apiKey) {
             var br = m === "chat" ? S.brain : "";
@@ -3363,6 +3400,79 @@
             setTimeout(function () { done(BRAIN.reply(m, text, S)); save(); }, 650 + Math.random() * 700 + Math.min(text.length * 8, 600));
           }
         }
+
+        function genImage(prompt) {
+          if (isOffline()) { toast(OFFLINE_MSG); return Promise.reject(OFFLINE_MSG); }
+          var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+          var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 120000);
+          return fetch("https://api.x.ai/v1/images/generations", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: "Bearer " + S.apiKey.trim() },
+            body: JSON.stringify({ model: "grok-imagine-image-2.0", prompt: prompt, n: 1, response_format: "b64_json" }),
+            signal: ctrl ? ctrl.signal : undefined
+          }).then(function (res) {
+            clearTimeout(timer);
+            return res.text().then(function (body) {
+              var data = null; try { data = JSON.parse(body); } catch (e) {}
+              if (!res.ok) {
+                if (res.status === 401 || res.status === 403) throw "The API key was rejected (" + res.status + "). Check it in Settings.";
+                if (res.status === 429) throw "Rate limit or quota hit (429). Try again in a bit.";
+                if (res.status === 404) throw "Endpoint or model not found (404). Check the model name.";
+                throw "The server said " + res.status + (data && data.error && data.error.message ? ": " + String(data.error.message).slice(0, 120) : ".");
+              }
+              var d = data && Array.isArray(data.data) && data.data[0];
+              if (d && d.b64_json) return "data:image/jpeg;base64," + d.b64_json;
+              if (d && typeof d.url === "string") return d.url;
+              throw "The reply came back empty.";
+            });
+          }, function (e) {
+            clearTimeout(timer);
+            throw e && e.name === "AbortError" ? "The request timed out." : "Network or CORS block: some providers don't accept calls straight from a browser.";
+          });
+        }
+
+        /* full-screen view of a picture Blarf made, with Save/Share */
+        (function () {
+          var box = $("lbox"), back = null, file = null;
+          var im = { src: "", el: null, removeAttribute: function () { this.src = ""; if (this.el) { this.el.remove(); this.el = null; } } };
+          function toFile(src) {
+            var mt = /^data:([^;,]+);base64,(.*)$/.exec(src);
+            if (!mt || typeof File === "undefined") return null;
+            try {
+              var bin = atob(mt[2]), u = new Uint8Array(bin.length);
+              for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+              return new File([u], "blarf-picture." + (mt[1].indexOf("png") >= 0 ? "png" : "jpg"), { type: mt[1] });
+            } catch (e) { return null; }
+          }
+          function open(src, from) {
+            back = from || null; im.removeAttribute(); im.src = src;
+            var t = doc.createElement("div"); t.innerHTML = '<img src="' + esc(src) + '" alt="Picture Blarf made" />';
+            im.el = t.firstChild; box.insertBefore(im.el, box.querySelector(".x-lbox__bar"));
+            file = toFile(src); box.hidden = false; $("lbox-x").focus(); }
+          function close() { box.hidden = true; im.removeAttribute("src"); file = null; if (back) try { back.focus(); } catch (e) {} back = null; }
+          ORDER.forEach(function (m) {
+            V[m].thread.addEventListener("click", function (e) { var g = e.target.closest(".x-genimg"); if (g) open(g.src, g); });
+            V[m].thread.addEventListener("keydown", function (e) { var g = e.target.closest && e.target.closest(".x-genimg"); if (g && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); open(g.src, g); } });
+          });
+          $("lbox-x").addEventListener("click", close);
+          box.addEventListener("click", function (e) { if (e.target === box) close(); });
+          doc.addEventListener("keydown", function (e) { if (e.key === "Escape" && !box.hidden) close(); });
+          $("lbox-save").addEventListener("click", function () {
+            var src = im.src;
+            if (!src) return;
+            var openTab = function () {
+              if (/^data:/.test(src)) {
+                var w = window.open("", "_blank");
+                if (w) { w.document.title = "Blarf's picture"; w.document.body.style.margin = "0"; w.document.body.innerHTML = '<img src="' + esc(src) + '" alt="Picture Blarf made" style="max-width:100%;display:block;margin:auto" />'; }
+                else { var a = doc.createElement("a"); a.href = src; a.download = "blarf-picture.jpg"; doc.body.appendChild(a); a.click(); a.remove(); }
+              } else window.open(src, "_blank", "noopener");
+            };
+            var ok = false;
+            try { ok = !!(file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })); } catch (e) {}
+            if (!ok) { openTab(); return; }
+            navigator.share({ files: [file], title: "Blarf's picture" }).catch(function (e) { if (!e || e.name !== "AbortError") openTab(); });
+          });
+        })();
 
         var XAI_RESPONSES = "https://api.x.ai/v1/responses";
         var LIVE_HINT = " You have live web and X search: use it for news, scores, prices, weather, release dates, videos, anything recent; mention the source site briefly.";
