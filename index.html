@@ -217,6 +217,37 @@
       .f-out__glint { transform-box: fill-box; transform-origin: center; animation: f-glint 3.6s ease-in-out infinite; }
       @keyframes f-glint { 0%, 70%, 100% { opacity: 0.35; transform: scale(0.7); } 82% { opacity: 1; transform: scale(1.15); } }
       @media (prefers-reduced-motion: reduce) { .f-out__glint { animation: none; opacity: 0.85; } }
+      /* idle and reaction props: hidden until the face carries .is-act-<name>; transform/opacity only */
+      .f-act, .f-act * { pointer-events: none; }
+      .f-act { display: none; }
+      .is-act-phone .f-act__phone, .is-act-phone .f-act__glow, .is-act-expert .f-act__glasses, .is-act-gamer .f-act__pad,
+      .x-hero.is-act-smoke .f-act__ring, .is-act-crew .f-act__puff, .is-act-phew .f-act__puff, .is-act-error .f-act__flush { display: inline; }
+      .f-act__padi, .f-act__ringc, .f-act__puff circle, .f-act__note { transform-box: fill-box; transform-origin: center; }
+      .is-act-phone .f-act__phone { animation: f-act-phone 3s cubic-bezier(0.22, 1, 0.36, 1) both; }
+      .is-act-phone .f-act__glow { animation: f-act-glow 3s ease-in-out both; }
+      .is-act-expert .f-act__glasses { animation: f-act-glasses 3s ease-out both; }
+      .is-act-gamer .f-act__padi { animation: f-act-flash 1.6s ease-out both; }
+      .is-act-smoke .f-act__ringc { fill: none; stroke: #D5D9DE; stroke-width: 1.4; animation: f-act-ring 2.4s ease-out 0.15s both; }
+      .is-act-error .f-act__flush { animation: f-act-flush 1.4s ease-in-out both; }
+      .f-act__puff circle { fill: #C9CDD2; }
+      .f-act__note { fill: #0b0b0b; display: none; }
+      .is-act-crew .f-act__note { display: inline; animation: f-act-note 1.4s ease-out 1s both; }
+      .is-act-crew .f-act__puff circle { animation: f-act-whistle 1.2s ease-out 1.15s both; }
+      .is-act-crew .f-act__puff circle:nth-child(2) { animation-delay: 1.3s; }
+      .is-act-phew .f-act__puff circle { animation: f-act-phew 1.2s ease-out 0.35s both; }
+      .is-act-phew .f-act__puff circle:nth-child(2) { animation-delay: 0.45s; }
+      @keyframes f-act-phone { 0% { transform: translateY(70px); } 20%, 78% { transform: translateY(0); } 100% { transform: translateY(70px); } }
+      @keyframes f-act-glow { 0%, 15% { opacity: 0; } 30%, 72% { opacity: 1; } 90%, 100% { opacity: 0; } }
+      @keyframes f-act-glasses { 0% { opacity: 0; transform: translateY(-6px); } 12%, 85% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(0); } }
+      @keyframes f-act-flash { 0% { opacity: 0; transform: scale(0.4); } 15% { opacity: 1; transform: scale(1.3); } 30% { opacity: 0.55; transform: scale(1); }
+        45% { opacity: 1; transform: scale(1.1); } 80% { opacity: 0.9; transform: scale(1); } 100% { opacity: 0; transform: scale(1); } }
+      @keyframes f-act-ring { 0% { opacity: 0; transform: translate(0, 0) scale(0.4); } 12% { opacity: 0.75; }
+        100% { opacity: 0; transform: translate(8px, -34px) scale(3.6); } }
+      @keyframes f-act-flush { 0% { opacity: 0; } 25%, 65% { opacity: 0.5; } 100% { opacity: 0; } }
+      @keyframes f-act-whistle { 0% { opacity: 0; transform: translate(0, 0) scale(0.5); } 15% { opacity: 0.4; } 100% { opacity: 0; transform: translate(-14px, -10px) scale(2.2); } }
+      @keyframes f-act-note { 0% { opacity: 0; transform: translate(0, 0); } 20% { opacity: 0.85; } 100% { opacity: 0; transform: translate(-10px, -16px); } }
+      @keyframes f-act-phew { 0% { opacity: 0; transform: translate(0, 0) scale(0.5); } 15% { opacity: 0.45; } 100% { opacity: 0; transform: translate(-12px, 8px) scale(2.8); } }
+      @media (prefers-reduced-motion: reduce) { .f-act { display: none !important; } }
 
       /* Blarf landing */
       .x-app[data-tab="chat"] .x-top__row { display: none; }
@@ -1881,7 +1912,8 @@
         }
 
         function mount(host, vb, big) {
-          host.insertAdjacentHTML("afterbegin", markup(vb || "0 0 200 200", big ? "x-hero" : ""));
+          var html = markup(vb || "0 0 200 200", big ? "x-hero" : ""), cut = html.lastIndexOf("</g></svg>");
+          host.insertAdjacentHTML("afterbegin", html.slice(0, cut) + actFace("ba" + (++uid)) + "</g>" + ACT_PHONE + "</svg>");
           var svg = host.firstElementChild;
           var f = { svg: svg, root: svg.querySelector(".f-root"), eyes: [].slice.call(svg.querySelectorAll(".f-eye")),
             pupils: [].slice.call(svg.querySelectorAll(".f-pupil")), shines: [].slice.call(svg.querySelectorAll(".f-shine")),
@@ -1891,6 +1923,7 @@
             mouthX: [].slice.call(svg.querySelectorAll(".f-mouth-clip, .f-mouth-line")), jaw: svg.querySelector(".f-jaw") };
           f.jawT = f.jaw ? f.jaw.getAttribute("transform") : "";
           f.cig = svg.querySelector(".f-cig"); f.puff = svg.querySelector(".f-puff"); f.cigO = 1;
+          f.ring = svg.querySelector(".f-act__ring"); f.wpuff = svg.querySelector(".f-act__puff");
           faces.push(f); return svg;
         }
         function mood(now) {
@@ -1905,6 +1938,96 @@
           var a = x - 94, b = y - 150; a = (a + JK * b) * 0.92; b *= 0.84;
           return [100 + a * JC - b * JS, 150 + a * JS + b * JC + j];
         }
+        /* ----- idle behaviors and reactions: one act at a time, layered over the pose ----- */
+        function actFace(id) {
+          var pad = "";
+          EYES.forEach(function (cx) {
+            pad += '<g transform="translate(' + cx + " " + (EYE_Y + 9) + ') scale(0.95)"><g class="f-act__padi">' +
+              '<path d="M-6 -1.5Q-6.6 3.4 -4.4 3.6Q-3 3.7 -1.6 1.6H1.6Q3 3.7 4.4 3.6Q6.6 3.4 6 -1.5Q5.5 -3.6 3.2 -3.6H-3.2Q-5.5 -3.6 -6 -1.5Z" fill="#fff" opacity="0.95"/>' +
+              '<circle cx="-3.2" cy="-0.8" r="0.9" fill="#0b0b0b"/><circle cx="3.2" cy="-0.8" r="0.9" fill="#0b0b0b"/></g></g>';
+          });
+          return '<defs><radialGradient id="' + id + '"><stop offset="0" stop-color="#A6E4FF" stop-opacity="0.5"/><stop offset="1" stop-color="#A6E4FF" stop-opacity="0"/></radialGradient></defs>' +
+            '<g class="f-act f-act__glow"><ellipse cx="124" cy="150" rx="78" ry="68" fill="url(#' + id + ')"/></g>' +
+            '<g class="f-act f-act__flush"><ellipse cx="40" cy="128" rx="17" ry="10" fill="#E53935"/><ellipse cx="160" cy="128" rx="17" ry="10" fill="#E53935"/></g>' +
+            '<g class="f-act f-act__pad">' + pad + '</g>' +
+            '<g class="f-act f-act__glasses"><path d="M50 100H86Q86 115 68 115Q50 115 50 100ZM114 100H150Q150 115 132 115Q114 115 114 100Z" fill="#CFEFFF" fill-opacity="0.3" stroke="#0b0b0b" stroke-width="3.5" stroke-linejoin="round"/>' +
+            '<path d="M86 101Q100 95 114 101M50 101L36 94M150 101L164 94" fill="none" stroke="#0b0b0b" stroke-width="3" stroke-linecap="round"/></g>' +
+            '<g class="f-act f-act__ring"><circle class="f-act__ringc" r="3.2"/></g>' +
+            '<g class="f-act f-act__puff"><circle r="2.8"/><circle cx="-3" cy="-2.5" r="2.2"/>' +
+            '<path class="f-act__note" d="M-9 -9.5V-17L-4.5 -18.2V-11.6A1.8 1.4 0 1 1 -5.6 -12.9V-16.2L-7.9 -15.6V-10.8A1.8 1.4 0 1 1 -9 -9.5Z"/></g>';
+        }
+        var ACT_PHONE = '<g class="f-act f-act__phone"><g transform="translate(130 184) rotate(-10)">' +
+          '<rect x="-15" y="-26" width="30" height="50" rx="6" fill="#20252B" stroke="#0b0b0b" stroke-width="3.5"/>' +
+          '<rect x="-11" y="-21" width="22" height="38" rx="2.5" fill="#8FDBFF"/>' +
+          '<path d="M-7 -14h14M-7 -8h10M-7 -2h12" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity="0.8"/>' +
+          '<rect x="-4" y="19.5" width="8" height="2" rx="1" fill="#5B636B"/></g></g>';
+        var ACTS = { yawn: 2000, roll: 1200, phone: 3000, shake: 1000, side: 2100, smoke: 2600,
+          nod: 700, think: 1800, expert: 3000, gamer: 1600, crew: 2400, onit: 700, proud: 1600, error: 1400, phew: 1600 };
+        var YAWN = [72, 146, 76, 112, 124, 112, 128, 146, 126, 206, 74, 206];
+        var A = null, PEND = null, IDL = { next: 0, lastN: "" }, AX0 = { look: 0, dx: 0, dy: 0, bl: 0, br: 0, mouth: null, mw: 0, jaw: 0, lid: 0, rot: 0, ty: 0, hx: 0, es: 0, think: false };
+        function ss(t) { t = t < 0 ? 0 : t > 1 ? 1 : t; return t * t * (3 - 2 * t); }
+        function env(p, a, b) { return p < a ? ss(p / a) : p > b ? 1 - ss((p - b) / (1 - b)) : 1; }
+        function actFx(n, p) {
+          var o = {}, e, PI = Math.PI;
+          for (var k in AX0) o[k] = AX0[k];
+          if (n === "yawn") { e = env(p, 0.35, 0.72); o.mouth = YAWN; o.mw = e; o.jaw = 8 * e; o.bl = o.br = -14 * e; o.lid = 0.85 * e; o.look = e; o.dy = -2 * e; o.rot = -2 * e; o.ty = -2 * e; }
+          else if (n === "roll") { e = env(p, 0.18, 0.82); var th = PI * (0.95 - 0.9 * ss(p)); o.look = e; o.dx = 11 * Math.cos(th) * e; o.dy = (-9 * Math.sin(th) - 2) * e; o.bl = o.br = -6 * e; o.rot = -2.5 * Math.sin(PI * p); }
+          else if (n === "phone") { e = env(p, 0.22, 0.8); o.look = e; o.dx = 4 * e; o.dy = 6 * e; o.ty = 3 * e; o.bl = o.br = 3 * e; o.lid = 0.25 * e; }
+          else if (n === "shake") { e = env(p, 0.1, 0.85); o.rot = 6 * Math.sin(6 * PI * p) * (p > 0.85 ? (1 - p) / 0.15 : 1); o.bl = o.br = 6 * e; o.mouth = FROWN; o.mw = 0.6 * e; o.lid = 0.3 * e; }
+          else if (n === "side") { e = env(p, 1 / 7, 6 / 7); o.look = e; o.dx = -16 * e; o.dy = e; o.lid = 0.35 * e; o.bl = 8 * e; o.br = -5 * e; o.hx = -2 * e; }
+          else if (n === "smoke") { e = env(p, 0.1, 0.6); o.bl = o.br = -3 * e; o.lid = 0.3 * e; }
+          else if (n === "nod" || n === "onit") { o.ty = 6 * Math.abs(Math.sin(2 * PI * p)) * (1 - 0.4 * p); o.dy = 2 * Math.sin(PI * p); if (n === "onit") o.bl = o.br = -4 * env(p, 0.15, 0.7); }
+          else if (n === "think") o.think = true;
+          else if (n === "expert") { e = env(p, 0.1, 0.88); o.lid = 0.45 * e; o.bl = o.br = 6 * e; o.look = e; o.dy = 2 * e; }
+          else if (n === "gamer") { e = env(p, 0.08, 0.8); o.look = e; o.es = 0.08 * e; o.mouth = VA[3]; o.mw = e; o.bl = o.br = -8 * e; o.ty = -3 * Math.sin(PI * Math.min(1, p * 2.5)); }
+          else if (n === "crew") {
+            var e1 = p < 0.45 ? env(p / 0.45, 0.25, 0.75) : 0, e2 = p >= 0.42 && p < 0.88 ? env((p - 0.42) / 0.46, 0.2, 0.8) : 0, w = p > 0.5 ? env((p - 0.5) / 0.5, 0.2, 0.7) : 0;
+            o.look = Math.max(e1, e2); o.dx = -13 * e1 + 13 * e2; o.hx = -3 * e1 + 3 * e2; o.mouth = VA[5]; o.mw = w; o.bl = o.br = -4 * w;
+          }
+          else if (n === "proud") { e = env(p, 0.15, 0.8); o.br = -16 * e; o.bl = -3 * e; o.rot = 4 * e; o.mouth = VA[3]; o.mw = 0.45 * e; o.es = 0.04 * e; }
+          else if (n === "error") { e = env(p, 0.1, 0.85); o.rot = p < 0.75 ? 6 * Math.sin(6 * PI * p / 0.75) * (1 - 0.3 * ss(p / 0.75)) : 0; o.bl = o.br = 10 * e; o.mouth = FROWN; o.mw = e; o.lid = 0.35 * e; }
+          else if (n === "phew") { o.bl = o.br = -10 * env(p, 0.15, 0.45); o.mouth = VA[5]; o.mw = env(p, 0.2, 0.65); o.ty = 4 * env(p, 0.35, 0.85); o.lid = 0.45 * env(p, 0.3, 0.85); }
+          return o;
+        }
+        function actClass(n) {
+          faces.forEach(function (f) {
+            if (f.actC) f.svg.classList.remove(f.actC);
+            f.actC = n ? "is-act-" + n : "";
+            if (n) { void f.svg.getBoundingClientRect(); f.svg.classList.add(f.actC); }
+          });
+        }
+        function startAct(n, now) { A = { n: n, at: now, dur: ACTS[n] }; actClass(n); }
+        function endAct() { A = null; actClass(null); }
+        /* talking, live talk (any state) or hands-free listening: no acts */
+        function voiceBusy(now) {
+          var b = document.querySelector(".x-blarf");
+          return st.voice || now < st.talkUntil || !!(b && b.hasAttribute("data-live")) ||
+            !!document.querySelector('.x-hfpill:not([hidden])[data-st="listening"], .x-hfpill:not([hidden])[data-st="talking"]');
+        }
+        function smokeOK() {
+          var h = faces[0];
+          return !document.documentElement.classList.contains("x-nocig") && !!(h && h.cig && h.cigO > 0.6);
+        }
+        /* idle pick: weighted, never the same twice in a row; yawns come more often in the sleepy morning */
+        function pickIdle() {
+          var W = { yawn: TM.key === "sleepy" ? 6 : 2, roll: 2, phone: 2, shake: 1.5, side: 2, smoke: smokeOK() ? 1.5 : 0 }, tot = 0, n;
+          W[IDL.lastN] = 0;
+          for (n in W) tot += W[n];
+          var r = Math.random() * tot;
+          for (n in W) { r -= W[n]; if (W[n] && r <= 0) return n; }
+          return "side";
+        }
+        /* window.blarfAct(name): plays now, or waits up to 10 s for talking or listening to end */
+        function act(name) {
+          if (!ACTS[name] || RM.matches) return false;
+          if (name === "smoke" && !smokeOK()) return false;
+          var now = performance.now();
+          if (voiceBusy(now)) { PEND = { n: name, until: now + 10000 }; return true; }
+          PEND = null; startAct(name, now); CIG.next = Math.max(CIG.next, now + ACTS[name] + 4000);
+          return true;
+        }
+        window.blarfAct = act;
+
         /* cigarette drags: every 20-40 s while idle */
         var CIG = { next: 0, at: -9999, puffed: false };
         var last = 0, TM = { at: 0, key: "sharp" };
@@ -1914,6 +2037,13 @@
           /* time-of-day mood, rechecked every 30 s */
           if (!TM.at || now - TM.at > 30000) { TM.at = now; TM.key = timeMood().key; }
           var drowsy = TM.key === "sleepy" || TM.key === "late";
+          /* the current act: cut short by talking, listening or reduced motion; a waiting reaction plays once free */
+          var vBusy = voiceBusy(now);
+          if (A && (calm || vBusy || now - A.at >= A.dur)) endAct();
+          if (PEND && (now > PEND.until || calm)) PEND = null;
+          if (PEND && !vBusy && !A) { var pn = PEND.n; PEND = null; act(pn); }
+          var AX = A ? actFx(A.n, (now - A.at) / A.dur) : AX0;
+          if (AX.think) md = "thinking";
 
           /* eyes wander */
           if (now > st.nextDrift && now > st.lookUntil) {
@@ -1923,7 +2053,7 @@
           var px = st.look[0], py = st.look[1];
           if (md === "thinking") { px = 8; py = -10; }
           /* deep think: a slow look up-left */
-          if (md === "thinking" && st.deep) { px = calm ? -9 : Math.round(-9 + Math.sin(now / 1400) * 1.5); py = -10; }
+          if (md === "thinking" && (st.deep || AX.think)) { px = calm ? -9 : Math.round(-9 + Math.sin(now / 1400) * 1.5); py = -10; }
 
           /* talking mouth */
           var talking = now < st.talkUntil || st.voice, m = null, g = 0;
@@ -1954,6 +2084,8 @@
             m = MOUTH.thinking.map(function (v, i) { return i % 2 ? v + (i > 7 ? w : 0) : v; });
           }
           tgt = pose(md, m, px, py);
+          if (AX.look) { tgt[26] *= 1 - AX.look; tgt[27] *= 1 - AX.look; }
+          if (AX.es) { tgt[24] += AX.es; tgt[25] += AX.es; }
 
           /* grouch: the meter decays when left alone; a higher meter means a deeper scowl */
           var ign = now < G.ignoreUntil, soft = now < G.softUntil;
@@ -1969,12 +2101,14 @@
           }
           for (var bj = 0; bj < 2; bj++) if (now < G.browUntil[bj]) for (var bk = 1; bk < 6; bk += 2) tgt[bj * 6 + bk] += bk === (bj ? 1 : 5) ? 14 : 10;
           /* deep think: the left brow hitched up */
-          if (md === "thinking" && st.deep) for (var bd = 1; bd < 6; bd += 2) tgt[bd] -= bd === 3 ? 10 : 7;
+          if (md === "thinking" && (st.deep || AX.think)) for (var bd = 1; bd < 6; bd += 2) tgt[bd] -= bd === 3 ? 10 : 7;
+          if (AX.bl || AX.br) for (var ab = 1; ab < 12; ab += 2) tgt[ab] += ab < 6 ? AX.bl : AX.br;
           for (var bc = 1; bc < 12; bc += 2) tgt[bc] = Math.min(tgt[bc], 70);
           if (!m && md !== "thinking") {
             if (now < G.pressUntil) for (var mi = 0; mi < 12; mi++) tgt[12 + mi] = VA[1][mi];
             else if (sc) for (var mj = 0; mj < 12; mj++) tgt[12 + mj] += (FROWN[mj] - tgt[12 + mj]) * sc * 0.85;
           }
+          if (AX.mw && !m) for (var am = 0; am < 12; am++) tgt[12 + am] += (AX.mouth[am] - tgt[12 + am]) * AX.mw;
           if (soft) tgt[29] = 0.5;
           /* per-eye lid closing: squeeze, annoyed squint, content droop, eyes shut while ignoring */
           var lc = drowsy ? [0.22, 0.22] : [0, 0];
@@ -1983,6 +2117,7 @@
             if (now < G.squeezeUntil) { lc[G.squeeze] = 1; lc[1 - G.squeeze] = 0.5; }
             if (G.track) { lc[0] = Math.max(lc[0], 0.4); lc[1] = Math.max(lc[1], 0.4); }
             if (soft) { lc[0] = Math.max(lc[0], 0.6); lc[1] = Math.max(lc[1], 0.6); }
+            if (AX.lid) { lc[0] = Math.max(lc[0], AX.lid); lc[1] = Math.max(lc[1], AX.lid); }
           }
           for (var li = 0; li < 2; li++) {
             G.lid[li] += (lc[li] - G.lid[li]) * (1 - Math.exp(-dt / (lc[li] > G.lid[li] ? 45 : 160)));
@@ -2040,15 +2175,16 @@
           var tb = (now - st.bounceAt) / 1000;
           if (tb < 0.9) { var b = Math.exp(-tb * 5.5) * Math.sin(tb * 20); s += (calm ? 0.015 : 0.07) * b; ty = (calm ? -2 : -10) * Math.abs(b); }
 
-          var rootT = "translate(" + r1(100 + sx + G.hx) + " " + r1(100 + ty + gy + LS.jaw * 1.5) + ") rotate(" + r1(cur[30] + sway + G.hr + gr) + ") scale(" + r1(s * gs) + ") translate(-100 -100)";
+          var rootT = "translate(" + r1(100 + sx + G.hx + AX.hx) + " " + r1(100 + ty + gy + LS.jaw * 1.5 + AX.ty) + ") rotate(" + r1(cur[30] + sway + G.hr + gr + AX.rot) + ") scale(" + r1(s * gs) + ") translate(-100 -100)";
           /* brows bob on loud peaks */
           var bbt = now - LS.browAt, bob = bbt < 260 ? -7 * Math.sin(Math.PI * bbt / 260) : 0, cb = cur.map(r1);
           if (bob) for (var q = 1; q < 12; q += 2) cb[q] = r1(cb[q] + bob);
           var mD = mouthD(cur.slice(12, 24).map(r1)), bL = browD(cb, 0), bR = browD(cb, 6);
-          var jawT = "translate(0 " + r1(LS.jaw * 7) + ") ";
+          var jy = LS.jaw * 7 + AX.jaw, jawT = "translate(0 " + r1(jy) + ") ";
           var ppx = clamp(cur[26], 11), ppy = clamp(cur[27], 12);
           /* cigarette: anchored at the mouth's right corner, the exhale at the left corner */
-          var cR = jawPt(cur[18], cur[19], LS.jaw * 7), cL = jawPt(cur[12], cur[13], LS.jaw * 7);
+          var cR = jawPt(cur[18], cur[19], jy), cL = jawPt(cur[12], cur[13], jy);
+          var mC = jawPt((cur[12] + cur[18]) / 2, (cur[15] + cur[21]) / 2, jy), wpT = "translate(" + r1(mC[0] - 4) + " " + r1(mC[1]) + ")";
           var cigT = "translate(" + r1(cR[0] - 1) + " " + r1(cR[1]) + ")", puffT = "translate(" + r1(cL[0] - 4) + " " + r1(cL[1] - 2) + ")";
           var cigO = cur[21] - cur[15] > 40 ? 0.15 : 1;
           var bl = document.querySelector(".x-blarf");
@@ -2057,7 +2193,18 @@
           if (!CIG.next) CIG.next = now + 20000 + Math.random() * 20000;
           else if (!idle && CIG.at < 0) CIG.next = Math.max(CIG.next, now + 20000);
           var cigOn = null, puffOn = null;
-          if (CIG.at < 0 && idle && now > CIG.next) { CIG.at = now; cigOn = true; }
+          /* idle behaviors: every 12-30 s while idle and the big face is on screen */
+          var hf0 = faces[0], topEl = document.getElementById("top");
+          var seen = idle && !document.hidden && hf0 && hf0.svg.isConnected && bl && !bl.classList.contains("is-up") &&
+            (!topEl || (topEl.getAttribute("data-tab") || "chat") === "chat");
+          if (!IDL.next) IDL.next = now + 12000 + Math.random() * 18000;
+          if (!seen || A || PEND || CIG.at >= 0) IDL.next = Math.max(IDL.next, now + 3000);
+          else if (now > IDL.next) {
+            var inm = pickIdle(); IDL.lastN = inm; startAct(inm, now);
+            IDL.next = now + ACTS[inm] + 12000 + Math.random() * 18000;
+            CIG.next = Math.max(CIG.next, now + ACTS[inm] + 4000);
+          }
+          if (CIG.at < 0 && idle && !A && now > CIG.next) { CIG.at = now; cigOn = true; }
           if (CIG.at >= 0) {
             var ct = now - CIG.at;
             if (ct > 1200 && cigOn === null) cigOn = false;
@@ -2074,8 +2221,8 @@
                 var rest = (j ? 2 : -3) - (cur[25] - 1) * 40;
                 g.setAttribute("transform", "translate(" + cx + " " + EYE_Y + ") scale(" + r1(cur[24]) + " " + r1(cur[25]) + ") translate(" + -cx + " " + -EYE_Y + ")");
                 f.lids[j].setAttribute("transform", "translate(0 " + r1(rest + (34 - rest) * Math.max(1 - lazy, G.lid[j])) + ")");
-                f.pupils[j].setAttribute("cx", r1(cx + ppx * 0.8)); f.pupils[j].setAttribute("cy", r1(EYE_Y + 9 + Math.max(-4, ppy) * 0.5)); f.pupils[j].setAttribute("r", r1(cur[28] * 0.62));
-                f.shines[j].setAttribute("cx", r1(cx + ppx * 0.8 + 2.5)); f.shines[j].setAttribute("cy", r1(EYE_Y + 6 + Math.max(-4, ppy) * 0.5));
+                f.pupils[j].setAttribute("cx", r1(cx + ppx * 0.8 + AX.dx)); f.pupils[j].setAttribute("cy", r1(EYE_Y + 9 + Math.max(-4, ppy) * 0.5 + AX.dy)); f.pupils[j].setAttribute("r", r1(cur[28] * 0.62));
+                f.shines[j].setAttribute("cx", r1(cx + ppx * 0.8 + 2.5 + AX.dx)); f.shines[j].setAttribute("cy", r1(EYE_Y + 6 + Math.max(-4, ppy) * 0.5 + AX.dy));
                 return;
               }
               g.setAttribute("transform", "translate(" + cx + " " + EYE_Y + ") scale(" + r1(cur[24]) + " " + r1(Math.max(0.06, cur[25] * open * (1 - 0.94 * G.lid[j]))) + ") translate(" + -cx + " " + -EYE_Y + ")");
@@ -2093,6 +2240,8 @@
               if (cigOn !== null) f.cig.classList.toggle("is-drag", cigOn);
               if (f.puff) { f.puff.setAttribute("transform", puffT); if (puffOn !== null) f.puff.classList.toggle("is-on", puffOn); }
             }
+            if (A && f.ring && f.cig && A.n === "smoke") f.ring.setAttribute("transform", cigT + " translate(31.5 11.5)");
+            if (A && f.wpuff && (A.n === "crew" || A.n === "phew")) f.wpuff.setAttribute("transform", wpT);
             f.cheeks.forEach(function (c, j) {
               c.setAttribute("opacity", r1(Math.min(1, cur[29] + G.cheek[j] * 0.35)));
               c.setAttribute("r", r1(13 + G.cheek[j] * 8));
@@ -2106,6 +2255,7 @@
         return {
           get MINI() { return mini(); },
           mount: mount,
+          act: act,
           calm: function () { G.g = 0; G.ignoreUntil = 0; G.slamUntil = 0; G.track = null; st.excitedUntil = performance.now() + 1500; },
           think: function (on, deep) { st.thinking = !!on; st.deep = !!(on && deep); },
           say: function (text, userText, quiet) {
@@ -2677,7 +2827,10 @@
           if (msg.r === "bot") {
             var willSpeak = speakAs("blarf", msg.t);
             if (m === "chat") { BL.say(msg.t, lastUser, willSpeak); setCaption(msg.t); }
+            /* a picture he made: proud eyebrow once he's done talking */
+            if (m === "chat" && msg.img) window.blarfAct("proud");
           }
+          if (msg.r === "err" && m === "chat") window.blarfAct("error");
         }
         var typingEl = {}, lastUser = "";
         function typing(m, on, label) {
@@ -2691,6 +2844,9 @@
             V[m].thread.appendChild(el); typingEl[m] = el; scrollDown(m, true);
           } else if (!on && typingEl[m]) { typingEl[m].remove(); typingEl[m] = null; }
           if (m === "chat") {
+            /* Deep Think done: a "phew" exhale */
+            if (!on && typing.deep) window.blarfAct("phew");
+            typing.deep = deep;
             BL.think(on, deep);
             $("sheet-status").textContent = on ? "thinking…" : MODES.chat.role;
             if (on) setCaption(lbl || "Hmm, let me think…", true);
@@ -2782,7 +2938,9 @@
         $("brain-seg").addEventListener("click", function (e) {
           var b = e.target.closest("[data-brain]");
           if (!b || !BRAINS[b.dataset.brain]) return;
+          var was = S.brain;
           S.brain = b.dataset.brain; save(); paintBrain();
+          if (was !== S.brain) window.blarfAct({ quick: "nod", deep: "think", expert: "expert", gamer: "gamer", crew: "crew" }[S.brain]);
           b.scrollIntoView({ block: "nearest", inline: "nearest" });
         });
         grab.addEventListener("click", function () { setSheet(!sheetUp); });
@@ -4016,6 +4174,7 @@
           var a = {}; try { a = JSON.parse(call.arguments || "{}") || {}; } catch (e) {}
           if (!t || !toolOn(t)) return Promise.resolve("error: tool unavailable");
           var el = toolLine(m, t, a);
+          if (m === "chat") window.blarfAct("onit");
           return new Promise(function (ok) { ok(t.run(a)); }).then(function (r) { return String(r); }, function (e) { return "error: " + (e && e.message || e); })
             .then(function (r) { el.classList.add("is-done"); return r; });
         }
