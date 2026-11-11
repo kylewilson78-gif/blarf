@@ -20,6 +20,7 @@
     />
     <link rel="stylesheet" href="hark.css" />
     <link rel="stylesheet" href="hark-charts.css" />
+    <link rel="stylesheet" href="blarf-p2a.css" />
     <script>
       /* iOS home-screen icon, drawn at runtime, plus a tiny manifest */
       (function () {
@@ -696,7 +697,7 @@
 
       /* tab bar */
       .x-tabs {
-        flex: none; display: grid; grid-template-columns: repeat(4, 1fr); z-index: 5;
+        flex: none; display: grid; grid-template-columns: repeat(5, 1fr); z-index: 5;
         padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
         background: var(--mat-regular); -webkit-backdrop-filter: var(--hark-blur); backdrop-filter: var(--hark-blur);
         border-top: 1px solid var(--stroke-secondary);
@@ -1228,6 +1229,7 @@
             </div>
           </div>
         </section>
+        <section class="x-view" id="view-library" aria-label="Library"><!-- P2a: library, built by blarf-lib.js --></section>
         <section class="x-view" id="view-settings" aria-label="Settings">
           <div class="x-scroll">
             <div class="x-settings">
@@ -1629,6 +1631,9 @@
         <button class="x-tab" role="tab" data-tab="hustle" style="--x-tab: var(--fill-system-orange)">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M8.5 7V5.5A1.5 1.5 0 0 1 10 4h4a1.5 1.5 0 0 1 1.5 1.5V7M3 13h18" /></svg>Hustle
         </button>
+        <button class="x-tab" role="tab" data-tab="library" style="--x-tab: var(--fill-system-green)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5A1.5 1.5 0 0 1 5 6h4.2l1.8 2H19a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z" /><path d="M8 13h8" /></svg>Library
+        </button>
         <button class="x-tab" role="tab" data-tab="settings" style="--x-tab: var(--text-primary)">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1" /><circle cx="15" cy="6" r="2" /><circle cx="9" cy="12" r="2" /><circle cx="17" cy="18" r="2" /></svg>Settings
         </button>
@@ -1648,6 +1653,8 @@
     <div class="x-pill" id="bub-pill" role="menu" aria-label="Message actions" hidden>
       <button type="button" role="menuitem" id="pill-copy">Copy</button>
       <button type="button" role="menuitem" id="pill-speak">Speak again</button>
+      <button type="button" role="menuitem" id="pill-save">Save</button>
+      <button type="button" role="menuitem" id="pill-select">Select…</button>
     </div>
     <button class="x-wake" id="hf-wake" type="button" hidden><b id="hf-wake-t">Tap anywhere to wake Blarf</b><span id="hf-wake-s"></span></button>
 
@@ -1664,6 +1671,8 @@
           <button class="x-menu__item" type="button" data-go="crew"><span aria-hidden="true">👥</span><span>The Crew</span></button>
           <button class="x-menu__item" type="button" data-go="poke"><span aria-hidden="true">🐻</span><span>Poke the Bear</span></button>
           <button class="x-menu__item" type="button" data-go="beat"><span aria-hidden="true">🥁</span><span>Beat Jam</span></button>
+          <button class="x-menu__item" type="button" data-go="library"><span aria-hidden="true">📚</span><span>Library</span></button>
+          <button class="x-menu__item" type="button" id="menu-vault"><span aria-hidden="true">🔐</span><span>Secure Vault</span></button>
           <button class="x-menu__item" type="button" data-go="settings"><span aria-hidden="true">⚙️</span><span>Settings</span></button>
           <button class="x-menu__item" id="menu-mute" type="button" role="switch" aria-checked="false"><span aria-hidden="true">🔇</span><span>Mute</span><span class="x-switch" aria-hidden="true"></span></button>
           <button class="x-menu__item" id="menu-hf" type="button" role="switch" aria-checked="true"><span aria-hidden="true">🎙️</span><span>Hands-free</span><span class="x-switch" aria-hidden="true"></span></button>
@@ -2769,7 +2778,7 @@
 
         /* ---------- storage: localStorage, then IndexedDB, then a cookie (never the API key); memory as a last resort ---------- */
         var SETKEY = "companion-settings";
-        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch", "brain", "mode", "deepStrength", "obsSub", "crew", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel", "autoRoute", "voicePolish", "thinkProv", "thinkModel", "visionModel", "memAuto", "memMig", "embedModel", "selfCheck", "checkLog", "autoResearch", "skillsOff", "mySkills"];
+        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch", "brain", "mode", "deepStrength", "obsSub", "crew", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel", "autoRoute", "voicePolish", "thinkProv", "thinkModel", "visionModel", "memAuto", "memMig", "embedModel", "selfCheck", "checkLog", "autoResearch", "skillsOff", "mySkills", "lib", "vaultCfg", "vaultKeys", "vaultShared"];
         var SECRET_FIELDS = ["apiKey", "elevenKey", "oaiKey", "fishKey"];
         var KV = (function () {
           var mem = {}, idb = null, idbState = 0; /* 0 pending, 1 ok, -1 unavailable */
@@ -2881,10 +2890,13 @@
             withImg.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
             withImg.slice(6).forEach(function (x) { delete x.img; x.pic = 1; });
           }
+          /* P2a: provider keys moved into the Secure Vault are only ever in memory (decrypted at unlock); stores get "" */
+          if (window.blarfVault && window.blarfVault.syncKeys) { try { window.blarfVault.syncKeys(); } catch (e) {} }
+          var VK = Array.isArray(S.vaultKeys) ? S.vaultKeys : [];
           var set = {};
-          SET_FIELDS.forEach(function (f) { set[f] = S[f]; });
+          SET_FIELDS.forEach(function (f) { set[f] = VK.indexOf(f) >= 0 ? "" : S[f]; });
           KV.set(SETKEY, JSON.stringify(set));
-          KV.set(STORE, JSON.stringify(S));
+          KV.set(STORE, VK.length ? JSON.stringify(S, function (k, v) { return this === S && VK.indexOf(k) >= 0 ? "" : v; }) : JSON.stringify(S));
         }
 
         var PROVIDERS = {
@@ -2967,6 +2979,11 @@
           crewAgents: saved.crewAgents === 16 ? 16 : 4,
           customUrl: saved.customUrl || "",
           apiKey: saved.apiKey || KV.legacyKey || "",
+          /* P2a: library settings, vault settings, which provider keys live in the Secure Vault (opt-in), vault item names Kyle shared with Blarf */
+          lib: saved.lib && typeof saved.lib === "object" ? saved.lib : {},
+          vaultCfg: saved.vaultCfg && typeof saved.vaultCfg === "object" ? saved.vaultCfg : {},
+          vaultKeys: Array.isArray(saved.vaultKeys) ? saved.vaultKeys.filter(function (f) { return SECRET_FIELDS.indexOf(f) >= 0; }) : [],
+          vaultShared: Array.isArray(saved.vaultShared) ? saved.vaultShared.filter(function (x) { return typeof x === "string"; }).slice(0, 20) : [],
           onboarded: !!saved.onboarded,
           tab: saved.tab || "chat",
           tools: saved.tools || { studio: true, hustle: true },
@@ -3551,7 +3568,15 @@
           return out.join(". ");
         }
         var MEM_ASK = " You keep a memory of Kyle. When he tells you something worth remembering long-term (projects, goals, wins, struggles, preferences, people, tracks he's working on, deadlines), add at the very end of your reply one line per fact in the exact form [[remember: short fact in third person]]. Use it sparingly, only for genuinely durable facts.";
-        function memoryClause() {
+        /* P2a: pinned Library items (Knowledge Vault) and vault item names Kyle chose to share; never secret values */
+        function p2aClause() {
+          var out = "";
+          try { if (window.blarfLib && window.blarfLib.clause) out += window.blarfLib.clause(); } catch (e) {}
+          try { if (window.blarfVault && window.blarfVault.clause) out += window.blarfVault.clause(); } catch (e) {}
+          return out;
+        }
+        function memoryClause() { return memoryClauseBase() + p2aClause(); }
+        function memoryClauseBase() {
           var notes = memNotes(memContextPicks());
           if (!notes) return timeMood().clause;
           var now = new Date();
@@ -3932,6 +3957,7 @@
             '<form class="x-composer" autocomplete="off">' +
             '<button class="x-cam" type="button" aria-label="Send a photo">' + CAM_ICON + '</button>' +
             '<button class="x-cam x-skbtn" type="button" aria-label="Skills" aria-haspopup="dialog" aria-controls="skill-sheet"><span aria-hidden="true">✨</span></button>' +
+            '<button class="x-cam x-clip" type="button" aria-label="Attach from Library or device" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5l-7.8 7.8a5 5 0 0 1-7.1-7.1l8.5-8.5a3.4 3.4 0 0 1 4.8 4.8l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8"/></svg></button>' +
             '<input class="x-file" type="file" accept="image/*" tabindex="-1" aria-hidden="true" />' +
             '<textarea class="x-input" id="input-' + m + '" aria-label="Message" rows="1" enterkeyhint="send" placeholder="' + (m === "chat" ? "Tap to talk" : "Message") + '"></textarea>' +
             '<button class="x-send" type="submit" aria-label="Send" disabled>' + SEND_ICON + "</button></form>";
@@ -3976,11 +4002,17 @@
         function fmt(s) { return esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>"); }
         /* fenced code blocks for skill replies; Prompt Booster's get a Copy button */
         function fmtCode(s, copy) {
-          var parts = String(s).split(/```[a-zA-Z0-9_-]*\n?/), out = "";
+          var langs = []; String(s).replace(/```([a-zA-Z0-9_+-]*)/g, function (_, l) { langs.push(l); return ""; });
+          var parts = String(s).split(/```[a-zA-Z0-9_+-]*\n?/), out = "";
           parts.forEach(function (p, i) {
             var code = i % 2 === 1 && !(i === parts.length - 1 && parts.length % 2 === 0);
             if (!code) { var t = i % 2 ? "```" + p : p; if (i > 0) t = t.replace(/^\n/, ""); if (i < parts.length - 1) t = t.replace(/\n+$/, ""); out += fmt(t); return; }
-            out += '<div class="x-code"><div class="x-code__bar"><span>' + (copy ? "Boosted prompt" : "Code") + "</span>" + '<button class="x-copy" type="button">Copy</button></div><pre>' + esc(p.replace(/\n+$/, "")) + "</pre></div>";
+            var lang = String(langs[i - 1] || "").toLowerCase(), src = p.replace(/\n+$/, "");
+            var run = !copy && window.blarfLib && window.blarfLib.runnable ? window.blarfLib.runnable(src, lang) : false;
+            out += '<div class="x-code" data-lang="' + esc(lang) + '"><div class="x-code__bar"><span>' + (copy ? "Boosted prompt" : lang ? esc(lang) : "Code") + "</span>" +
+              '<span class="x-code__btns">' + (copy ? "" : '<button class="x-copy x-lsave" type="button" aria-label="Save code to Library">Save</button>') +
+              (run ? '<button class="x-copy x-lrun" type="button" aria-label="Run in a sandbox">▶ Run</button>' : "") +
+              '<button class="x-copy" type="button">Copy</button></span></div><pre>' + esc(src) + "</pre></div>";
           });
           return out;
         }
@@ -3993,7 +4025,7 @@
             : msg.r === "bot" && typeof msg.img === "string" && /^(data:image\/|https:\/\/)/.test(msg.img) ? '<img class="x-bubimg x-genimg" src="' + esc(msg.img) + '" alt="Picture Blarf made" role="button" tabindex="0" />' : "";
           var lnk = msg.r === "bot" && typeof msg.link === "string" && /^https:\/\//.test(msg.link)
             ? '<br /><a class="link x-boblink" href="' + esc(msg.link) + '" target="_blank" rel="noopener">' + esc(msg.linkLabel || "Open link") + "</a>" : "";
-          var body = msg.r === "bot" && msg.skill && /```/.test(msg.t) ? fmtCode(msg.t, msg.skill === "booster") : fmt(msg.t);
+          var body = msg.r === "bot" && /```[\s\S]*```/.test(msg.t) ? fmtCode(msg.t, msg.skill === "booster") : fmt(msg.t);
           var chk = msg.r === "bot" && msg.chk && typeof msg.chk === "object" ? msg.chk : null;
           var inner = '<div class="x-bub">' + pic + body + lnk + '</div><p class="x-time">' + clock(msg.ts) +
             (msg.r === "bot" && typeof msg.tag === "string" && msg.tag ? '<span class="x-brtag">' + esc(msg.tag) + "</span>"
@@ -4824,6 +4856,7 @@
 
         function startLive() {
           if (LIVE) return;
+          if (window.blarfVault && window.blarfVault.keysLocked && window.blarfVault.keysLocked()) { window.blarfVault.unlockFor(startLive); return; }
           if (isOffline()) { toast(OFFLINE_MSG); return; }
           if (!S.apiKey || S.provider !== "xai") { toast("Live talk needs the xAI Grok provider and an API key in Settings."); return; }
           var AC = window.AudioContext || window.webkitAudioContext;
@@ -5195,6 +5228,13 @@
           }
           if (!text && img) text = "What do you make of this?";
           if (!text) return false;
+          if (window.blarfVault && window.blarfVault.keysLocked && window.blarfVault.keysLocked()) {
+            var vi2 = V[m] && V[m].input;
+            window.blarfVault.unlockFor(function () {
+              if (send(m, text, img) && vi2 && img && V[m].img === img) { vi2.value = ""; if (V[m].setPend) V[m].setPend(null); }
+            }, function () { if (vi2 && !img && !vi2.value) { vi2.value = text; vi2.dispatchEvent(new Event("input", { bubbles: true })); } });
+            return false;
+          }
           var dp = img ? null : drawPrompt(text);
           if (S.apiKey && isOffline() && !(localHas() && !img && !dp)) { toast(OFFLINE_MSG); return false; }
           if (m === "chat") { lastUser = text; setSheet(true); if (/^stop\b/i.test(text)) { S.roast = false; S.trivia = false; } }
@@ -5221,12 +5261,16 @@
             if (S.provider !== "xai" || !S.apiKey) { typing(m, true); setTimeout(function () { bot({ r: "bot", t: "Image gen needs Grok as the provider, kid.", ts: Date.now() }); }, 500); return; }
             typing(m, true, "Blarf's paintin'… don't rush an artist");
             genImage(text.draw).then(function (src) {
+              try { if (window.blarfLib && window.blarfLib.onGenerated) window.blarfLib.onGenerated(src, text.draw); } catch (e) {}
               bot({ r: "bot", t: DRAW_CAPS[Math.floor(Math.random() * DRAW_CAPS.length)], img: src, ts: Date.now() });
             }, function (err) { bot({ r: "err", t: "**Couldn't make the picture.** " + err, ts: Date.now() }); });
             return;
           }
           /* pick this message's memories first (embeddings wait ~1.8 s max), then answer */
-          memPrepare(text).then(function () { nextRun(m, text); });
+          memPrepare(text).then(function () {
+            if (!window.blarfLib || !window.blarfLib.prepare) return;
+            return Promise.race([window.blarfLib.prepare(text).catch(function () {}), new Promise(function (r) { setTimeout(r, 2500); })]);
+          }).then(function () { nextRun(m, text); });
         }
         function nextRun(m, text) {
           var loc = localRoute();
@@ -6527,6 +6571,7 @@
             }
             grow(); if (v.img) { fit(); scrollDown(m, true); }
           };
+          v.setPend = setPend; /* P2a: the paperclip hands photos to the same chip */
           v.cam.addEventListener("click", function () { v.file.value = ""; v.file.click(); });
           v.pend.querySelector(".x-pend__x").addEventListener("click", function () { setPend(null); v.input.focus(); });
           v.file.addEventListener("change", function () {
@@ -6581,7 +6626,8 @@
           var md = MODES[tab];
           app.style.setProperty("--x-accent", md ? md.accent : "var(--text-secondary)");
           ovlPanel.style.setProperty("--x-accent", md ? md.accent : "var(--text-secondary)");
-          $("hdr-mode").textContent = md ? md.role : tab === "beat" ? "Beat Jam" : "Settings";
+          $("hdr-mode").textContent = md ? md.role : tab === "beat" ? "Beat Jam" : tab === "library" ? "Library" : "Settings";
+          if (tab === "library" && window.blarfLib && window.blarfLib.paint) { try { window.blarfLib.paint(); } catch (e) {} }
           if (md) scrollDown(tab, false);
           if (tab === "settings" && typeof paintPersona === "function") paintPersona();
           save();
@@ -6856,12 +6902,14 @@
           var d = k.indexOf("-"), pre = d > 0 && d < 6 ? k.slice(0, d + 1) : "";
           return pre + "••••" + k.slice(-4);
         }
+        function vaultHeld(f) { return Array.isArray(S.vaultKeys) && S.vaultKeys.indexOf(f) >= 0; }
         function paintKey() {
-          var has = !!S.apiKey, show = has && !keyEditing;
+          var locked = vaultHeld("apiKey") && !S.apiKey;
+          var has = !!S.apiKey || locked, show = has && !keyEditing;
           $("row-key").hidden = show;
           $("row-key-saved").hidden = !show; $("row-key-actions").hidden = !show;
-          $("key-mask").textContent = has ? maskKey(S.apiKey) : "";
-          $("key-saved-note").textContent = KV.keyWorks() ? "Saved on this device ✓" : "Saved for this visit only";
+          $("key-mask").textContent = locked ? "🔒 In Secure Vault" : has ? maskKey(S.apiKey) : "";
+          $("key-saved-note").textContent = vaultHeld("apiKey") ? (locked ? "Locked · unlocks when you chat" : "In Secure Vault, unlocked ✓") : KV.keyWorks() ? "Saved on this device ✓" : "Saved for this visit only";
           $("key-nostore").hidden = KV.keyWorks();
         }
         function keyCommit() {
@@ -6937,8 +6985,11 @@
         /* voice API keys: saved as you type, local stores only (never the cookie), never logged */
         var VKEYS = { elevenKey: $("set-elevenkey"), oaiKey: $("set-oaikey"), fishKey: $("set-fishkey"), fishProxy: $("set-fishproxy") };
         function paintVoiceKeys() {
-          Object.keys(VKEYS).forEach(function (f) { if (doc.activeElement !== VKEYS[f]) VKEYS[f].value = S[f] || ""; });
-          VKEYS.oaiKey.placeholder = !S.oaiKey && S.provider === "openai" && S.apiKey ? "Using your AI key above" : "Paste key";
+          Object.keys(VKEYS).forEach(function (f) {
+            if (doc.activeElement !== VKEYS[f]) VKEYS[f].value = S[f] || "";
+            VKEYS[f].placeholder = vaultHeld(f) && !S[f] ? "🔒 In Secure Vault (locked)" : "Paste key";
+          });
+          if (!S.oaiKey && !vaultHeld("oaiKey") && S.provider === "openai" && S.apiKey) VKEYS.oaiKey.placeholder = "Using your AI key above";
         }
         Object.keys(VKEYS).forEach(function (f) {
           var el = VKEYS[f];
@@ -7035,6 +7086,7 @@
               return;
             }
             var cp = e.target.closest(".x-copy");
+            if (cp && (cp.classList.contains("x-lsave") || cp.classList.contains("x-lrun"))) return;
             if (cp) {
               var pre = cp.closest(".x-code").querySelector("pre"), txt = pre ? pre.textContent : "";
               var done = function () { cp.textContent = "Copied ✓"; toast("Copied. Go get 'em."); setTimeout(function () { cp.textContent = "Copy"; }, 1600); };
@@ -7786,7 +7838,7 @@
         /* IndexedDB answers late: restore any setting the other stores lost, then back-fill every store */
         KV.ready([SETKEY, STORE], function (got) {
           var fromIdb = parseJSON(got[SETKEY]) || parseJSON(got[STORE]) || {}, changed = false;
-          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch", "brain", "mode", "deepStrength", "obsSub", "crew", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel", "autoRoute", "voicePolish", "thinkProv", "thinkModel", "visionModel", "memAuto", "memMig", "embedModel", "selfCheck", "checkLog", "autoResearch", "skillsOff", "mySkills"].forEach(function (f) {
+          ["lib", "vaultCfg", "vaultKeys", "vaultShared", "name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch", "brain", "mode", "deepStrength", "obsSub", "crew", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel", "autoRoute", "voicePolish", "thinkProv", "thinkModel", "visionModel", "memAuto", "memMig", "embedModel", "selfCheck", "checkLog", "autoResearch", "skillsOff", "mySkills"].forEach(function (f) {
             if (saved[f] === undefined && fromIdb[f] !== undefined && fromIdb[f] !== "") { S[f] = fromIdb[f]; changed = true; }
           });
           S.chars = charsClean(S.chars);
@@ -7852,8 +7904,25 @@
         setSheet(false);
         paintIdentity(); paintStatus();
         go("chat"); /* always land on Blarf's face */
+
+        /* ---------- P2a: library + secure vault talk to the app through this ---------- */
+        window.blarfCore = {
+          S: S, save: save, toast: toast, esc: esc, fmt: fmt, go: go, V: V, ORDER: ORDER, MODES: MODES,
+          layerSheet: layerSheet, sheetDrag: sheetDrag, calm: calm, setSheet: setSheet, setMenu: setMenu, send: send,
+          copyText: copyText, hidePill: hidePill, pill: function () { return pillMsg; },
+          toks: memToks, embedOK: function () { return memEmbedOK(); }, embed: function (t, ms) { return memEmbFetch(t, ms); }, embModel: memEmbModel,
+          qvec: function (t) { return MEM.qv[memEmbModel() + "|" + memClip(t, 600)] || null; },
+          memProjects: function () { return MEM.items.filter(function (it) { return it.kind === "project" && it.p && it.active !== false && !it.outdated; }); },
+          memKey: memKey, memSim: memSim,
+          secretFields: SECRET_FIELDS.slice(),
+          repaintKeys: function () { try { paintKey(); paintVoiceKeys(); paintStatus(); } catch (e) {} },
+          offline: function () { return isOffline(); }
+        };
+        try { window.dispatchEvent(new Event("blarf-core")); } catch (e) {}
       })();
     </script>
+    <script src="blarf-vault.js"></script>
+    <script src="blarf-lib.js"></script>
     <script>
       /* iOS polish: sliding highlight behind the active brain pill, light haptics on primary actions */
       (function () {
