@@ -657,6 +657,21 @@
       .x-spk[aria-pressed="false"] { opacity: 0.6; }
       .x-blarf.is-up .x-spk--stage { opacity: 0; pointer-events: none; }
       .x-test { min-height: var(--tap); }
+      /* Characters & Voices: rows in settings and the per-character sheet */
+      button.x-row.x-crew__row { width: 100%; min-height: 56px; border: 0; background-color: transparent; text-align: left; color: var(--text-primary); }
+      .x-crew__emoji { flex: none; width: 28px; text-align: center; font-size: 22px; line-height: 1; }
+      .x-crew__row .x-twoline { font: var(--type-body); }
+      .x-crew__row .x-crew__vp { flex: none; font: var(--type-small); color: var(--text-secondary); }
+      .x-crew__row::after { content: ""; flex: none; width: 7px; height: 7px; border-right: 1.5px solid var(--text-secondary); border-top: 1.5px solid var(--text-secondary); transform: rotate(45deg); margin-right: 4px; }
+      .x-menu__panel.x-crew__panel { touch-action: pan-y; max-height: 88vh; overflow-y: auto; overscroll-behavior: contain; display: grid; gap: 12px; align-content: start; }
+      @supports (height: 100dvh) { .x-menu__panel.x-crew__panel { max-height: 88dvh; } }
+      .x-crew__head { display: flex; align-items: center; gap: 12px; padding: 4px 4px 0; }
+      .x-crew__head h3 { font: var(--type-heading); margin: 0; }
+      .x-crew__head small { display: block; font: var(--type-caption); color: var(--text-secondary); }
+      .x-crew__head > div { flex: 1; min-width: 0; }
+      .x-crew__head .btn { min-height: var(--tap); }
+      .x-crew__panel .x-gnote { padding-top: 0; margin-top: -6px; }
+      .x-crew__panel .x-field[type="password"], .x-crew__panel #crew-vid { text-align: right; }
       .x-toast {
         position: fixed; left: 50%; top: calc(env(safe-area-inset-top) + 10px); z-index: 60;
         width: max-content; max-width: min(340px, calc(100vw - 32px)); padding: 10px 16px;
@@ -897,6 +912,12 @@
               </div>
 
               <div>
+                <p class="x-glabel">Characters &amp; Voices</p>
+                <div class="x-group" id="crew-list"></div>
+                <p class="x-gnote">Each crew member's personality and text-chat voice. Live talk keeps the Voice setting above.</p>
+              </div>
+
+              <div>
                 <p class="x-glabel">Live talk</p>
                 <div class="x-group">
                   <div class="x-row">
@@ -959,6 +980,25 @@
                   </div>
                 </div>
                 <p class="x-gnote">Your key stays on this device.</p>
+                <div class="x-group" style="margin-top: 12px">
+                  <div class="x-row">
+                    <label for="set-elevenkey">ElevenLabs API key</label>
+                    <input class="x-field" id="set-elevenkey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Paste key" />
+                  </div>
+                  <div class="x-row">
+                    <label for="set-oaikey">OpenAI API key (voice)</label>
+                    <input class="x-field" id="set-oaikey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Paste key" />
+                  </div>
+                  <div class="x-row">
+                    <label for="set-fishkey">Fish Audio API key</label>
+                    <input class="x-field" id="set-fishkey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Paste key" />
+                  </div>
+                  <div class="x-row">
+                    <label for="set-fishproxy">Fish Audio proxy URL (optional)</label>
+                    <input class="x-field" id="set-fishproxy" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://…" />
+                  </div>
+                </div>
+                <p class="x-gnote" id="voicekey-note">Voice keys for Characters &amp; Voices. Kept on this device only.</p>
                 <p class="x-gnote" id="key-nostore" hidden>Can't save here. Open Blarf from your Home Screen to keep your key.</p>
               </div>
 
@@ -1129,6 +1169,61 @@
           <button class="x-menu__item" type="button" data-go="settings"><span aria-hidden="true">⚙️</span><span>Settings</span></button>
           <button class="x-menu__item" id="menu-mute" type="button" role="switch" aria-checked="false"><span aria-hidden="true">🔇</span><span>Mute</span><span class="x-switch" aria-hidden="true"></span></button>
           <button class="x-menu__item" id="menu-hf" type="button" role="switch" aria-checked="true"><span aria-hidden="true">🎙️</span><span>Hands-free</span><span class="x-switch" aria-hidden="true"></span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="x-menu" id="crew-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="crew-title">
+      <button class="x-menu__scrim x-scrim" id="crew-scrim" type="button" aria-label="Close" tabindex="-1"></button>
+      <div class="x-menu__panel x-crew__panel" id="crew-panel">
+        <div class="x-grabber" aria-hidden="true"></div>
+        <div class="x-crew__head">
+          <span class="x-crew__emoji" id="crew-emoji" aria-hidden="true"></span>
+          <div><h3 id="crew-title">Character</h3><small id="crew-role"></small></div>
+          <button class="btn" id="crew-done" type="button">Done</button>
+        </div>
+        <div class="x-group">
+          <div class="x-prompt">
+            <label for="crew-persona">Personality</label>
+            <textarea class="x-field x-area" id="crew-persona" rows="6" autocomplete="off" spellcheck="true"></textarea>
+          </div>
+          <div class="x-row">
+            <span class="x-keynote" id="crew-pnote">Empty uses the default personality.</span>
+            <button class="btn" id="crew-reset" type="button">Reset</button>
+          </div>
+        </div>
+        <div class="x-group">
+          <div class="x-row">
+            <label for="crew-vprov">Voice provider</label>
+            <select class="x-field" id="crew-vprov">
+              <option value="builtin">Built-in (iPhone)</option>
+              <option value="xai">xAI</option>
+              <option value="elevenlabs">ElevenLabs</option>
+              <option value="openai">OpenAI</option>
+              <option value="fish">Fish Audio</option>
+            </select>
+          </div>
+          <div class="x-row">
+            <label for="crew-vid">Voice ID</label>
+            <input class="x-field" id="crew-vid" autocomplete="off" autocapitalize="off" spellcheck="false" />
+          </div>
+        </div>
+        <p class="x-gnote" id="crew-hint"></p>
+        <div class="x-group">
+          <div class="x-row">
+            <label for="crew-speed">Speed</label>
+            <input class="x-beat__range" id="crew-speed" type="range" min="0.7" max="1.5" step="0.05" value="1" />
+            <output class="x-beat__val" id="crew-speed-v" for="crew-speed">1.00</output>
+          </div>
+          <div class="x-row" id="crew-pitch-row">
+            <label for="crew-pitch">Pitch</label>
+            <input class="x-beat__range" id="crew-pitch" type="range" min="0.5" max="2" step="0.05" value="1" />
+            <output class="x-beat__val" id="crew-pitch-v" for="crew-pitch">1.00</output>
+          </div>
+          <div class="x-row">
+            <span>Voice</span>
+            <button class="btn x-test" id="crew-test" type="button">▶ Test voice</button>
+          </div>
         </div>
       </div>
     </div>
@@ -2011,7 +2106,8 @@
 
         /* ---------- storage: localStorage, then IndexedDB, then a cookie (never the API key); memory as a last resort ---------- */
         var SETKEY = "companion-settings";
-        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch", "brain", "tools"];
+        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch", "brain", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy"];
+        var SECRET_FIELDS = ["apiKey", "elevenKey", "oaiKey", "fishKey"];
         var KV = (function () {
           var mem = {}, idb = null, idbState = 0; /* 0 pending, 1 ok, -1 unavailable */
           var https = location.protocol === "https:", AGE = 400 * 86400;
@@ -2042,8 +2138,8 @@
           /* the API key never goes in a cookie: strip it from anything written there */
           function ckSafe(v) {
             var o; try { o = JSON.parse(v); } catch (e) { return v; }
-            if (!o || typeof o !== "object" || !("apiKey" in o)) return v;
-            delete o.apiKey; return JSON.stringify(o);
+            if (!o || typeof o !== "object" || !SECRET_FIELDS.some(function (f) { return f in o; })) return v;
+            SECRET_FIELDS.forEach(function (f) { delete o[f]; }); return JSON.stringify(o);
           }
           var lsOK = lsSet("blarf-probe", "1"); lsDel("blarf-probe");
           var ckOK = ckSet("blarf-probe", "1"); ckDel("blarf-probe");
@@ -2127,6 +2223,61 @@
           custom: { label: "Custom", url: "", model: "" }
         };
 
+        var CREW = [
+          { id: "blarf", name: "Blarf", role: "Overseer", emoji: "😤" },
+          { id: "larf", name: "Larf", role: "Research", emoji: "🔎" },
+          { id: "tina", name: "Tina", role: "Music & creative", emoji: "🎤" },
+          { id: "marv", name: "Marv", role: "Code & tech", emoji: "💻" },
+          { id: "slarf", name: "Slarf", role: "Business & money", emoji: "💰" }
+        ];
+        var CREW_CORE = " You're from Boston and talk like it: blunt, wicked direct, Boston slang. You're foul-mouthed when Swearing is on. You're part of a crew of grumps (Blarf, Larf, Tina, Marv, Slarf) who bust each other's chops constantly, but you all have Kyle's back.";
+        var CREW_PERSONA = {
+          larf: "You're Larf, the crew's twitchy know-it-all researcher. You dig up facts fast, cite your sources (name the site, paper or person) and get antsy when anybody guesses instead of checking." + CREW_CORE,
+          tina: "You're Tina, a loud, confident South Boston songwriter and producer with great ears. You hear what's wrong with a hook or a mix in two seconds and say so, then tell Kyle exactly how to make it hit." + CREW_CORE,
+          marv: "You're Marv, a dry, sarcastic senior engineer who hates sloppy code. You give clean, correct, minimal solutions, point out the bug nobody else saw, and sigh at copy-pasted garbage." + CREW_CORE,
+          slarf: "You're Slarf, a slick, cheap, hustling deal-maker obsessed with margins. Every idea gets run through costs, pricing and who pays, and you're always angling for a better deal." + CREW_CORE
+        };
+        var CREW_TEST = {
+          blarf: "Hey Boss, it's Blarf. What do you want now?",
+          larf: "Larf here. I checked three sources, and you're wrong. Again.",
+          tina: "Tina here, kid. That hook's wicked good, but the snare's way too loud.",
+          marv: "Marv. I looked at your code. We need to talk.",
+          slarf: "Slarf here. Love the idea. What's the margin on it?"
+        };
+        var VPROV = { builtin: "Built-in", xai: "xAI", elevenlabs: "ElevenLabs", openai: "OpenAI", fish: "Fish Audio" };
+        var VHINT = {
+          builtin: "Leave blank or type a voice name from this device.",
+          xai: "eve, ara, rex, sal, leo, or your custom voice ID like iy2flpai0uza.",
+          elevenlabs: "The voice ID from your ElevenLabs Voice Library.",
+          openai: "alloy, ash, ballad, coral, echo, fable, onyx, nova, sage, shimmer, verse.",
+          fish: "Your Fish Audio model / reference ID."
+        };
+        function crewMember(id) { for (var i = 0; i < CREW.length; i++) if (CREW[i].id === id) return CREW[i]; return CREW[0]; }
+        function clampNum(v, lo, hi, d) { v = +v; return isFinite(v) && v >= lo && v <= hi ? v : d; }
+        function liveVoiceId() { return S.voice.id === "custom" ? (S.voice.custom || "").trim() || "eve" : S.voice.id; }
+        function charsClean(c) {
+          c = c && typeof c === "object" ? c : {};
+          var out = {};
+          CREW.forEach(function (m) {
+            var o = c[m.id] && typeof c[m.id] === "object" ? c[m.id] : {}, blarf = m.id === "blarf";
+            var v = {
+              vprov: VPROV[o.vprov] ? o.vprov : blarf ? "xai" : "builtin",
+              vid: typeof o.vid === "string" ? o.vid.slice(0, 160) : blarf ? liveVoiceId() : "",
+              speed: clampNum(o.speed, 0.7, 1.5, 1),
+              pitch: clampNum(o.pitch, 0.5, 2, blarf ? 0.85 : 1)
+            };
+            /* Blarf's personality is the "My system prompt" box: one value, never stored twice */
+            if (blarf) Object.defineProperty(v, "persona", { get: function () { return S.sysPrompt || ""; }, set: function (x) { S.sysPrompt = String(x || ""); }, enumerable: false, configurable: true });
+            else v.persona = typeof o.persona === "string" ? o.persona : "";
+            out[m.id] = v;
+          });
+          return out;
+        }
+        function charPersona(id) {
+          var c = S.chars && S.chars[id], p = c ? String(c.persona || "").trim() : "";
+          return p || (id === "blarf" ? null : CREW_PERSONA[id] || null);
+        }
+
         var MY_VOICE = "iy2flpai0uza", OLD_VOICE = "a59ce96d-b224-49eb-82a3-c89304d75f0d";
         var saved = load() || {};
         var S = {
@@ -2158,7 +2309,11 @@
           pokeBest: typeof saved.pokeBest === "number" && saved.pokeBest >= 0 ? Math.floor(saved.pokeBest) : 0,
           beat: beatClean(saved.beat),
           goals: goalsClean(saved.goals),
-          pad: typeof saved.pad === "string" ? saved.pad : ""
+          pad: typeof saved.pad === "string" ? saved.pad : "",
+          elevenKey: typeof saved.elevenKey === "string" ? saved.elevenKey : "",
+          oaiKey: typeof saved.oaiKey === "string" ? saved.oaiKey : "",
+          fishKey: typeof saved.fishKey === "string" ? saved.fishKey : "",
+          fishProxy: typeof saved.fishProxy === "string" ? saved.fishProxy : ""
         };
         /* today's 3 goals: { day: 'YYYY-MM-DD', items: [{ t, done }] x3 } */
         function goalsDay() { var d = new Date(); return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2); }
@@ -2177,6 +2332,9 @@
         if (S.voiceMig < 1) { S.voice.id = MY_VOICE; S.voiceMig = 1; save(); }
         /* move the old cloned-voice ID to the new one */
         if (S.voice.id === OLD_VOICE || (S.voice.id === "custom" && (S.voice.custom || "").trim() === OLD_VOICE)) { S.voice.id = MY_VOICE; S.voice.custom = ""; save(); }
+        /* the crew: per-character personality and text-chat voice */
+        S.chars = charsClean(saved.chars);
+        if (!saved.chars) save();
         ["chat", "studio", "hustle"].forEach(function (m) {
           if (!Array.isArray(S.threads[m])) S.threads[m] = [];
           /* migrate the old default name in saved greetings */
@@ -2401,7 +2559,7 @@
           if (m === "chat") paintEmpty();
           save(); scrollDown(m, true);
           if (msg.r === "bot") {
-            var willSpeak = speak(msg.t);
+            var willSpeak = speakAs("blarf", msg.t);
             if (m === "chat") { BL.say(msg.t, lastUser, willSpeak); setCaption(msg.t); }
           }
         }
@@ -2580,7 +2738,7 @@
           ta.remove(); return ok;
         }
         $("pill-copy").addEventListener("click", function () { if (pillMsg) copyText(pillMsg.text); hidePill(); });
-        $("pill-speak").addEventListener("click", function () { if (pillMsg) { unlockAudio(); speak(pillMsg.text, true); } hidePill(); });
+        $("pill-speak").addEventListener("click", function () { if (pillMsg) { unlockAudio(); speakAs("blarf", pillMsg.text, true); } hidePill(); });
         ORDER.forEach(function (m) {
           var th = V[m].thread;
           th.addEventListener("pointerdown", function (e) {
@@ -2914,6 +3072,103 @@
           try { speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (e) { return; }
           faceOn(null);
           voiceSafety = setTimeout(end, 4000 + clean.length * 90);
+        }
+
+        /* ---------- speakAs: each crew member's own voice provider, built-in fallback so nobody goes silent ---------- */
+        function sayOn(face, lvl) { if (face) faceOn(lvl); else voiceActive = true; }
+        function oaiVoiceKey() { return (S.oaiKey || "").trim() || (S.provider === "openai" ? (S.apiKey || "").trim() : ""); }
+        function ttsRequest(cfg, clean) {
+          var sp = clampNum(cfg.speed, 0.7, 1.5, 1), vid = (cfg.vid || "").trim(), json = { "Content-Type": "application/json" };
+          if (cfg.vprov === "xai") {
+            if (S.provider !== "xai" || !S.apiKey) return { err: "xAI voice needs the xAI Grok provider and key." };
+            json.Authorization = "Bearer " + S.apiKey.trim();
+            return { url: "https://api.x.ai/v1/tts", init: { method: "POST", headers: json, body: JSON.stringify({ text: clean, voice_id: vid || "eve", language: "en", speed: sp }) } };
+          }
+          if (cfg.vprov === "elevenlabs") {
+            if (!(S.elevenKey || "").trim()) return { err: "Add your ElevenLabs API key in Settings." };
+            if (!vid) return { err: "Add an ElevenLabs voice ID." };
+            json["xi-api-key"] = S.elevenKey.trim(); json.Accept = "audio/mpeg";
+            return { url: "https://api.elevenlabs.io/v1/text-to-speech/" + encodeURIComponent(vid) + "?output_format=mp3_44100_128",
+              init: { method: "POST", headers: json, body: JSON.stringify({ text: clean, model_id: "eleven_flash_v2_5", voice_settings: { stability: 0.4, similarity_boost: 0.8, speed: Math.max(0.7, Math.min(1.2, sp)) } }) } };
+          }
+          if (cfg.vprov === "openai") {
+            var ok = oaiVoiceKey();
+            if (!ok) return { err: "Add your OpenAI API key (voice) in Settings." };
+            json.Authorization = "Bearer " + ok;
+            return { url: "https://api.openai.com/v1/audio/speech", init: { method: "POST", headers: json, body: JSON.stringify({ model: "gpt-4o-mini-tts", voice: vid || "onyx", input: clean, speed: sp, response_format: "mp3" }) } };
+          }
+          if (cfg.vprov === "fish") {
+            if (!(S.fishKey || "").trim()) return { err: "Add your Fish Audio API key in Settings." };
+            json.Authorization = "Bearer " + S.fishKey.trim(); json.model = "s1";
+            return { url: (S.fishProxy || "").trim() || "https://api.fish.audio/v1/tts", init: { method: "POST", headers: json, body: JSON.stringify({ text: clean, reference_id: vid, format: "mp3" }) } };
+          }
+          return null;
+        }
+        function builtinSpeak(clean, id, cfg, face) {
+          if (!window.speechSynthesis || typeof SpeechSynthesisUtterance === "undefined") {
+            sayOn(face, null); voiceSafety = setTimeout(function () { if (id === voiceSeq) faceOff(); }, Math.min(9000, 1200 + clean.length * 55));
+            return;
+          }
+          var want = (cfg.vprov === "builtin" ? (cfg.vid || "") : "").trim().toLowerCase(), v = null;
+          if (want) v = speechSynthesis.getVoices().filter(function (x) { return x.name.toLowerCase().indexOf(want) >= 0; })[0] || null;
+          if (!v) v = pickVoice();
+          var u = new SpeechSynthesisUtterance(clean);
+          if (v) u.voice = v;
+          u.lang = v ? v.lang : "en-US";
+          u.rate = 0.95 * clampNum(cfg.speed, 0.7, 1.5, 1);
+          u.pitch = cfg.vprov === "builtin" ? clampNum(cfg.pitch, 0.5, 2, 1) : 0.85;
+          var end = function () { if (id === voiceSeq) faceOff(); };
+          u.onstart = function () { if (id === voiceSeq) sayOn(face, null); };
+          u.onend = end; u.onerror = end;
+          if (face) u.onboundary = function (e) {
+            if (id !== voiceSeq || (e.name && e.name !== "word")) return;
+            var w = clean.slice(e.charIndex, e.charLength ? e.charIndex + e.charLength : undefined).match(/^\S+/);
+            if (w) BL.word(w[0], u.rate);
+          };
+          try { speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (e) { return; }
+          sayOn(face, null);
+          voiceSafety = setTimeout(end, 4000 + clean.length * 90 / u.rate);
+        }
+        function speakAs(charId, text, force) {
+          if ((!S.voice.on && !force) || LIVE) return false;
+          var clean = cleanSpeech(String(text || "").replace(/\[\[[\s\S]*?\]\]/g, " "));
+          if (!clean) return false;
+          var cfg = (S.chars && S.chars[charId]) || { vprov: "builtin", vid: "", speed: 1, pitch: 1 };
+          var face = charId === "blarf", who = VPROV[cfg.vprov] || "Voice";
+          stopVoice();
+          var id = voiceSeq, req = ttsRequest(cfg, clean);
+          if (!req) { builtinSpeak(clean, id, cfg, face); return true; }
+          if (req.err) { toast(req.err + " Using the device voice."); builtinSpeak(clean, id, cfg, face); return true; }
+          fetch(req.url, req.init).then(function (res) {
+            if (!res.ok) {
+              return res.text().then(function (body) {
+                var msg = body; try { var j = JSON.parse(body); msg = (j.error && (j.error.message || j.error)) || j.message || (j.detail && (j.detail.message || j.detail)) || body; } catch (e) {}
+                throw { status: res.status, msg: String(typeof msg === "string" ? msg : JSON.stringify(msg) || "").replace(/\s+/g, " ").slice(0, 90) };
+              });
+            }
+            return res.blob();
+          }).then(function (blob) {
+            if (id !== voiceSeq) return;
+            if (!blob || !blob.size) throw { status: 0, msg: "empty audio" };
+            voiceUrl = URL.createObjectURL(blob);
+            voiceEl.muted = false; voiceEl.playbackRate = 1; voiceEl.src = voiceUrl;
+            var c = actx; /* only a context made inside a tap */
+            if (c && c.state === "suspended") c.resume().catch(function () {});
+            var p = voiceEl.play();
+            sayOn(face, analyser && c && c.state !== "closed" ? level : null);
+            if (p && p.catch) p.catch(function () {
+              if (id !== voiceSeq) return;
+              faceOff();
+              toast("Tap anywhere once so " + crewMember(charId).name + " can talk.");
+              builtinSpeak(clean, id, cfg, face);
+            });
+          }).catch(function (err) {
+            if (id !== voiceSeq) return;
+            if (cfg.vprov === "fish" && !(err && err.status) && !(S.fishProxy || "").trim()) toast("Fish Audio blocks browser calls. Add a proxy URL in Settings.");
+            else toast((err && err.status ? who + " voice error " + err.status + (err.msg ? ": " + err.msg : "") : "Couldn't reach " + who + " voice") + ". Using the device voice.");
+            builtinSpeak(clean, id, cfg, face);
+          });
+          return true;
         }
 
         function paintSpeakers() {
@@ -4164,6 +4419,93 @@
         agentIn.value = S.agentId;
         ["input", "change", "blur"].forEach(function (ev) { agentIn.addEventListener(ev, function () { S.agentId = agentIn.value.trim(); save(); }); });
         $("voice-test").addEventListener("click", function () { unlockAudio(); speak("Hey Boss, I'm " + S.name + ".", true); });
+
+        /* voice API keys: saved as you type, local stores only (never the cookie), never logged */
+        var VKEYS = { elevenKey: $("set-elevenkey"), oaiKey: $("set-oaikey"), fishKey: $("set-fishkey"), fishProxy: $("set-fishproxy") };
+        function paintVoiceKeys() {
+          Object.keys(VKEYS).forEach(function (f) { if (doc.activeElement !== VKEYS[f]) VKEYS[f].value = S[f] || ""; });
+          VKEYS.oaiKey.placeholder = !S.oaiKey && S.provider === "openai" && S.apiKey ? "Using your OpenAI key above" : "Paste key";
+        }
+        Object.keys(VKEYS).forEach(function (f) {
+          var el = VKEYS[f];
+          el.addEventListener("input", function () { S[f] = el.value.trim(); save(); });
+          el.addEventListener("change", function () { S[f] = el.value.trim(); save(); paintVoiceKeys(); toast(f === "fishProxy" ? "Saved" : S[f] ? (KV.keyWorks() ? "Key saved on this device" : "Key saved for this visit") : "Key removed"); });
+        });
+        prov.addEventListener("change", paintVoiceKeys);
+        keyIn.addEventListener("change", paintVoiceKeys);
+        paintVoiceKeys();
+
+        /* Characters & Voices: one row per crew member, each opens its own sheet */
+        var crewList = $("crew-list"), crewSheet = $("crew-sheet"), crewCur = null, crewTimer = null, crewOpener = null;
+        var crewIn = $("crew-persona"), crewProv = $("crew-vprov"), crewVid = $("crew-vid"), crewSpeed = $("crew-speed"), crewPitch = $("crew-pitch");
+        function paintCrew() {
+          crewList.innerHTML = CREW.map(function (m) {
+            var c = S.chars[m.id] || {};
+            return '<button class="x-row x-crew__row" type="button" data-crew="' + m.id + '" aria-haspopup="dialog">' +
+              '<span class="x-crew__emoji" aria-hidden="true">' + m.emoji + '</span>' +
+              '<span class="x-twoline">' + esc(m.name) + '<small>' + esc(m.role) + '</small></span>' +
+              '<span class="x-crew__vp">' + esc(VPROV[c.vprov] || "Built-in") + '</span></button>';
+          }).join("");
+        }
+        function crewPaintVoice() {
+          var c = S.chars[crewCur];
+          crewProv.value = c.vprov; crewVid.value = c.vid || "";
+          crewVid.placeholder = c.vprov === "openai" ? "onyx" : c.vprov === "xai" ? "eve" : c.vprov === "builtin" ? "Optional" : "Voice ID";
+          $("crew-hint").textContent = VHINT[c.vprov];
+          crewSpeed.value = c.speed; $("crew-speed-v").textContent = (+c.speed).toFixed(2);
+          crewPitch.value = c.pitch; $("crew-pitch-v").textContent = (+c.pitch).toFixed(2);
+          $("crew-pitch-row").hidden = c.vprov !== "builtin";
+        }
+        function crewCommitPersona() {
+          clearTimeout(crewTimer);
+          if (!crewCur) return;
+          var c = S.chars[crewCur];
+          if (c.persona !== crewIn.value) { c.persona = crewIn.value; save(); if (crewCur === "blarf") paintPersona(); }
+        }
+        function crewOpen(id, opener) {
+          crewCur = id; crewOpener = opener || null;
+          var m = crewMember(id);
+          $("crew-emoji").textContent = m.emoji; $("crew-title").textContent = m.name; $("crew-role").textContent = m.role;
+          crewIn.value = S.chars[id].persona || "";
+          crewIn.placeholder = id === "blarf" ? "Leave empty to use Blarf's built-in personality." : CREW_PERSONA[id];
+          $("crew-pnote").textContent = id === "blarf" ? "Same as “My system prompt” below. Empty uses his built-in personality." : "Empty uses the default personality.";
+          crewPaintVoice();
+          layerSheet(crewSheet, true);
+          $("crew-panel").scrollTop = 0;
+          $("crew-done").focus({ preventScroll: true });
+        }
+        function crewClose() {
+          if (!crewSheet.classList.contains("is-open")) return;
+          crewCommitPersona(); paintCrew();
+          layerSheet(crewSheet, false);
+          var back = crewCur && crewList.querySelector('[data-crew="' + crewCur + '"]');
+          if (back) back.focus({ preventScroll: true });
+        }
+        crewList.addEventListener("click", function (e) { var b = e.target.closest("[data-crew]"); if (b) crewOpen(b.dataset.crew, b); });
+        $("crew-scrim").addEventListener("click", crewClose);
+        $("crew-done").addEventListener("click", crewClose);
+        doc.addEventListener("keydown", function (e) { if (e.key === "Escape" && crewSheet.classList.contains("is-open")) { e.stopImmediatePropagation(); crewClose(); } }, true);
+        crewIn.addEventListener("input", function () { clearTimeout(crewTimer); crewTimer = setTimeout(crewCommitPersona, 400); });
+        crewIn.addEventListener("blur", crewCommitPersona);
+        $("crew-reset").addEventListener("click", function () {
+          clearTimeout(crewTimer); crewIn.value = ""; S.chars[crewCur].persona = ""; save();
+          if (crewCur === "blarf") paintPersona();
+          toast(crewMember(crewCur).name + " is back to default.");
+        });
+        crewProv.addEventListener("change", function () {
+          var c = S.chars[crewCur]; c.vprov = crewProv.value;
+          if (c.vprov === "xai" && !c.vid && crewCur === "blarf") c.vid = liveVoiceId();
+          save(); crewPaintVoice(); paintCrew();
+        });
+        ["input", "change", "blur"].forEach(function (ev) { crewVid.addEventListener(ev, function () { S.chars[crewCur].vid = crewVid.value.trim(); save(); }); });
+        crewSpeed.addEventListener("input", function () { S.chars[crewCur].speed = +crewSpeed.value; $("crew-speed-v").textContent = (+crewSpeed.value).toFixed(2); });
+        crewPitch.addEventListener("input", function () { S.chars[crewCur].pitch = +crewPitch.value; $("crew-pitch-v").textContent = (+crewPitch.value).toFixed(2); });
+        crewSpeed.addEventListener("change", save);
+        crewPitch.addEventListener("change", save);
+        $("crew-test").addEventListener("click", function () { unlockAudio(); speakAs(crewCur, CREW_TEST[crewCur] || "Hey Boss.", true); });
+        /* the "My system prompt" box and Blarf's sheet share one value */
+        sysIn.addEventListener("input", function () { if (crewCur === "blarf" && crewSheet.classList.contains("is-open") && doc.activeElement !== crewIn) crewIn.value = sysIn.value; });
+        paintCrew();
         paintSpeakers();
         /* confirm a committed settings change once, on change rather than every keystroke */
         [nameIn, prov, modelIn, urlIn, voiceSel, voiceCustom, agentIn].forEach(function (el) {
@@ -4623,9 +4965,11 @@
         /* IndexedDB answers late: restore any setting the other stores lost, then back-fill every store */
         KV.ready([SETKEY, STORE], function (got) {
           var fromIdb = parseJSON(got[SETKEY]) || parseJSON(got[STORE]) || {}, changed = false;
-          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch", "brain", "tools"].forEach(function (f) {
+          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch", "brain", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy"].forEach(function (f) {
             if (saved[f] === undefined && fromIdb[f] !== undefined && fromIdb[f] !== "") { S[f] = fromIdb[f]; changed = true; }
           });
+          S.chars = charsClean(S.chars);
+          paintCrew(); paintVoiceKeys();
           if (!S.tools || typeof S.tools !== "object") S.tools = { studio: true, hustle: true };
           paintTools();
           if (modelMig()) changed = true;
