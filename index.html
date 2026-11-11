@@ -1058,6 +1058,34 @@
       .x-modesub__hint { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--type-caption); color: var(--text-secondary); }
       .x-modesub__crew { font: var(--weight-medium) 13px/18px var(--sans); }
       .x-modesub__off { min-height: 32px; padding: 0 12px; border: 0; border-radius: var(--r-pill); background: var(--fill-tertiary); font: var(--weight-medium) 13px/18px var(--sans); color: var(--text-primary); }
+      /* P1d: self-check chip, skills */
+      .x-chk { margin-left: 6px; min-height: 22px; padding: 1px 8px; border: 0; border-radius: var(--r-pill); background: color-mix(in srgb, var(--fill-system-green) 16%, transparent); color: var(--text-secondary); font: var(--type-caption); font-size: 11px; line-height: 20px; white-space: nowrap; cursor: pointer; }
+      .x-chk.is-fixed { background: color-mix(in srgb, var(--fill-system-orange) 18%, transparent); }
+      .x-chk::after { content: " \203A"; opacity: 0.6; }
+      .x-chk[aria-expanded="true"]::after { content: " \2039"; }
+      .x-chk__list { margin: 4px 0 2px; padding: 8px 12px 8px 26px; border-radius: 14px; background: var(--fill-tertiary); font: var(--type-caption); color: var(--text-secondary); max-width: 100%; }
+      .x-chk__list[hidden] { display: none; }
+      .x-chk__list li + li { margin-top: 3px; }
+      .x-chk__list p { margin: 0 0 4px -14px; font-weight: 600; color: var(--text-primary); }
+      .x-code { margin: 6px 0; border-radius: 12px; overflow: hidden; background: var(--fill-primary-on); border: 0.5px solid var(--stroke-secondary); white-space: normal; }
+      .x-code__bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 4px 4px 12px; font: var(--type-caption); color: var(--text-secondary); border-bottom: 0.5px solid var(--stroke-secondary); }
+      .x-code pre { margin: 0; padding: 10px 12px; max-height: 320px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text-primary); -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
+      .x-copy { min-height: 32px; min-width: 64px; padding: 0 12px; border: 0; border-radius: var(--r-pill); background: var(--fill-tertiary); color: var(--text-primary); font: var(--weight-medium) 13px/1 var(--sans); cursor: pointer; }
+      .x-skbtn { font-size: 19px; line-height: 1; }
+      .x-skbtn[aria-pressed="true"] { box-shadow: 0 0 0 1.5px var(--x-accent) inset; }
+      .x-skpend .x-pend__chip { padding-left: 12px; border-radius: var(--r-pill); }
+      .x-skpend .x-pend__lbl { color: var(--text-primary); font: var(--weight-medium) 14px/18px var(--sans); }
+      .x-skpend .x-pend__x { width: 36px; height: 36px; }
+      .x-skitem .x-twoline { flex: 1; min-width: 0; padding-block: 8px; }
+      .x-skitem small { display: block; font: var(--type-caption); color: var(--text-secondary); }
+      .x-sktitle { font: var(--type-body-strong); padding: 4px 4px 10px; }
+      .x-skempty { padding: 16px; font: var(--type-body); color: var(--text-secondary); }
+      .x-skmine { font-style: normal; font: var(--type-caption); padding: 0 6px; border-radius: var(--r-pill); background: var(--fill-tertiary); color: var(--text-secondary); vertical-align: 1px; }
+      .x-skdel { flex: none; min-width: 32px; height: 32px; padding: 0 8px; border: 0; border-radius: var(--r-pill); background: none; color: var(--text-secondary); font: var(--weight-medium) 18px/1 var(--sans); }
+      .x-skdel.is-armed { background: var(--fill-system-red, #e5484d); color: #fff; font-size: 13px; }
+      .x-teach .x-row + .x-row, .x-teach .x-prompt + .x-row { background: linear-gradient(var(--stroke-secondary), var(--stroke-secondary)) 16px 0 / calc(100% - 16px) 1px no-repeat; }
+      .x-teach__save { padding: 10px 16px 14px; display: flex; justify-content: flex-end; }
+      @media (prefers-reduced-motion: reduce) { .x-chk, .x-copy { transition: none; } }
       .x-suggest { display: flex; justify-content: center; padding: 6px 16px 0; }
       .x-suggest[hidden] { display: none; }
       .x-suggest__chip { display: inline-flex; align-items: center; border-radius: var(--r-pill); background: var(--fill-tertiary); border: 0.5px solid var(--stroke-secondary); box-shadow: 0 2px 8px rgb(0 0 0 / 0.08); animation: x-sugg-in 360ms var(--x-spring) both; }
@@ -1384,6 +1412,18 @@
                     <input class="x-field" id="set-oaikey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Paste key" />
                   </div>
                   <div class="x-row">
+                    <label class="x-twoline" for="set-selfcheck">Self-check<small id="selfcheck-stats" aria-live="polite">No answers checked this week yet</small></label>
+                    <select class="x-field" id="set-selfcheck">
+                      <option value="off">Off</option>
+                      <option value="deep">Deep Think only</option>
+                      <option value="all">All long answers</option>
+                    </select>
+                  </div>
+                  <div class="x-row">
+                    <span class="x-twoline" id="lbl-research">Auto-research<small>Looks it up instead of guessing</small></span>
+                    <button class="x-switch" id="set-research" type="button" role="switch" aria-checked="true" aria-labelledby="lbl-research"></button>
+                  </div>
+                  <div class="x-row">
                     <span>Thinks with</span>
                     <span class="x-val" id="brain-now" role="status"></span>
                   </div>
@@ -1417,6 +1457,22 @@
                 <p class="x-glabel">Connectors</p>
                 <div class="x-group" id="mcp-group"></div>
                 <p class="x-gnote">Plug Blarf into MCP servers (Zapier, GitHub, Notion, your own). Grok calls them from xAI's side — needs xAI.</p>
+              </div>
+
+              <div>
+                <p class="x-glabel">Skills</p>
+                <div class="x-group" id="skills-group"></div>
+                <p class="x-gnote">Say a trigger (“reverse engineer…”, “boost this prompt”, “help me brainstorm”) or tap ✨ next to the camera.</p>
+                <p class="x-glabel" style="margin-top: 20px" id="teach-h">Teach Blarf a skill</p>
+                <form class="x-group x-teach" id="skill-form" autocomplete="off" aria-labelledby="teach-h">
+                  <div class="x-row"><label for="sk-name">Name</label><input class="x-field" id="sk-name" maxlength="40" placeholder="Hook Doctor" /></div>
+                  <div class="x-row"><label for="sk-emoji">Emoji</label><input class="x-field" id="sk-emoji" maxlength="4" placeholder="🧩" /></div>
+                  <div class="x-row"><label for="sk-trig">Triggers</label><input class="x-field" id="sk-trig" maxlength="400" autocapitalize="off" placeholder="fix my hook, hook doctor" /></div>
+                  <div class="x-row"><label for="sk-brain">Brain</label><select class="x-field" id="sk-brain"><option value="auto">Auto</option><option value="talk">Talk (fast)</option><option value="think">Think (deep)</option></select></div>
+                  <div class="x-prompt"><label for="sk-ins">What should Blarf do?</label><textarea class="x-area" id="sk-ins" rows="4" maxlength="2000" placeholder="Rate the hook 1-10, say what's weak, then write 3 punchier versions."></textarea></div>
+                  <div class="x-teach__save"><button class="btn" type="submit">Save skill</button></div>
+                </form>
+                <p class="x-gnote">Saved on this device. Triggers are comma-separated. Your skills work just like the built-in ones.</p>
               </div>
 
               <div>
@@ -1612,6 +1668,15 @@
           <button class="x-menu__item" id="menu-mute" type="button" role="switch" aria-checked="false"><span aria-hidden="true">🔇</span><span>Mute</span><span class="x-switch" aria-hidden="true"></span></button>
           <button class="x-menu__item" id="menu-hf" type="button" role="switch" aria-checked="true"><span aria-hidden="true">🎙️</span><span>Hands-free</span><span class="x-switch" aria-hidden="true"></span></button>
         </div>
+      </div>
+    </div>
+
+    <div class="x-menu" id="skill-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="skill-sheet-t">
+      <button class="x-menu__scrim x-scrim" id="skill-scrim" type="button" aria-label="Close skills" tabindex="-1"></button>
+      <div class="x-menu__panel" id="skill-panel">
+        <div class="x-grabber" aria-hidden="true"></div>
+        <p class="x-sktitle" id="skill-sheet-t">✨ Skills <small style="font: var(--type-caption); color: var(--text-secondary)">rides on your next message</small></p>
+        <div class="x-menu__list" id="skill-list"></div>
       </div>
     </div>
 
@@ -2704,7 +2769,7 @@
 
         /* ---------- storage: localStorage, then IndexedDB, then a cookie (never the API key); memory as a last resort ---------- */
         var SETKEY = "companion-settings";
-        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch", "brain", "mode", "deepStrength", "obsSub", "crew", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel", "autoRoute", "voicePolish", "thinkProv", "thinkModel", "visionModel", "memAuto", "memMig", "embedModel"];
+        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch", "brain", "mode", "deepStrength", "obsSub", "crew", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel", "autoRoute", "voicePolish", "thinkProv", "thinkModel", "visionModel", "memAuto", "memMig", "embedModel", "selfCheck", "checkLog", "autoResearch", "skillsOff", "mySkills"];
         var SECRET_FIELDS = ["apiKey", "elevenKey", "oaiKey", "fishKey"];
         var KV = (function () {
           var mem = {}, idb = null, idbState = 0; /* 0 pending, 1 ok, -1 unavailable */
@@ -2932,8 +2997,14 @@
           fishKey: typeof saved.fishKey === "string" ? saved.fishKey : "",
           fishProxy: typeof saved.fishProxy === "string" ? saved.fishProxy : "",
           mcp: mcpClean(saved.mcp),
-          localModel: localModelClean(saved.localModel)
+          localModel: localModelClean(saved.localModel),
+          selfCheck: saved.selfCheck === "off" || saved.selfCheck === "all" ? saved.selfCheck : "deep",
+          checkLog: Array.isArray(saved.checkLog) ? saved.checkLog.filter(function (x) { return x && typeof x.ts === "number"; }).slice(-50) : [],
+          autoResearch: saved.autoResearch !== false,
+          skillsOff: saved.skillsOff && typeof saved.skillsOff === "object" ? saved.skillsOff : {},
+          mySkills: saved.mySkills
         };
+        S.mySkills = skillsClean(S.mySkills);
         function localModelClean(v) { return v === "Llama-3.2-1B-Instruct-q4f16_1-MLC" ? v : "Qwen2.5-0.5B-Instruct-q4f16_1-MLC"; }
         /* MCP connectors: [{ label, url, token, allowed, on }] */
         function mcpLabel(s) { return String(s == null ? "" : s).replace(/\s+/g, "_").replace(/[^A-Za-z0-9_]/g, "").slice(0, 40); }
@@ -3654,6 +3725,8 @@
            ctx: { role: mode job, len: length rule, live: spoken, compact: small on-device model }. S.sysPrompt replaces the base persona; memory, time mood and the swear rule always ride along. */
         var BLARF_LISTEN = " SHOW YOU'RE LISTENING: answer what Kyle actually said, not a generic version of it; quote or name his specifics back (his words, his track, his idea, his numbers). Notice his tone (stressed, hyped, tired, pissed, joking) and roll with it. When something that matters is unclear, or he's about to make a dumb move, ask one sharp follow-up instead of guessing; otherwise don't pad replies with questions.";
         var BLARF_RULES = " Never talk like a corporate assistant: no \"As an AI\", no \"I'd be happy to help\", no disclaimers, no lectures. If he asks what you are, own it in character: you're Blarf, the grumpy blue face living in his phone. Roast everybody equally, but never punch down: no slurs and no hate toward any group of people.";
+        var BLARF_RESEARCH = " RESEARCH, DON'T GUESS: on facts, news, prices, current events, scores, release dates, versions and specs, never make stuff up or bluff. If you have web search, use it before answering. If you don't and you're not sure, say so in one short line and put [[research: short search query]] at the very end; it gets looked up for you.";
+        var BLARF_RESEARCH_LIVE = " RESEARCH, DON'T GUESS: never bluff facts, news, prices or specs. If you don't know for sure, say so and tell him to ask you in Text Chat, where you can look it up.";
         function blarfCharacter(ctx) {
           ctx = ctx || {};
           var p = personaPrompt(), sheet;
@@ -3664,7 +3737,7 @@
             " In creative work (lyrics, bars, scripts, stories) write gritty, real dialogue, and profanity where the piece calls for it." + BLARF_RULES;
           if (ctx.role) sheet += " " + ctx.role;
           if (ctx.len) sheet += " " + ctx.len;
-          if (!ctx.compact) sheet += BLARF_LISTEN;
+          if (!ctx.compact) sheet += BLARF_LISTEN + (ctx.live ? BLARF_RESEARCH_LIVE : BLARF_RESEARCH);
           return sheet + memoryClause() + swearClause();
         }
         var SHORT_LEN = "Keep replies short and mobile-friendly: one to four short sentences or a tight list.";
@@ -3854,14 +3927,17 @@
             MODES[m].chips.map(function (c) { return '<button class="x-chip" type="button">' + esc(c) + "</button>"; }).join("") + "</div>" +
             '<div class="x-pend" id="pend-' + m + '" hidden><span class="x-pend__chip"><span class="x-pend__lbl">Photo</span>' +
             '<button class="x-pend__x" type="button" aria-label="Remove photo">×</button></span></div>' +
+            '<div class="x-pend x-skpend" id="skpend-' + m + '" hidden role="status"><span class="x-pend__chip"><span class="x-pend__lbl"></span>' +
+            '<button class="x-pend__x" type="button" aria-label="Cancel skill">×</button></span></div>' +
             '<form class="x-composer" autocomplete="off">' +
             '<button class="x-cam" type="button" aria-label="Send a photo">' + CAM_ICON + '</button>' +
+            '<button class="x-cam x-skbtn" type="button" aria-label="Skills" aria-haspopup="dialog" aria-controls="skill-sheet"><span aria-hidden="true">✨</span></button>' +
             '<input class="x-file" type="file" accept="image/*" tabindex="-1" aria-hidden="true" />' +
             '<textarea class="x-input" id="input-' + m + '" aria-label="Message" rows="1" enterkeyhint="send" placeholder="' + (m === "chat" ? "Tap to talk" : "Message") + '"></textarea>' +
             '<button class="x-send" type="submit" aria-label="Send" disabled>' + SEND_ICON + "</button></form>";
           if (m === "chat") views.appendChild(sec); else $("ovl-views").insertBefore(sec, $("view-settings"));
           V[m] = { sec: sec, scroll: $("scroll-" + m), thread: $("thread-" + m), input: $("input-" + m), send: sec.querySelector(".x-send"), form: sec.querySelector("form"),
-            cam: sec.querySelector(".x-cam"), file: sec.querySelector(".x-file"), pend: $("pend-" + m) };
+            cam: sec.querySelector(".x-cam"), file: sec.querySelector(".x-file"), pend: $("pend-" + m), skbtn: sec.querySelector(".x-skbtn"), skpend: $("skpend-" + m) };
         });
 
         function toolHTML(m) {
@@ -3898,6 +3974,16 @@
         /* ---------- formatting ---------- */
         function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
         function fmt(s) { return esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>"); }
+        /* fenced code blocks for skill replies; Prompt Booster's get a Copy button */
+        function fmtCode(s, copy) {
+          var parts = String(s).split(/```[a-zA-Z0-9_-]*\n?/), out = "";
+          parts.forEach(function (p, i) {
+            var code = i % 2 === 1 && !(i === parts.length - 1 && parts.length % 2 === 0);
+            if (!code) { var t = i % 2 ? "```" + p : p; if (i > 0) t = t.replace(/^\n/, ""); if (i < parts.length - 1) t = t.replace(/\n+$/, ""); out += fmt(t); return; }
+            out += '<div class="x-code"><div class="x-code__bar"><span>' + (copy ? "Boosted prompt" : "Code") + "</span>" + '<button class="x-copy" type="button">Copy</button></div><pre>' + esc(p.replace(/\n+$/, "")) + "</pre></div>";
+          });
+          return out;
+        }
         function clock(ts) { return new Date(ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); }
 
         function msgEl(msg) {
@@ -3907,10 +3993,15 @@
             : msg.r === "bot" && typeof msg.img === "string" && /^(data:image\/|https:\/\/)/.test(msg.img) ? '<img class="x-bubimg x-genimg" src="' + esc(msg.img) + '" alt="Picture Blarf made" role="button" tabindex="0" />' : "";
           var lnk = msg.r === "bot" && typeof msg.link === "string" && /^https:\/\//.test(msg.link)
             ? '<br /><a class="link x-boblink" href="' + esc(msg.link) + '" target="_blank" rel="noopener">' + esc(msg.linkLabel || "Open link") + "</a>" : "";
-          var inner = '<div class="x-bub">' + pic + fmt(msg.t) + lnk + '</div><p class="x-time">' + clock(msg.ts) +
+          var body = msg.r === "bot" && msg.skill && /```/.test(msg.t) ? fmtCode(msg.t, msg.skill === "booster") : fmt(msg.t);
+          var chk = msg.r === "bot" && msg.chk && typeof msg.chk === "object" ? msg.chk : null;
+          var inner = '<div class="x-bub">' + pic + body + lnk + '</div><p class="x-time">' + clock(msg.ts) +
             (msg.r === "bot" && typeof msg.tag === "string" && msg.tag ? '<span class="x-brtag">' + esc(msg.tag) + "</span>"
               : msg.r === "bot" && msg.brain && BRAINS[msg.brain] ? '<span class="x-brtag">' + BRAINS[msg.brain].label + "</span>" : "") +
-            (msg.r === "bot" && typeof msg.via === "string" && msg.via ? '<span class="x-via" title="Who answered">' + esc(msg.via) + "</span>" : "") + "</p>";
+            (msg.r === "bot" && typeof msg.via === "string" && msg.via ? '<span class="x-via" title="Who answered">' + esc(msg.via) + "</span>" : "") +
+            (chk ? '<button class="x-chk' + (chk.fixed ? " is-fixed" : "") + '" type="button" aria-expanded="false" aria-label="' + esc(chkLabel(chk)) + ', show details">' + esc(chkLabel(chk)) + "</button>" : "") + "</p>" +
+            (chk ? '<ul class="x-chk__list" hidden><p>' + (chk.fixed ? "Self-check caught these and fixed them:" : chk.n ? "Self-check notes:" : "Self-check: all good.") + "</p>" +
+              ((chk.issues || []).length ? chk.issues.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") : "<li>Understood the ask, memory used right, task done, no contradictions, no shaky assumptions.</li>") + "</ul>" : "");
           el.innerHTML = msg.r === "bot" ? '<span class="x-mini" aria-hidden="true">' + BL.MINI + '</span><div class="x-msg__body">' + inner + "</div>" : inner;
           return el;
         }
@@ -4678,7 +4769,7 @@
           /* session start: focus memory on what we were just talking about */
           memFocus(S.threads.chat.filter(function (x) { return x && x.r === "me" && typeof x.t === "string"; }).slice(-3).map(function (x) { return x.t; }).join(" "));
           var mid = S.crew ? "chill" : modeOf("chat");
-          return blarfCharacter({ role: "Right now you're talking with him out loud in a live voice chat. You also know music production (FL Studio, mixing, 808s, chords, Dubler 2, Splice) and startup coaching (priorities, next actions, accountability), and help with either when he asks. You're in " + COG[mid].label + " mode: " + modeTone(mid) + (mid === "observer" ? " In live talk you can't see the camera, so ask him to send a photo in Text Chat." : "") }) + tail;
+          return blarfCharacter({ live: true, role: "Right now you're talking with him out loud in a live voice chat. You also know music production (FL Studio, mixing, 808s, chords, Dubler 2, Splice) and startup coaching (priorities, next actions, accountability), and help with either when he asks. You're in " + COG[mid].label + " mode: " + modeTone(mid) + (mid === "observer" ? " In live talk you can't see the camera, so ask him to send a photo in Text Chat." : "") }) + tail;
         }
         function paintTalk(st) {
           if (st) blarf.setAttribute("data-live", st); else blarf.removeAttribute("data-live");
@@ -5112,6 +5203,8 @@
           var me = { r: "me", t: text, ts: Date.now() };
           if (img) { me.img = img; me.pic = 1; }
           me.mode = modeOf(m);
+          if (!dp) { var skp = skillArmed[m] ? skillGet(skillArmed[m]) : skillMatch(text); if (skp && skillOn(skp)) me.skill = skp.id; }
+          if (skillArmed[m]) skillArm(m, null);
           addMsg(m, me);
           if (m === "chat" && !dp) maybeSuggest(text, img);
           queue[m].push(dp ? { draw: dp } : text);
@@ -5140,7 +5233,10 @@
           if (loc) { localRun(m, loc); return; }
           if (m === "chat" && S.crew && S.apiKey) { crewRun(m); return; }
           var lastMine = S.threads[m].filter(function (x) { return x.r === "me"; }).pop();
-          var rt = S.apiKey || oaiThinkKey() ? router({ m: m, text: text, img: !!(lastMine && lastMine.img) || (modeOf(m) === "observer" && !!recentImg(m)) }) : null;
+          var sk = lastMine && lastMine.skill ? skillGet(lastMine.skill) : null;
+          if (!skillOn(sk)) sk = null;
+          var rt = S.apiKey || oaiThinkKey() ? router({ m: m, text: text, skill: sk, img: !!(lastMine && lastMine.img) || (modeOf(m) === "observer" && !!recentImg(m)) }) : null;
+          if (rt && sk) rt.skill = sk;
           /* an OpenAI key alone can still run the Think brain; anything else needs the main key */
           if (rt && !S.apiKey && rt.prov !== "openai") rt = null;
           if (rt && rt.note) toast(rt.note);
@@ -5150,26 +5246,34 @@
           var done = function (reply) { typing(m, false); addMsg(m, { r: "bot", t: reply, ts: Date.now() }); next(m); };
           if (rt) {
             var mtag = m === "chat" ? modeTag(S.mode) : "", mid = modeOf(m);
-            var finish = function (reply, used) {
+            if (sk) mtag = (mtag ? mtag + " · " : "") + sk.emoji + " " + sk.name;
+            var finish = function (reply, used, o) {
               typing.think = false; typing(m, false);
-              addMsg(m, { r: "bot", t: reply, ts: Date.now(), mode: mid, tag: mtag || undefined, via: viaLabel(used) });
+              addMsg(m, { r: "bot", t: reply, ts: Date.now(), mode: mid, tag: mtag || undefined, via: viaLabel(used) + (o && o.researched ? " + 🔎 Research" : ""),
+                skill: sk ? sk.id : undefined, chk: o && o.chk ? o.chk : undefined });
               next(m);
             };
+            /* one answer (plus voice polish), then research if needed, then the self-check */
+            var produce = function (r) {
+              return askAI(m, r).then(function (reply) {
+                if (r.prov !== "openai" || !S.voicePolish) return { t: reply, rt: r };
+                return voicePolish(m, reply).then(function (pol) { return { t: pol || reply, rt: pol ? Object.assign({}, r, { polished: true }) : r }; });
+              });
+            };
+            var post = function (res) { return afterReply(m, text, res, produce).then(function (o) { finish(o.t, o.rt, o); }); };
             var offline = function (err) {
               typing.think = false; typing(m, false);
               addMsg(m, { r: "err", t: "**Couldn't reach the AI.** " + err + " Answering offline for now.", ts: Date.now() });
               typing(m, true);
               setTimeout(function () { done(BRAIN.reply(m, text, S)); save(); }, 700);
             };
-            askAI(m, rt).then(function (reply) {
-              if (rt.prov !== "openai" || !S.voicePolish) return finish(reply, rt);
-              return voicePolish(m, reply).then(function (pol) { finish(pol || reply, pol ? Object.assign({}, rt, { polished: true }) : rt); });
-            }, function (err) {
+            produce(rt).then(post, function (err) {
               /* Think brain on OpenAI choked: Grok takes it, no fuss */
               if (rt.prov === "openai" && S.apiKey && S.provider !== "local") {
                 toast("🧠 Think brain choked (" + String(err).replace(/\*\*/g, "").slice(0, 70) + "). Grok's got it.");
                 var fb = talkRoute("think", S.provider === "xai" ? "high" : "");
-                askAI(m, fb).then(function (reply) { finish(reply, fb); }, offline);
+                if (sk) fb.skill = sk;
+                produce(fb).then(post, offline);
                 return;
               }
               offline(err);
@@ -5253,7 +5357,7 @@
         })();
 
         var XAI_RESPONSES = "https://api.x.ai/v1/responses";
-        var LIVE_HINT = " You have live web and X search: use it for news, scores, prices, weather, release dates, videos, anything recent; mention the source site briefly.";
+        var LIVE_HINT = " You have live web and X search: use it for news, scores, prices, weather, release dates, videos, anything recent; mention the source site briefly. When you searched and found a durable fact worth knowing later (specs, release dates, who made what; never today's price or score), you may add up to 2 lines at the very end in the exact form [[fact: short third-person fact | one-word topic]].";
         /* text of an xAI Responses reply, plus up to 3 source domains */
         function xaiText(data) {
           if (!data) return "";
@@ -5594,6 +5698,8 @@
           var forced = pol === "think";
           var think = forced;
           if (!think && pol === "auto" && S.autoRoute !== false) think = /```/.test(text) || text.length > 400 || (text.length >= 18 && THINK_RE.test(text));
+          /* skills: Reverse Engineer wants the Think brain, Prompt Booster / Creative Partner stay quick */
+          if (!forced && pol === "auto" && req.skill) { if (req.skill.brain === "think") think = true; else if (req.skill.brain === "talk") think = false; }
           if (!think && req.img) {
             var v = talkRoute("vision");
             v.model = (S.visionModel || "").trim();
@@ -5677,15 +5783,22 @@
             return { role: role, content: role === "user" && x.from ? "(earlier, in " + x.from + ") " + t : t };
           });
           var brainClause = mc.long ? " Ignore the earlier length limit for this answer." : "";
+          if (rt.skill) brainClause += skillClause(rt.skill);
+          if (rt.revise) {
+            brainClause += " REVISION PASS: you already drafted an answer to Kyle's last message (it's the last assistant turn) and a quality check flagged problems. Write the corrected, complete answer that fixes them, in your voice. Output only the new answer: no mention of the check, no apology, no preamble.";
+            history = history.concat([{ role: "assistant", content: rt.revise.draft },
+              { role: "user", content: "(quality check, not from Kyle) Issues: " + rt.revise.issues.join(" | ") + (rt.revise.fix ? "\nFix: " + rt.revise.fix : "") + "\nRewrite the full answer to my last message." }]);
+          }
           if (rt.brain === "think" && !mc.long) brainClause += " THINK BRAIN: this one needs real reasoning. Get it right and complete (steps, code, numbers as needed), still in your voice. Ignore the earlier length limit if the answer needs it.";
           var waitMs = oai ? 120000 : xr ? (mid === "deep" ? 180000 : 90000) : 60000;
           var reqBody, tools = null;
           if (xr) {
             url = oai ? OAI_RESPONSES : XAI_RESPONSES;
-            var fnTools = toolDefs(mid);
-            var mcpT = m === "chat" && isX ? mcpTools() : [];
+            var fnTools = rt.noTools ? [] : toolDefs(mid);
+            var mcpT = m === "chat" && isX && !rt.noTools ? mcpTools() : [];
             var search = S.liveSearch !== false && modeLive(mid) ? (isX ? [{ type: "web_search" }, { type: "x_search" }] : [{ type: "web_search" }]) : [];
             tools = search.concat(fnTools).concat(mcpT);
+            rt.hadSearch = search.length > 0;
             reqBody = { model: model, input: [{ role: "system", content: MODES[m].system() + VISION + MEM_ASK + (search.length ? (isX ? LIVE_HINT : LIVE_HINT.replace("web and X search", "web search")) : "") + (fnTools.length ? TOOL_HINT : "") + (mcpT.length ? mcpClause() : "") + brainClause }].concat(history) };
             if (tools.length) reqBody.tools = tools; else tools = null;
             var eff = rt.effort || modeEffort(mid);
@@ -5741,12 +5854,211 @@
             if (!c) throw "The reply came back empty.";
             var got = 0;
             c = String(c).replace(/\[\[\s*remember\s*:\s*([\s\S]*?)\]\]/gi, function (_, f) { if (remember(f)) got++; return ""; });
+            /* facts it looked up itself go to semantic memory (source = domain + date); [[research:]] stays for afterReply */
+            if (rt.hadSearch && /\[\[\s*fact\s*:/i.test(c)) { var lf = learnFacts(c, (hist[lastMe] || {}).t); if (lf && !got) toast("🔎 Blarf learned " + (lf === 1 ? "a new fact" : lf + " new facts")); }
+            c = c.replace(/\[\[\s*fact\s*:[\s\S]*?\]\]/gi, "");
             c = c.replace(/[ \t]+\n/g, "\n").replace(/\s+$/, "").trim();
             if (got) toast("🧠 Blarf will remember that");
             if (!c) c = "Got it, Boss. 🧠";
             return c;
           });
         }
+
+        /* ---------- P1d: built-in skills, auto-research, self-check ---------- */
+        /* Skill registry: { id, name, emoji, desc, triggers[], instructions, brain: auto|talk|think, ph (composer hint) }.
+           Built-ins live here; Kyle's own ("Teach Blarf a skill") live in S.mySkills with the same shape. */
+        var SKILLS = [
+          { id: "reverse", name: "Reverse Engineer", emoji: "🔧", brain: "think", ph: "What should I take apart?",
+            desc: "How any product, song, app, system or prompt works, and how to rebuild it",
+            triggers: ["reverse engineer", "reverse-engineer", "break down how", "tear down", "teardown", "how was this made", "how did they make", "how'd they make", "how is this built"],
+            instructions: "SKILL: REVERSE ENGINEER. Take apart whatever Kyle named or showed you (a product, song, beat, app, website, system, business, prompt, or what's in his photo/screenshot) and show how it actually works. If there's a photo, read every visible detail first. Use these bold headers: **What it is** (one line). **The parts** (the key components, layers or ingredients, tight list). **How it connects** (the flow, what feeds what, in order). **How to rebuild it** (numbered steps with concrete tools, settings, stack or prompt text; songs: tempo, key, drums, sounds, arrangement and FL Studio mix moves; apps: stack, data, screens, APIs; prompts: the structure and the exact wording that does the work). **What makes it good** (the 2-3 choices that make it hit, plus the trap people fall into copying it). Mark what's a guess vs. what you know, and don't invent specs. End with one line: the first thing he should try." },
+          { id: "booster", name: "Prompt Booster", emoji: "🚀", brain: "talk", ph: "Paste your rough prompt",
+            desc: "Turns a rough prompt into a strong, structured one for any AI, image, video or music tool",
+            triggers: ["boost this prompt", "boost my prompt", "boost prompt", "boost this:", "prompt booster", "improve this prompt", "improve my prompt", "make this prompt better", "make my prompt better", "enhance this prompt", "upgrade this prompt", "rewrite this prompt"],
+            instructions: "SKILL: PROMPT BOOSTER. Kyle's message has a rough prompt in it (whatever follows the trigger, or what's in quotes). Turn it into a powerful, structured prompt for the tool it's meant for; guess from context: chat AI (Grok, ChatGPT, Claude), image (Grok Imagine, Midjourney, Flux), video (Sora, Veo, Kling), music (Suno, Udio) or code (Cursor). Format EXACTLY: **Before:** his original, one line. Then **After:** followed by the boosted prompt inside ONE ``` code block (only the prompt goes in the block). Chat AIs: role, context, task, constraints, output format, an example if it helps. Image/video: subject, action, setting, style, lighting, lens/camera, mood, composition, aspect ratio, what to avoid; video adds motion, camera move, duration. Music: genre, BPM, key, instruments, vocal style, structure tags like [Verse] [Chorus], mood, production references described as a style (never ask a tool to clone a real artist's voice). Then **Why it hits:** 2-3 short bullets. If he didn't actually paste a prompt, ask him for it in one line. Keep banter to one line outside the block." },
+          { id: "creative", name: "Creative Partner", emoji: "🎨", brain: "talk", ph: "What are we brainstorming?",
+            desc: "Yes-and idea partner: 5 wild options, then picks the best",
+            triggers: ["help me brainstorm", "let's brainstorm", "lets brainstorm", "brainstorm", "riff on", "riff with me", "give me ideas", "give me some ideas", "ideas for", "creative partner"],
+            instructions: "SKILL: CREATIVE PARTNER. Be his idea partner with 'yes, and' energy: build on what he gave you, don't critique it. Give **5 wild options** (numbered, each a punchy title plus one or two lines, ranging from solid to unhinged, all different angles). Then **My pick:** the best one and why, two lines. Then one way to push it even further. Gritty, real creative writing is fine here (bars, hooks, scripts, stories, profanity where the piece calls for it); still no hate toward groups of people. End by asking which one he wants to run with." }
+        ];
+        var SKILL_LIMIT = 24;
+        function skillsClean(a) {
+          if (!Array.isArray(a)) return [];
+          return a.filter(function (x) { return x && typeof x === "object" && typeof x.name === "string" && x.name.trim() && typeof x.instructions === "string" && x.instructions.trim(); }).slice(0, SKILL_LIMIT).map(function (x) {
+            var tr = (Array.isArray(x.triggers) ? x.triggers : String(x.triggers || "").split(",")).map(function (t) { return String(t).trim().toLowerCase().slice(0, 60); }).filter(function (t) { return t.length >= 3; }).slice(0, 12);
+            return { id: /^c_[a-z0-9]+$/.test(x.id || "") ? x.id : "c_" + Math.random().toString(36).slice(2, 9), name: x.name.trim().slice(0, 40), emoji: String(x.emoji || "").trim().slice(0, 4) || "🧩",
+              desc: String(x.desc || "").slice(0, 120), triggers: tr, instructions: x.instructions.trim().slice(0, 2000), brain: ["talk", "think"].indexOf(x.brain) >= 0 ? x.brain : "auto", ph: "", custom: true };
+          });
+        }
+        function skillAll() { return SKILLS.concat(S.mySkills || []); }
+        function skillOn(s) { return !!s && !(S.skillsOff && S.skillsOff[s.id]); }
+        function skillGet(id) { var all = skillAll(); for (var i = 0; i < all.length; i++) if (all[i].id === id) return all[i]; return null; }
+        function reEsc(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+        /* the earliest (then longest) trigger phrase in the message wins */
+        function skillMatch(text) {
+          var t = String(text || "").toLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/\s+/g, " "), best = null;
+          skillAll().filter(skillOn).forEach(function (s) {
+            (s.triggers || []).forEach(function (tr) {
+              tr = String(tr || "").toLowerCase().trim(); if (tr.length < 3) return;
+              var mt = new RegExp("(^|[^a-z0-9])" + reEsc(tr) + "(?=$|[^a-z0-9])").exec(t);
+              if (!mt) return;
+              var i = mt.index + mt[1].length;
+              if (!best || i < best.i || (i === best.i && tr.length > best.len)) best = { s: s, i: i, len: tr.length };
+            });
+          });
+          return best ? best.s : null;
+        }
+        function skillClause(s) {
+          var ins = s.custom ? "SKILL: " + s.name.toUpperCase() + ". " + s.instructions : s.instructions;
+          return " SKILL ACTIVE (" + s.emoji + " " + s.name + "): for this reply follow the skill instructions, still in your own voice. " + ins + " Ignore the earlier length limit if the skill needs the room.";
+        }
+        var skillArmed = { chat: null, studio: null, hustle: null };
+        function skillArm(m, id) {
+          var s = id ? skillGet(id) : null, v = V[m]; if (!v) return;
+          skillArmed[m] = s ? s.id : null;
+          var p = v.skpend;
+          if (p) {
+            p.hidden = !s;
+            if (s) p.querySelector(".x-pend__lbl").textContent = s.emoji + " " + s.name;
+          }
+          v.input.placeholder = s ? (s.ph || s.name + ": what's the job?") : m === "chat" ? "Tap to talk to " + S.name : "Message " + S.name;
+        }
+
+        /* ---------- auto-research: if he doesn't know, he looks it up ---------- */
+        var RESEARCH_MK = /\[\[\s*research\s*:\s*([\s\S]*?)\]\]/i;
+        var HEDGE_RE = /\b(i (don'?t|do not) (actually )?know|not (totally |100% |entirely )?sure|no idea|beats me|can'?t (browse|check|search|look (it|that|this) up|verify)|(don'?t|do not) have (live|real-?time|current|up-to-date|internet|web) |as of my (last|latest|knowledge)|knowledge cut-?off|training (data|cutoff)|(might|may|could) (be|have) (out ?dated|changed|out of date)|last i (heard|checked)|couldn'?t tell ya|i'?d have to (look|check))/i;
+        var FACT_RE = /\b(news|headlines?|price[sd]?|pricing|cost|how much (is|are|does|do)|stock|shares?|score[sd]?|standings|weather|forecast|release date|released|come out|came out|coming out|launch(ed|es|ing)? (date|day)|latest (version|update|model|release|news)|newest (version|model)|specs?|specifications|benchmarks?|who won|winner|election|polls?|exchange rate|tour dates|box office|net worth|patch notes|changelog)\b/i;
+        var ASK_RE = /\?\s*$|^(what|what's|whats|who|who's|when|where|which|how|is|are|does|did|do|can|will|was|were)\b/i;
+        /* returns the search query, or null. Only when this brain couldn't search on its own. */
+        function researchNeed(m, q, reply, rt) {
+          q = String(q || "").trim(); reply = String(reply || "");
+          if (!q || (rt && rt.hadSearch)) return null;
+          if (S.autoResearch === false || S.provider !== "xai" || !(S.apiKey || "").trim() || isOffline()) return null;
+          var mk = RESEARCH_MK.exec(reply);
+          if (mk) return mk[1].replace(/\s+/g, " ").trim().slice(0, 200) || q;
+          var asky = ASK_RE.test(q), facty = FACT_RE.test(q);
+          if (HEDGE_RE.test(reply) && (asky || facty)) return q;
+          if (facty && asky) return q;
+          return null;
+        }
+        function stripMarks(t) { return String(t || "").replace(/\[\[\s*(research|fact)\s*:[\s\S]*?\]\]/gi, "").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim(); }
+        /* [[fact: text | topic]] lines -> semantic memory, source = domain + date */
+        function learnFacts(t, q) {
+          t = String(t || "");
+          var sm = /\n\nSources: ([^\n]*)\s*$/.exec(t), dom = sm ? sm[1].split(",")[0].trim() : "";
+          var day = new Date().toISOString().slice(0, 10), n = 0, re = /\[\[\s*fact\s*:\s*([\s\S]*?)\]\]/gi, mt;
+          while ((mt = re.exec(t)) && n < 2) {
+            var parts = mt[1].split("|"), fact = String(parts[0] || "").replace(/\s+/g, " ").trim(), topic = String(parts[1] || "").trim().toLowerCase().slice(0, 24);
+            if (fact.length < 8 || !dom) continue;
+            var r = memUpsert({ kind: "semantic", text: fact.slice(0, 160), topic: topic, confidence: 0.7, op: "new" }, { via: (dom + " " + day).slice(0, 30), msg: String(q || "").slice(0, 140) });
+            if (r && r.it) n++;
+          }
+          return n;
+        }
+        var RESEARCH_JOB = " RESEARCH JOB: Kyle asked something you didn't know for sure. Use web search now and look it up, then answer his actual question in your own voice, short and mobile-friendly, with the real facts (numbers, dates, names). Never make anything up; if the search doesn't settle it, say so straight. After the answer, add up to 2 lines in the exact form [[fact: durable fact worth remembering, third person, max 140 chars | one-word topic]] only for facts that stay true (specs, release dates, who made what), never for fleeting stuff like today's price or score.";
+        function research(m, q, query) {
+          var key = (S.apiKey || "").trim();
+          if (!key || S.provider !== "xai") return Promise.resolve("");
+          var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+          var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 90000);
+          var body = { model: (S.model || "").trim() || PROVIDERS.xai.model, input: [{ role: "system", content: MODES[m].system() + RESEARCH_JOB },
+            { role: "user", content: "Kyle asked: " + q + (query && query !== q ? "\nSearch for: " + query : "") }], tools: [{ type: "web_search" }], reasoning: { effort: "low" } };
+          return fetch(XAI_RESPONSES, { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + key }, body: JSON.stringify(body), signal: ctrl ? ctrl.signal : undefined }).then(function (res) {
+            clearTimeout(timer);
+            if (!res.ok) return "";
+            return res.json().then(function (d) {
+              var t = String(xaiText(d) || "");
+              if (!t.trim()) return "";
+              var got = learnFacts(t, q);
+              if (got) toast("🔎 Blarf learned " + (got === 1 ? "a new fact" : got + " new facts"));
+              return stripMarks(t.replace(/\[\[\s*remember\s*:[\s\S]*?\]\]/gi, ""));
+            });
+          }).catch(function () { clearTimeout(timer); return ""; });
+        }
+
+        /* ---------- self-check: one cheap QA call, at most one revision ---------- */
+        var CHECK_SYS = "You are a strict QA checker for Blarf, Kyle's AI companion app. Blarf's grumpy Boston voice, jokes and swearing are on purpose: never flag tone or style. Check ONLY substance: 1) Did the answer understand what Kyle actually asked? 2) Did it use the relevant memories correctly (and not ignore one that matters)? 3) Is the task actually done (every part answered, steps/code complete, nothing promised but not delivered)? 4) Does it contradict a stored memory or an earlier turn? 5) Does it rest on an unverified assumption, or state a shaky fact as certain? " +
+          "Output ONLY JSON: {\"ok\":true|false,\"issues\":[\"short concrete issue\"],\"fix\":\"one short instruction for the rewrite, or empty\"}. ok=true when there are no real problems; nitpicks don't count. Max 4 issues.";
+        function checkMode() { return S.selfCheck === "off" || S.selfCheck === "all" ? S.selfCheck : "deep"; }
+        function checkWanted(m, rt, t) {
+          var md = checkMode();
+          if (md === "off" || !rt || rt.brain === "offline" || rt.prov === "local" || !t || isOffline()) return false;
+          if (!(S.apiKey || "").trim() && !oaiKeyForMem()) return false;
+          if (modeOf(m) === "deep") return true;
+          return md === "all" && String(t).length > 600;
+        }
+        function selfCheck(m, q, reply) {
+          var turns = sharedHist(m, 8).slice(0, -1).slice(-6).map(function (x) { return (x.r === "me" ? "Kyle: " : "Blarf: ") + String(x.t).slice(0, 300); }).join("\n");
+          var mem = memoryClause().slice(0, 1600);
+          var user = "KYLE ASKED:\n" + String(q).slice(0, 2000) + "\n\nEARLIER TURNS (oldest first):\n" + (turns || "(none)") + "\n\nWHAT BLARF REMEMBERS ABOUT KYLE:\n" + (mem.trim() || "(nothing relevant)") + "\n\nBLARF'S ANSWER TO CHECK:\n" + String(reply).slice(0, 6000);
+          return memTalk(CHECK_SYS, user, 30000).then(function (s) {
+            var o = memParseJSON(s);
+            if (!o || o.ok == null) return null;
+            var issues = (Array.isArray(o.issues) ? o.issues : []).map(function (x) { return String(x == null ? "" : typeof x === "object" ? x.issue || x.text || "" : x).replace(/\s+/g, " ").trim().slice(0, 160); }).filter(function (x) { return x.length > 3; }).slice(0, 4);
+            var ok = o.ok === true || o.ok === "true";
+            return { ok: ok || !issues.length, issues: issues, fix: String(o.fix || "").trim().slice(0, 600) };
+          }, function () { return null; });
+        }
+        function fixMeaningful(c) { var f = String(c.fix || "").trim(); return c.issues.length > 0 && f.replace(/\W/g, "").length >= 12 && !/^(none|n\/?a|no fix|nothing|no changes?)\b/i.test(f); }
+        function checkLog(chk, m) {
+          if (!chk) return;
+          if (!Array.isArray(S.checkLog)) S.checkLog = [];
+          S.checkLog.push({ ts: Date.now(), ok: !!chk.ok, n: chk.ok ? 0 : chk.n, fixed: chk.fixed || 0, mode: modeOf(m) });
+          if (S.checkLog.length > 50) S.checkLog = S.checkLog.slice(-50);
+          save(); paintCheckStats();
+        }
+        function checkStats() {
+          var wk = Date.now() - 7 * 86400000, L = (Array.isArray(S.checkLog) ? S.checkLog : []).filter(function (x) { return x && x.ts >= wk; });
+          var caught = 0, fixed = 0; L.forEach(function (x) { caught += x.n || 0; fixed += x.fixed || 0; });
+          if (!L.length) return "No answers checked this week yet";
+          return "Self-check caught " + caught + " issue" + (caught === 1 ? "" : "s") + " this week" + (fixed ? " (fixed " + fixed + ")" : "") + " · " + L.length + " checked";
+        }
+        function paintCheckStats() { var el = $("selfcheck-stats"); if (el) el.textContent = checkStats(); }
+        function chkLabel(c) {
+          if (!c) return "";
+          if (c.fixed) return "↻ fixed " + c.fixed + " thing" + (c.fixed === 1 ? "" : "s");
+          if (!c.ok && c.n) return "✓ checked · " + c.n + " note" + (c.n === 1 ? "" : "s");
+          return "✓ checked";
+        }
+        /* swap the typing indicator's label without restarting the thinking animation */
+        function typingLabel(m, lbl) {
+          var el = typingEl[m]; if (!el) return;
+          var b = el.querySelector(".x-bub"), l = el.querySelector(".x-typing__lbl");
+          if (!l && b) { l = doc.createElement("span"); l.className = "x-typing__lbl"; b.appendChild(l); }
+          if (l) l.textContent = lbl;
+          el.setAttribute("aria-label", lbl);
+          if (m === "chat") setCaption(lbl, true);
+        }
+        /* after a reply: research when the brain couldn't, then self-check (max one revision). Never rejects. */
+        function afterReply(m, q, res, produce) {
+          var out = { t: res.t, rt: res.rt, chk: null, researched: false };
+          return Promise.resolve().then(function () {
+            var rq = researchNeed(m, q, out.t, out.rt);
+            out.t = stripMarks(out.t) || out.t;
+            if (!rq) return;
+            typingLabel(m, "Lookin' it up… 🔎");
+            return research(m, q, rq).then(function (t) { if (t) { out.t = t; out.researched = true; } });
+          }).then(function () {
+            if (!checkWanted(m, out.rt, out.t)) return;
+            typingLabel(m, "Double-checkin' my work…");
+            return selfCheck(m, q, out.t).then(function (c) {
+              if (!c) return;
+              out.chk = { ok: c.ok, issues: c.issues, n: c.issues.length, fixed: 0 };
+              if (c.ok || !fixMeaningful(c)) return;
+              typingLabel(m, "Fixin' " + (c.issues.length === 1 ? "one thing" : c.issues.length + " things") + "…");
+              var r2 = Object.assign({}, out.rt, { revise: { draft: out.t, issues: c.issues, fix: c.fix }, noTools: true });
+              delete r2.polished;
+              return produce(r2).then(function (res2) {
+                var t2 = stripMarks(res2 && res2.t);
+                if (!t2 || t2.length < 20) return;
+                var src = /\n\nSources: [^\n]*$/.exec(out.t);
+                if (src && !/\n\nSources: /.test(t2)) t2 += src[0];
+                out.t = t2; out.chk.fixed = c.issues.length;
+              }, function () {});
+            }).then(function () { checkLog(out.chk, m); });
+          }).catch(function () {}).then(function () { return out; });
+        }
+        window.blarfP1d = { skills: skillAll, match: skillMatch, arm: function (id) { skillArm("chat", id); }, researchNeed: researchNeed, checkStats: checkStats, checkMode: checkMode };
 
         /* ---------- on-device brain (WebLLM, experimental): one engine, loaded lazily, reused ---------- */
         var LOCAL_SMALL = "Qwen2.5-0.5B-Instruct-q4f16_1-MLC";
@@ -6068,6 +6380,7 @@
         function crewTidy(c, keep) {
           var got = 0;
           c = String(c || "").replace(/\[\[\s*remember\s*:\s*([\s\S]*?)\]\]/gi, function (_, f) { if (keep && remember(f)) got++; return ""; });
+          c = c.replace(/\[\[\s*(research|fact)\s*:[\s\S]*?\]\]/gi, "");
           c = c.replace(/[ \t]+\n/g, "\n").replace(/\s+$/, "").trim();
           if (got) toast("🧠 Blarf will remember that");
           return c || (keep ? "Got it, Boss. 🧠" : "…");
@@ -6669,6 +6982,114 @@
         keyIn.addEventListener("change", paintBrainSettings);
         VKEYS.oaiKey.addEventListener("input", paintBrainSettings);
         paintBrainSettings();
+
+        /* ---------- P1d UI: Brain > Self-check + Auto-research, ✨ Skills sheet, Settings > Skills, check chip, Copy ---------- */
+        (function () {
+          var sc = $("set-selfcheck"), rs = $("set-research");
+          function paint() { sc.value = checkMode(); rs.setAttribute("aria-checked", S.autoResearch !== false ? "true" : "false"); paintCheckStats(); }
+          sc.addEventListener("change", function () {
+            S.selfCheck = ["off", "deep", "all"].indexOf(sc.value) >= 0 ? sc.value : "deep"; save(); paint();
+            toast({ off: "Self-check off.", deep: "Self-check on for Deep Think.", all: "Self-check on for Deep Think and every long answer." }[S.selfCheck]);
+          });
+          rs.addEventListener("click", function () { S.autoResearch = S.autoResearch === false; save(); paint(); toast(S.autoResearch ? "Auto-research on. No guessin'." : "Auto-research off."); });
+          paint();
+        })();
+
+        /* the ✨ sheet: pick a skill, it rides on the next message */
+        var skSheet = $("skill-sheet"), skFor = "chat", skOpener = null;
+        function skillSheet(open, m, from) {
+          if (open) {
+            skFor = m || "chat"; skOpener = from || null;
+            var on = skillAll().filter(skillOn);
+            $("skill-list").innerHTML = on.length ? on.map(function (s) {
+              return '<button class="x-menu__item x-skitem" type="button" data-skill="' + esc(s.id) + '"><span aria-hidden="true">' + esc(s.emoji) + '</span><span class="x-twoline">' + esc(s.name) +
+                "<small>" + esc(s.desc || (s.triggers || []).slice(0, 3).map(function (t) { return "\u201c" + t + "\u201d"; }).join(", ")) + "</small></span></button>";
+            }).join("") : '<p class="x-skempty">All skills are off. Turn some on in Settings &gt; Skills.</p>';
+            layerSheet(skSheet, true);
+            var f = skSheet.querySelector(".x-skitem"); if (f) f.focus({ preventScroll: true });
+          } else {
+            layerSheet(skSheet, false);
+            if (skOpener) try { skOpener.focus({ preventScroll: true }); } catch (e) {}
+          }
+        }
+        $("skill-list").addEventListener("click", function (e) {
+          var b = e.target.closest("[data-skill]"); if (!b) return;
+          var m = skFor;
+          skOpener = null; skillSheet(false);
+          skillArm(m, b.getAttribute("data-skill"));
+          setTimeout(function () { V[m].input.focus(); }, calm() ? 0 : 300);
+        });
+        $("skill-scrim").addEventListener("click", function () { skillSheet(false); });
+        sheetDrag($("skill-panel"), [$("skill-panel")], $("skill-scrim"), function () { skillSheet(false); });
+        doc.addEventListener("keydown", function (e) { if (e.key === "Escape" && skSheet.classList.contains("is-open")) { e.stopPropagation(); skillSheet(false); } }, true);
+        ORDER.forEach(function (m) {
+          var v = V[m];
+          v.skbtn.addEventListener("click", function () { skillSheet(true, m, v.skbtn); });
+          v.skpend.querySelector(".x-pend__x").addEventListener("click", function () { skillArm(m, null); v.input.focus(); });
+          /* check chip: tap to see what the self-check found; Copy on boosted prompts */
+          v.thread.addEventListener("click", function (e) {
+            var c = e.target.closest(".x-chk");
+            if (c) {
+              var list = c.closest(".x-msg__body").querySelector(".x-chk__list");
+              if (list) { list.hidden = !list.hidden; c.setAttribute("aria-expanded", list.hidden ? "false" : "true"); }
+              return;
+            }
+            var cp = e.target.closest(".x-copy");
+            if (cp) {
+              var pre = cp.closest(".x-code").querySelector("pre"), txt = pre ? pre.textContent : "";
+              var done = function () { cp.textContent = "Copied ✓"; toast("Copied. Go get 'em."); setTimeout(function () { cp.textContent = "Copy"; }, 1600); };
+              var fallback = function () {
+                var ta = doc.createElement("textarea"); ta.value = txt; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+                doc.body.appendChild(ta); ta.select(); var ok = false; try { ok = doc.execCommand("copy"); } catch (er) {} ta.remove();
+                if (ok) done(); else toast("Couldn't copy. Long-press the prompt instead.");
+              };
+              if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, fallback); else fallback();
+            }
+          });
+        });
+
+        /* Settings > Skills: switches, custom skill delete, "Teach Blarf a skill" */
+        function paintSkills() {
+          var g = $("skills-group"); if (!g) return;
+          g.innerHTML = skillAll().map(function (s) {
+            return '<div class="x-row x-skrow"><span class="x-twoline" id="lbl-skill-' + esc(s.id) + '">' + esc(s.emoji) + " " + esc(s.name) + (s.custom ? ' <em class="x-skmine">yours</em>' : "") +
+              "<small>" + esc(s.desc || "Triggers: " + (s.triggers || []).join(", ")) + "</small></span>" +
+              (s.custom ? '<button class="x-skdel" type="button" data-del="' + esc(s.id) + '" aria-label="Delete ' + esc(s.name) + '">×</button>' : "") +
+              '<button class="x-switch" type="button" role="switch" data-sk="' + esc(s.id) + '" aria-checked="' + (skillOn(s) ? "true" : "false") + '" aria-labelledby="lbl-skill-' + esc(s.id) + '"></button></div>';
+          }).join("");
+        }
+        $("skills-group").addEventListener("click", function (e) {
+          var sw = e.target.closest("[data-sk]"), del = e.target.closest("[data-del]");
+          if (sw) {
+            var s = skillGet(sw.getAttribute("data-sk")); if (!s) return;
+            if (!S.skillsOff || typeof S.skillsOff !== "object") S.skillsOff = {};
+            if (skillOn(s)) S.skillsOff[s.id] = true; else delete S.skillsOff[s.id];
+            save(); paintSkills(); toast(s.name + (skillOn(s) ? " on." : " off."));
+          } else if (del) {
+            var id = del.getAttribute("data-del"), d = skillGet(id); if (!d) return;
+            if (del.getAttribute("data-armed") !== "1") { del.setAttribute("data-armed", "1"); del.textContent = "Delete"; del.classList.add("is-armed"); setTimeout(function () { if (del.isConnected) { del.removeAttribute("data-armed"); del.textContent = "×"; del.classList.remove("is-armed"); } }, 3000); return; }
+            S.mySkills = (S.mySkills || []).filter(function (x) { return x.id !== id; });
+            if (S.skillsOff) delete S.skillsOff[id];
+            ORDER.forEach(function (m) { if (skillArmed[m] === id) skillArm(m, null); });
+            save(); paintSkills(); toast("Forgot the " + d.name + " skill.");
+          }
+        });
+        $("skill-form").addEventListener("submit", function (e) {
+          e.preventDefault();
+          var name = $("sk-name").value.trim(), trig = $("sk-trig").value, ins = $("sk-ins").value.trim(), emo = $("sk-emoji").value.trim(), br = $("sk-brain").value;
+          if (!name || !ins) { toast(!name ? "Give the skill a name, kid." : "Tell me what the skill should do."); (!name ? $("sk-name") : $("sk-ins")).focus(); return; }
+          if ((S.mySkills || []).length >= SKILL_LIMIT) { toast("That's " + SKILL_LIMIT + " skills. Delete one first."); return; }
+          var trs = String(trig).split(",").map(function (t) { return t.trim(); }).filter(function (t) { return t.length >= 3; });
+          if (!trs.length) trs = [name.toLowerCase()];
+          var clash = trs.filter(function (t) { var hit = skillMatch(t); return hit && hit.name.toLowerCase() !== name.toLowerCase(); });
+          var sk = skillsClean([{ name: name, emoji: emo, triggers: trs, instructions: ins, brain: br }])[0];
+          S.mySkills = (S.mySkills || []).filter(function (x) { return x.name.toLowerCase() !== sk.name.toLowerCase(); }).concat([sk]);
+          save(); paintSkills();
+          e.target.reset();
+          toast("🧩 Blarf learned " + sk.name + "." + (clash.length ? " Heads up: \u201c" + clash[0] + "\u201d already sets off another skill." : " Say \u201c" + sk.triggers[0] + "\u201d to use it."));
+          window.blarfAct("proud");
+        });
+        paintSkills();
 
         /* Characters & Voices: one row per crew member, each opens its own sheet */
         var crewList = $("crew-list"), crewSheet = $("crew-sheet"), crewCur = null, crewTimer = null, crewOpener = null;
@@ -7365,7 +7786,7 @@
         /* IndexedDB answers late: restore any setting the other stores lost, then back-fill every store */
         KV.ready([SETKEY, STORE], function (got) {
           var fromIdb = parseJSON(got[SETKEY]) || parseJSON(got[STORE]) || {}, changed = false;
-          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch", "brain", "mode", "deepStrength", "obsSub", "crew", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel", "autoRoute", "voicePolish", "thinkProv", "thinkModel", "visionModel", "memAuto", "memMig", "embedModel"].forEach(function (f) {
+          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch", "brain", "mode", "deepStrength", "obsSub", "crew", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel", "autoRoute", "voicePolish", "thinkProv", "thinkModel", "visionModel", "memAuto", "memMig", "embedModel", "selfCheck", "checkLog", "autoResearch", "skillsOff", "mySkills"].forEach(function (f) {
             if (saved[f] === undefined && fromIdb[f] !== undefined && fromIdb[f] !== "") { S[f] = fromIdb[f]; changed = true; }
           });
           S.chars = charsClean(S.chars);
@@ -7377,6 +7798,9 @@
           if ($("set-embmodel")) $("set-embmodel").value = S.embedModel; paintMemory();
           if (!S.tools || typeof S.tools !== "object") S.tools = { studio: true, hustle: true };
           paintTools();
+          S.mySkills = skillsClean(S.mySkills); if (!S.skillsOff || typeof S.skillsOff !== "object") S.skillsOff = {};
+          if (!Array.isArray(S.checkLog)) S.checkLog = []; S.autoResearch = S.autoResearch !== false;
+          paintSkills(); $("set-selfcheck").value = checkMode(); $("set-research").setAttribute("aria-checked", S.autoResearch ? "true" : "false"); paintCheckStats();
           if (modelMig()) changed = true;
           if (["quick", "deep", "expert", "gamer", "crew"].indexOf(S.brain) < 0) S.brain = "quick";
           if (fromIdb.mode === undefined && saved.mode === undefined && fromIdb.brain !== undefined) S.mode = undefined;
