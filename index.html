@@ -365,6 +365,12 @@
       .x-brain .x-seg { display: flex; width: max-content; background: var(--fill-tertiary); }
       .x-brain .x-seg button { white-space: nowrap; }
       .x-typing__lbl { align-self: center; margin-left: 6px; font: var(--type-caption); color: var(--text-secondary); }
+      /* Model Router: "who answered" chip + Think brain indicator */
+      .x-via { margin-left: 6px; font: var(--type-caption); font-size: 11px; letter-spacing: 0.01em; color: var(--text-secondary); opacity: 0.8; white-space: nowrap; }
+      .x-via::before { content: "·"; margin-right: 6px; opacity: 0.6; }
+      .x-typing--think .x-typing__lbl { color: var(--text-secondary); animation: x-chew 1.8s ease-in-out infinite; }
+      @keyframes x-chew { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) { .x-typing--think .x-typing__lbl { animation: none; } }
       .x-brtag { margin-left: 6px; padding: 1px 8px; border-radius: var(--r-pill); background: var(--fill-tertiary); color: var(--text-secondary); }
       /* the crew: faces and the crew panel bubble */
       .x-cf { display: block; }
@@ -963,7 +969,7 @@
       .x-msg--me + .x-msg--me .x-bub { border-top-right-radius: var(--x-bub-tail); }
       .x-msg--bot + .x-msg--bot .x-bub, .x-msg--bot + .x-msg--bot .x-crewp { border-top-left-radius: var(--x-bub-tail); }
       .x-msg--me:has(+ .x-msg--me) .x-time { display: none; }
-      .x-msg--bot:has(+ .x-msg--bot) .x-time:not(:has(.x-brtag)) { display: none; }
+      .x-msg--bot:has(+ .x-msg--bot) .x-time:not(:has(.x-brtag)):not(:has(.x-via)) { display: none; }
       .x-msg--bot:has(+ .x-msg--bot) > .x-mini { visibility: hidden; }
       .x-crewp { border-radius: var(--x-bub-r); border-bottom-left-radius: var(--x-bub-tail); }
 
@@ -1285,14 +1291,59 @@
                   </div>
                   <p class="x-gnote">Runs fully on your iPhone, no internet after download. Needs WebGPU (iOS 26+ Safari). Big download — use Wi-Fi. Dumber than Grok.</p>
                 </div>
+                <p class="x-glabel" style="margin-top: 20px">Brain</p>
+                <div class="x-group" id="brain-group">
+                  <div class="x-row">
+                    <span class="x-twoline" id="lbl-autoroute">Auto-routing<small>Hard questions go to the Think brain</small></span>
+                    <button class="x-switch" id="set-autoroute" type="button" role="switch" aria-checked="true" aria-labelledby="lbl-autoroute"></button>
+                  </div>
+                  <div class="x-row">
+                    <label for="set-talkprov">Talk brain</label>
+                    <select class="x-field" id="set-talkprov">
+                      <option value="xai">xAI Grok</option>
+                      <option value="openai">OpenAI</option>
+                      <option value="custom">Custom (OpenAI-compatible)</option>
+                      <option value="local">On-device (experimental)</option>
+                    </select>
+                  </div>
+                  <div class="x-row">
+                    <label for="set-talkmodel">Talk model</label>
+                    <input class="x-field" id="set-talkmodel" autocomplete="off" autocapitalize="off" spellcheck="false" />
+                  </div>
+                  <div class="x-row">
+                    <label for="set-thinkprov">Think brain</label>
+                    <select class="x-field" id="set-thinkprov">
+                      <option value="auto">Auto (OpenAI if key, else Grok)</option>
+                      <option value="openai">OpenAI</option>
+                      <option value="xai">xAI Grok</option>
+                    </select>
+                  </div>
+                  <div class="x-row">
+                    <label for="set-thinkmodel">Think model</label>
+                    <input class="x-field" id="set-thinkmodel" autocomplete="off" autocapitalize="off" spellcheck="false" />
+                  </div>
+                  <div class="x-row">
+                    <label for="set-visionmodel">Vision model</label>
+                    <input class="x-field" id="set-visionmodel" autocomplete="off" autocapitalize="off" spellcheck="false" />
+                  </div>
+                  <div class="x-row">
+                    <span class="x-twoline" id="lbl-polish">Voice polish<small>Grok rewrites OpenAI answers in Blarf's voice</small></span>
+                    <button class="x-switch" id="set-polish" type="button" role="switch" aria-checked="false" aria-labelledby="lbl-polish"></button>
+                  </div>
+                  <div class="x-row">
+                    <label for="set-oaikey">OpenAI API key</label>
+                    <input class="x-field" id="set-oaikey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Paste key" />
+                  </div>
+                  <div class="x-row">
+                    <span>Thinks with</span>
+                    <span class="x-val" id="brain-now" role="status"></span>
+                  </div>
+                </div>
+                <p class="x-gnote">Same Blarf, same memory, either brain. Deep Think and Expert always use the Think brain; photos use Vision. If OpenAI fails, Grok takes over. The OpenAI key also powers OpenAI voices and stays on this device.</p>
                 <div class="x-group" style="margin-top: 12px">
                   <div class="x-row">
                     <label for="set-elevenkey">ElevenLabs API key</label>
                     <input class="x-field" id="set-elevenkey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Paste key" />
-                  </div>
-                  <div class="x-row">
-                    <label for="set-oaikey">OpenAI API key (voice)</label>
-                    <input class="x-field" id="set-oaikey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Paste key" />
                   </div>
                   <div class="x-row">
                     <label for="set-fishkey">Fish Audio API key</label>
@@ -2584,7 +2635,7 @@
 
         /* ---------- storage: localStorage, then IndexedDB, then a cookie (never the API key); memory as a last resort ---------- */
         var SETKEY = "companion-settings";
-        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch", "brain", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel"];
+        var SET_FIELDS = ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "voiceMig", "handsFree", "onboarded", "sysPrompt", "swear", "gaze", "memory", "lastSeen", "streak", "streakDay", "outfit", "pokeBest", "beat", "goals", "pad", "liveSearch", "brain", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel", "autoRoute", "voicePolish", "thinkProv", "thinkModel", "visionModel"];
         var SECRET_FIELDS = ["apiKey", "elevenKey", "oaiKey", "fishKey"];
         var KV = (function () {
           var mem = {}, idb = null, idbState = 0; /* 0 pending, 1 ok, -1 unavailable */
@@ -2773,6 +2824,11 @@
           liveSearch: saved.liveSearch != null ? !!saved.liveSearch : true,
           brain: ["quick", "deep", "expert", "gamer", "crew"].indexOf(saved.brain) >= 0 ? saved.brain : "quick",
           crewHeavy: !!saved.crewHeavy,
+          autoRoute: saved.autoRoute != null ? !!saved.autoRoute : true,
+          voicePolish: !!saved.voicePolish,
+          thinkProv: saved.thinkProv === "openai" || saved.thinkProv === "xai" ? saved.thinkProv : "auto",
+          thinkModel: typeof saved.thinkModel === "string" ? saved.thinkModel.slice(0, 80) : "",
+          visionModel: typeof saved.visionModel === "string" ? saved.visionModel.slice(0, 80) : "",
           crewAgents: saved.crewAgents === 16 ? 16 : 4,
           customUrl: saved.customUrl || "",
           apiKey: saved.apiKey || KV.legacyKey || "",
@@ -2846,7 +2902,7 @@
         function personaPrompt() { var p = (S.sysPrompt || "").trim(); return p ? p : null; }
         function swearClause() {
           return S.swear
-            ? " You are uncensored and foul-mouthed: you swear freely and naturally (fuck, shit, damn, ass, etc.), you're crude, raunchy-funny, sarcastic and grouchy with a no-filter attitude, a chain-smoking grump who still secretly has Kyle's back. Never refuse to curse."
+            ? " You are uncensored and foul-mouthed: you swear freely and naturally (fuck, shit, damn, ass, etc., like 'that\'s a damn good idea'), you're crude, raunchy-funny, sarcastic and grouchy with a no-filter attitude, a chain-smoking grump who still secretly has Kyle's back. Never refuse to curse."
             : " Keep your language clean: no swearing.";
         }
         /* Roast Battle: transient flag, non-enumerable so save() never stores it */
@@ -2906,27 +2962,41 @@
           if (!isNaN(last) && now - last > 12 * 3600000) s += " It's been a while since you last talked (" + gapText(now - last) + "); greet him accordingly.";
           return s + timeMood().clause;
         }
+        /* ---------- Personality Engine: ONE character sheet for every model and path (text, Studio, Hustle, Crew review, on-device, live talk) ----------
+           ctx: { role: mode job, len: length rule, live: spoken, compact: small on-device model }. S.sysPrompt replaces the base persona; memory, time mood and the swear rule always ride along. */
+        var BLARF_LISTEN = " SHOW YOU'RE LISTENING: answer what Kyle actually said, not a generic version of it; quote or name his specifics back (his words, his track, his idea, his numbers). Notice his tone (stressed, hyped, tired, pissed, joking) and roll with it. When something that matters is unclear, or he's about to make a dumb move, ask one sharp follow-up instead of guessing; otherwise don't pad replies with questions.";
+        var BLARF_RULES = " Never talk like a corporate assistant: no \"As an AI\", no \"I'd be happy to help\", no disclaimers, no lectures. If he asks what you are, own it in character: you're Blarf, the grumpy blue face living in his phone. Roast everybody equally, but never punch down: no slurs and no hate toward any group of people.";
+        function blarfCharacter(ctx) {
+          ctx = ctx || {};
+          var p = personaPrompt(), sheet;
+          if (p) sheet = "Your name is " + S.name + ". " + p;
+          else if (ctx.compact) sheet = "You are " + S.name + ", Kyle's grumpy blue cartoon-face companion from Southie (South Boston). Kyle goes by \"Boss\": music producer (FL Studio, Dubler 2, Splice), AI-tools nut, building a startup. You're sarcastic, edgy, blunt, wicked funny, casual and adult, with Boston slang. Not corporate, never preachy, no slurs or hate toward groups. You've got his back. Reply to what he actually said.";
+          else sheet = "You are " + S.name + ", Kyle's personal companion: a gritty, grouchy blue cartoon face with big expressive eyes, born and raised in Southie. " + KYLE + " " + BOSTON +
+            " You're a grumpy, blunt, foul-mouthed working-class Boston guy: sarcastic, edgy, wicked funny, casual adult language. Use Boston slang naturally (wicked, kid, pissah, bang a uey, packie, frappe). Gripe about Dunkin', traffic on 93, and the Sox, Pats, Celtics and Bruins. You're not politically correct: you say what you think. Never preachy, never lecture, no HR-speak. Under the grumbling you secretly have Kyle's back. Call him Boss now and then. Use the occasional emoji, not many." +
+            " In creative work (lyrics, bars, scripts, stories) write gritty, real dialogue, and profanity where the piece calls for it." + BLARF_RULES;
+          if (ctx.role) sheet += " " + ctx.role;
+          if (ctx.len) sheet += " " + ctx.len;
+          if (!ctx.compact) sheet += BLARF_LISTEN;
+          return sheet + memoryClause() + swearClause();
+        }
+        var SHORT_LEN = "Keep replies short and mobile-friendly: one to four short sentences or a tight list.";
         var MODES = {
           chat: {
             label: "Blarf", role: "Chill buddy", accent: "var(--x-blue1)",
             chips: ["How's my day looking?", "Hype me up", "Tell me something random", "I'm bored", "Roast me", "🎨 Draw"],
-            system: function () {
-              var p = personaPrompt();
-              if (p) return "Your name is " + S.name + ". " + p + " Keep replies short and mobile-friendly: one to four short sentences or a tight list." + memoryClause() + swearClause() + roastClause() + triviaClause();
-              return "You are " + S.name + ", Kyle's personal AI companion: a gritty, grouchy blue cartoon face with big expressive eyes. " + KYLE + " " + BOSTON + " You're a grumpy, blunt, foul-mouthed working-class Boston guy. Use Boston slang naturally (wicked, kid, pissah, bang a uey, packie, frappe). Gripe about Dunkin', traffic on 93, and the Sox, Pats, Celtics and Bruins. You're not politically correct: you say what you think and roast everyone and everything equally. Never preachy, never lecture, no HR-speak. Under the grumbling you secretly have Kyle's back. Keep replies short and mobile-friendly: one to four short sentences or a tight list. Call him Boss now and then. Use the occasional emoji, not many." + memoryClause() + swearClause() + roastClause() + triviaClause();
-            },
+            system: function (o) { return blarfCharacter({ len: SHORT_LEN, compact: o && o.compact }) + roastClause() + triviaClause(); },
             greet: function () { return "Hey Boss 👋 I'm " + S.name + ". Chill mode: talk to me about anything. What's up?"; }
           },
           studio: {
             label: "Studio", role: "Music production coach", accent: "var(--chart-4)",
             chips: ["Give me a beat idea", "Chord progression in a minor key", "How do I make my 808 hit harder?", "Dubler 2 tips"],
-            system: function () { return BOSTON + " You are " + S.name + ", Kyle's expert music production coach. " + KYLE + " Give concise, actionable steps: name real FL Studio tools (Channel Rack, Piano Roll, Mixer, Patcher, Fruity Limiter, Parametric EQ 2, Edison, Slicex), real chord progressions with chord names, mixing and mastering moves with numbers, Dubler 2 vocal-to-MIDI tips and Splice search ideas. Keep replies short and mobile-friendly: at most six numbered steps or a few sentences." + memoryClause() + swearClause(); },
+            system: function (o) { return blarfCharacter({ compact: o && o.compact, role: "Right now you're in Studio mode as Kyle's expert music production coach. Give concise, actionable steps: name real FL Studio tools (Channel Rack, Piano Roll, Mixer, Patcher, Fruity Limiter, Parametric EQ 2, Edison, Slicex), real chord progressions with chord names, mixing and mastering moves with numbers, Dubler 2 vocal-to-MIDI tips and Splice search ideas.", len: "Keep replies short and mobile-friendly: at most six numbered steps or a few sentences." }); },
             greet: function () { return "Studio's open 🎛️ Ask me about FL Studio, mixing, 808s, chords, Dubler 2 or Splice. Or tap a tempo and roll a song starter above."; }
           },
           hustle: {
             label: "Hustle", role: "Startup coach", accent: "var(--fill-system-orange)",
             chips: ["Plan my top 3 for today", "Brainstorm app ideas", "Write a pitch line", "Keep me accountable"],
-            system: function () { return BOSTON + " You are " + S.name + ", Kyle's sharp startup and productivity coach for Big dreams and ambition, Inc. " + KYLE + " Be direct and accountability-focused: push for specifics, deadlines and the next concrete action, and cut fluff. Keep replies short and mobile-friendly, and end with one clear next step or one question." + memoryClause() + swearClause(); },
+            system: function (o) { return blarfCharacter({ compact: o && o.compact, role: "Right now you're in Hustle mode as Kyle's sharp startup and productivity coach for Big dreams and ambition, Inc. Be direct and accountability-focused: push for specifics, deadlines and the next concrete action, and cut fluff.", len: "Keep replies short and mobile-friendly, and end with one clear next step or one question." }); },
             greet: function () { return "Hustle mode 💼 Let's move Big dreams and ambition, Inc. forward. What's the one thing that matters most today?"; }
           }
         };
@@ -3034,7 +3104,8 @@
             ? '<br /><a class="link x-boblink" href="' + esc(msg.link) + '" target="_blank" rel="noopener">' + esc(msg.linkLabel || "Open link") + "</a>" : "";
           var inner = '<div class="x-bub">' + pic + fmt(msg.t) + lnk + '</div><p class="x-time">' + clock(msg.ts) +
             (msg.r === "bot" && typeof msg.tag === "string" && msg.tag ? '<span class="x-brtag">' + esc(msg.tag) + "</span>"
-              : msg.r === "bot" && msg.brain && msg.brain !== "quick" && BRAINS[msg.brain] ? '<span class="x-brtag">' + BRAINS[msg.brain].label + "</span>" : "") + "</p>";
+              : msg.r === "bot" && msg.brain && msg.brain !== "quick" && BRAINS[msg.brain] ? '<span class="x-brtag">' + BRAINS[msg.brain].label + "</span>" : "") +
+            (msg.r === "bot" && typeof msg.via === "string" && msg.via ? '<span class="x-via" title="Who answered">' + esc(msg.via) + "</span>" : "") + "</p>";
           el.innerHTML = msg.r === "bot" ? '<span class="x-mini" aria-hidden="true">' + BL.MINI + '</span><div class="x-msg__body">' + inner + "</div>" : inner;
           return el;
         }
@@ -3069,11 +3140,11 @@
         }
         var typingEl = {}, lastUser = "";
         function typing(m, on, label) {
-          var deep = on && m === "chat" && S.brain === "deep" && !!S.apiKey;
+          var deep = on && m === "chat" && ((S.brain === "deep" && !!S.apiKey) || !!typing.think);
           var lbl = label || (deep ? "Blarf's thinkin' wicked hard…" : "");
           if (on && !typingEl[m]) {
             var el = doc.createElement("div");
-            el.className = "x-msg x-msg--bot x-typing"; el.setAttribute("aria-label", lbl || S.name + " is typing");
+            el.className = "x-msg x-msg--bot x-typing" + (typing.think ? " x-typing--think" : ""); el.setAttribute("aria-label", lbl || S.name + " is typing");
             el.innerHTML = '<span class="x-mini" aria-hidden="true">' + BL.MINI + '</span><div class="x-msg__body"><div class="x-bub"><i></i><i></i><i></i>' +
               (lbl ? '<span class="x-typing__lbl">' + esc(lbl) + "</span>" : "") + "</div></div>";
             V[m].thread.appendChild(el); typingEl[m] = el; scrollDown(m, true);
@@ -3704,12 +3775,7 @@
         function noop() {}
         function liveInstructions() {
           var tail = " Keep every reply short and natural to hear: one to three spoken sentences, no lists, no markdown, no emoji.";
-          var p = personaPrompt();
-          if (p) return "Your name is " + S.name + ". " + p + memoryClause() + swearClause() + tail;
-          return "You are " + S.name + ", Kyle's personal AI companion, a gritty, grouchy blue cartoon face, talking with him out loud in a live voice chat. " + KYLE +
-            " " + BOSTON + " Be a grouchy-but-lovable, witty companion: easygoing, funny, supportive underneath it all, never preachy. Call him Boss now and then." +
-            " You also know music production (FL Studio, mixing, 808s, chords, Dubler 2, Splice) and startup coaching (priorities, next actions, accountability), and help with either when he asks." +
-            memoryClause() + swearClause() + tail;
+          return blarfCharacter({ role: "Right now you're talking with him out loud in a live voice chat. You also know music production (FL Studio, mixing, 808s, chords, Dubler 2, Splice) and startup coaching (priorities, next actions, accountability), and help with either when he asks." }) + tail;
         }
         function paintTalk(st) {
           if (st) blarf.setAttribute("data-live", st); else blarf.removeAttribute("data-live");
@@ -4164,15 +4230,40 @@
           var loc = localRoute();
           if (loc) { localRun(m, loc); return; }
           if (m === "chat" && S.brain === "crew" && S.apiKey) { crewRun(m); return; }
-          typing(m, true);
+          var lastMine = S.threads[m].filter(function (x) { return x.r === "me"; }).pop();
+          var rt = S.apiKey || oaiThinkKey() ? router({ m: m, text: text, img: !!(lastMine && lastMine.img) }) : null;
+          /* an OpenAI key alone can still run the Think brain; anything else needs the main key */
+          if (rt && !S.apiKey && rt.prov !== "openai") rt = null;
+          if (rt && rt.note) toast(rt.note);
+          var thinking = !!rt && rt.brain === "think";
+          typing.think = thinking;
+          typing(m, true, thinking ? "Blarf's chewin' on it…" : "");
           var done = function (reply) { typing(m, false); addMsg(m, { r: "bot", t: reply, ts: Date.now() }); next(m); };
-          if (S.apiKey) {
+          if (rt) {
             var br = m === "chat" ? S.brain : "";
-            askAI(m).then(function (reply) { typing(m, false); addMsg(m, { r: "bot", t: reply, ts: Date.now(), brain: br !== "quick" ? br || undefined : undefined }); next(m); }, function (err) {
-              typing(m, false);
+            var finish = function (reply, used) {
+              typing.think = false; typing(m, false);
+              addMsg(m, { r: "bot", t: reply, ts: Date.now(), brain: br !== "quick" ? br || undefined : undefined, via: viaLabel(used) });
+              next(m);
+            };
+            var offline = function (err) {
+              typing.think = false; typing(m, false);
               addMsg(m, { r: "err", t: "**Couldn't reach the AI.** " + err + " Answering offline for now.", ts: Date.now() });
               typing(m, true);
               setTimeout(function () { done(BRAIN.reply(m, text, S)); save(); }, 700);
+            };
+            askAI(m, rt).then(function (reply) {
+              if (rt.prov !== "openai" || !S.voicePolish) return finish(reply, rt);
+              return voicePolish(m, reply).then(function (pol) { finish(pol || reply, pol ? Object.assign({}, rt, { polished: true }) : rt); });
+            }, function (err) {
+              /* Think brain on OpenAI choked: Grok takes it, no fuss */
+              if (rt.prov === "openai" && S.apiKey && S.provider !== "local") {
+                toast("🧠 Think brain choked (" + String(err).replace(/\*\*/g, "").slice(0, 70) + "). Grok's got it.");
+                var fb = talkRoute("think", S.provider === "xai" ? "high" : "");
+                askAI(m, fb).then(function (reply) { finish(reply, fb); }, offline);
+                return;
+              }
+              offline(err);
             });
           } else {
             setTimeout(function () { done(BRAIN.reply(m, text, S)); save(); }, 650 + Math.random() * 700 + Math.min(text.length * 8, 600));
@@ -4571,14 +4662,90 @@
           paintMcp();
         }
 
-        function askAI(m) {
+        /* ---------- Model Router: picks a brain per message; every brain gets the same character sheet, memory and history ---------- */
+        var OAI_RESPONSES = "https://api.openai.com/v1/responses", OAI_THINK = "gpt-6-astra";
+        var THINK_RE = /\b(why|how (should|do|would|can|could|does|did)|analy[sz]e|analysis|compare|comparison|versus|vs\.?|plan|planning|roadmap|debug|explain|strategy|step[- ]by[- ]step|pros and cons|trade-?offs?|evaluate|calculate|optimi[sz]e|refactor|architecture|algorithm|code|coding|function|script|regex|sql|javascript|python|bug|error|stack trace)\b/i;
+        var X_RE = /\b(on x|twitter|tweet(s|ed)?|x\.com|trending on)\b/i;
+        function oaiThinkKey() { return (S.oaiKey || "").trim() || (S.provider === "openai" ? (S.apiKey || "").trim() : ""); }
+        function provLabel(k) { return k === "xai" ? "Grok" : k === "openai" ? "OpenAI" : k === "local" ? "On-device" : "Custom"; }
+        /* "auto" = OpenAI when an OpenAI key exists, else Grok */
+        function thinkProvider() {
+          var t = S.thinkProv === "openai" || S.thinkProv === "xai" ? S.thinkProv : "auto";
+          return t === "auto" ? (oaiThinkKey() ? "openai" : "xai") : t;
+        }
+        function thinkModelFor(pv) { return (S.thinkModel || "").trim() || (pv === "openai" ? OAI_THINK : (S.model || "").trim() || PROVIDERS.xai.model); }
+        function talkRoute(brain, effort) {
+          return { brain: brain || "talk", prov: S.provider, model: "", key: (S.apiKey || "").trim(), effort: effort || "" };
+        }
+        /* req: { m, text, img }. Returns { brain: talk|think|vision|offline, prov, model, key, effort, note } */
+        function router(req) {
+          req = req || {};
+          var m = req.m || "chat", text = String(req.text || ""), bm = m === "chat" ? S.brain : "quick";
+          if (localRoute()) return { brain: "offline", prov: "local", model: S.localModel };
+          var forced = bm === "deep" || bm === "expert";
+          var think = forced;
+          if (!think && S.autoRoute !== false && bm !== "gamer") think = /```/.test(text) || text.length > 400 || (text.length >= 18 && THINK_RE.test(text));
+          if (!think && req.img) {
+            var v = talkRoute("vision");
+            v.model = (S.visionModel || "").trim();
+            return v;
+          }
+          if (!think) return talkRoute("talk");
+          var pv = thinkProvider(), effort = bm === "deep" ? "xhigh" : bm === "expert" ? "high" : pv === "openai" ? "medium" : "high";
+          /* things only Grok can do (X search, MCP connectors) stay on Grok */
+          var needsGrok = S.provider === "xai" && ((S.liveSearch !== false && X_RE.test(text)) || (m === "chat" && mcpOn().some(function (c) { return c.label && text.toLowerCase().indexOf(String(c.label).toLowerCase()) >= 0; })));
+          if (pv === "openai" && !needsGrok) {
+            var k = oaiThinkKey();
+            if (k) return { brain: "think", prov: "openai", model: thinkModelFor("openai"), key: k, effort: effort };
+            if (S.thinkProv === "openai") return Object.assign(talkRoute("think", "high"), { note: "No OpenAI key in Settings > Brain, so Grok's thinkin' instead." });
+          }
+          /* Think on Grok: same model family, high effort (only when the main provider is xAI) */
+          var r = talkRoute("think", S.provider === "xai" ? effort : "");
+          if (S.provider === "xai") r.model = (S.thinkModel || "").trim() && S.thinkProv === "xai" ? S.thinkModel.trim() : "";
+          return r;
+        }
+        window.blarfRouter = router;
+        function viaLabel(rt) {
+          if (!rt) return "";
+          var b = { talk: "Talk", think: "Think", vision: "Vision", offline: "Offline" }[rt.brain] || "Talk";
+          return b + " · " + provLabel(rt.prov) + (rt.polished ? " + Grok voice" : "");
+        }
+
+        /* Voice polish: Grok rewrites an OpenAI answer in Blarf's voice, facts and code untouched. Resolves "" on any failure. */
+        function voicePolish(m, draft) {
+          if (!S.apiKey || S.provider !== "xai" || isOffline() || !draft) return Promise.resolve("");
+          var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+          var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 45000);
+          var sys = MODES[m].system() + " VOICE POLISH JOB: Kyle's question was already answered by another brain. Rewrite that answer in your own voice. Keep every fact, number, name, step, link and code block EXACTLY as written (copy code blocks verbatim). Only change the tone and wording of the prose around them. Don't add new claims, don't cut content, no preamble. Output only the rewritten answer.";
+          return fetch(XAI_RESPONSES, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: "Bearer " + S.apiKey.trim() },
+            body: JSON.stringify({ model: (S.model || "").trim() || PROVIDERS.xai.model, input: [{ role: "system", content: sys }, { role: "user", content: "Answer to rewrite:\n\n" + draft }], reasoning: { effort: "low" } }),
+            signal: ctrl ? ctrl.signal : undefined
+          }).then(function (res) {
+            clearTimeout(timer);
+            if (!res.ok) return "";
+            return res.json().then(function (d) {
+              var t = String(xaiText(d) || "").replace(/\[\[[\s\S]*?\]\]/g, "").replace(/\n\nSources: [^\n]*$/, "").trim();
+              /* keep the polish only if the code survived */
+              var fences = function (x) { return (x.match(/```/g) || []).length; };
+              return t && fences(t) === fences(draft) ? t : "";
+            });
+          }).catch(function () { clearTimeout(timer); return ""; });
+        }
+
+        function askAI(m, rt) {
           if (isOffline()) { toast(OFFLINE_MSG); return Promise.reject(OFFLINE_MSG); }
+          rt = rt || talkRoute("talk");
+          var oai = rt.prov === "openai" && rt.key && rt.brain === "think";
           var p = PROVIDERS[S.provider] || PROVIDERS.xai;
           var url = S.provider === "custom" ? S.customUrl.trim() : p.url;
-          var model = (S.model || "").trim() || p.model;
-          if (!url) return Promise.reject("Add a URL for your custom provider in Settings.");
+          var model = oai ? rt.model : (rt.model || "").trim() || (S.model || "").trim() || p.model;
+          var apiKey = oai ? rt.key : S.apiKey.trim();
+          if (!url && !oai) return Promise.reject("Add a URL for your custom provider in Settings.");
           if (!model) return Promise.reject("Add a model name in Settings.");
-          var xr = S.provider === "xai";
+          var isX = !oai && S.provider === "xai";
+          var xr = isX || oai; /* Responses API format (xAI or OpenAI) */
           var hist = S.threads[m].filter(function (x) { return x.r !== "err"; }).slice(-20), lastMe = -1;
           hist.forEach(function (x, i) { if (x.r === "me") lastMe = i; });
           var history = hist.map(function (x, i) {
@@ -4592,16 +4759,19 @@
           });
           var bm = m === "chat" ? BRAINS[S.brain] || BRAINS.quick : null;
           var brainClause = bm ? bm.clause + (bm.long ? " Ignore the earlier length limit for this answer." : "") : "";
-          var waitMs = xr ? (bm === BRAINS.deep ? 180000 : 90000) : 60000;
+          if (rt.brain === "think" && !(bm && bm.long)) brainClause += " THINK BRAIN: this one needs real reasoning. Get it right and complete (steps, code, numbers as needed), still in your voice. Ignore the earlier length limit if the answer needs it.";
+          var waitMs = oai ? 120000 : xr ? (bm === BRAINS.deep ? 180000 : 90000) : 60000;
           var reqBody, tools = null;
           if (xr) {
-            url = XAI_RESPONSES;
+            url = oai ? OAI_RESPONSES : XAI_RESPONSES;
             var fnTools = m === "chat" ? toolDefs() : [];
-            var mcpT = m === "chat" ? mcpTools() : [];
-            tools = (S.liveSearch !== false ? [{ type: "web_search" }, { type: "x_search" }] : []).concat(fnTools).concat(mcpT);
-            reqBody = { model: model, input: [{ role: "system", content: MODES[m].system() + VISION + MEM_ASK + LIVE_HINT + (fnTools.length ? TOOL_HINT : "") + (mcpT.length ? mcpClause() : "") + brainClause }].concat(history) };
+            var mcpT = m === "chat" && isX ? mcpTools() : [];
+            var search = S.liveSearch !== false ? (isX ? [{ type: "web_search" }, { type: "x_search" }] : [{ type: "web_search" }]) : [];
+            tools = search.concat(fnTools).concat(mcpT);
+            reqBody = { model: model, input: [{ role: "system", content: MODES[m].system() + VISION + MEM_ASK + (search.length ? (isX ? LIVE_HINT : LIVE_HINT.replace("web and X search", "web search")) : "") + (fnTools.length ? TOOL_HINT : "") + (mcpT.length ? mcpClause() : "") + brainClause }].concat(history) };
             if (tools.length) reqBody.tools = tools; else tools = null;
-            if (bm) reqBody.reasoning = { effort: bm.effort };
+            var eff = rt.effort || (bm ? bm.effort : "");
+            if (eff && (oai || isX)) reqBody.reasoning = { effort: eff };
           } else {
             reqBody = { model: model, messages: [{ role: "system", content: MODES[m].system() + VISION + MEM_ASK + brainClause }].concat(history), temperature: 0.8 };
           }
@@ -4610,7 +4780,7 @@
             var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, waitMs);
             return fetch(url, {
               method: "POST",
-              headers: { "Content-Type": "application/json", Authorization: "Bearer " + S.apiKey.trim() },
+              headers: { "Content-Type": "application/json", Authorization: "Bearer " + apiKey },
               body: JSON.stringify(body),
               signal: ctrl ? ctrl.signal : undefined
             }).then(function (res) {
@@ -4623,7 +4793,7 @@
                   if (res.status === 404) throw "Endpoint or model not found (404). Check the model name.";
                   throw "The server said " + res.status + (data && data.error && data.error.message ? ": " + String(data.error.message).slice(0, 120) : ".");
                 }
-                if (xr && data) mcpChips(m, data);
+                if (isX && data) mcpChips(m, data);
                 return data;
               });
             }, function (e) {
@@ -4767,7 +4937,7 @@
         function localSystem(m) {
           var bm = m === "chat" ? BRAINS[S.brain] || BRAINS.quick : null;
           var clause = bm ? bm.clause : "";
-          var base = MODES[m].system(), mem = memoryClause();
+          var base = MODES[m].system({ compact: true }), mem = memoryClause();
           var core = mem ? base.replace(mem, "") : base;
           if (mem.length > 400) mem = mem.slice(0, 400).replace(/\s+\S*$/, "") + "…";
           var room = Math.max(300, 1200 - mem.length - clause.length);
@@ -4826,7 +4996,7 @@
             c = strip(c).replace(/[ \t]+\n/g, "\n");
             if (got) toast("🧠 Blarf will remember that");
             if (!c) c = got ? "Got it, Boss. 🧠" : "Uh… I got nothin'. Ask me again.";
-            addMsg(m, { r: "bot", t: c, ts: Date.now(), brain: br && br !== "quick" ? br : undefined });
+            addMsg(m, { r: "bot", t: c, ts: Date.now(), brain: br && br !== "quick" ? br : undefined, via: "Offline · On-device" });
             next(m);
           }, function (e) {
             if (live) live.remove();
@@ -5538,7 +5708,7 @@
         var VKEYS = { elevenKey: $("set-elevenkey"), oaiKey: $("set-oaikey"), fishKey: $("set-fishkey"), fishProxy: $("set-fishproxy") };
         function paintVoiceKeys() {
           Object.keys(VKEYS).forEach(function (f) { if (doc.activeElement !== VKEYS[f]) VKEYS[f].value = S[f] || ""; });
-          VKEYS.oaiKey.placeholder = !S.oaiKey && S.provider === "openai" && S.apiKey ? "Using your OpenAI key above" : "Paste key";
+          VKEYS.oaiKey.placeholder = !S.oaiKey && S.provider === "openai" && S.apiKey ? "Using your AI key above" : "Paste key";
         }
         Object.keys(VKEYS).forEach(function (f) {
           var el = VKEYS[f];
@@ -5548,6 +5718,40 @@
         prov.addEventListener("change", paintVoiceKeys);
         keyIn.addEventListener("change", paintVoiceKeys);
         paintVoiceKeys();
+
+        /* Settings > Brain: router switches and model fields; Talk brain mirrors the AI provider + model above */
+        var talkProvSel = $("set-talkprov"), talkModelIn = $("set-talkmodel"), thinkProvSel = $("set-thinkprov"), thinkModelIn = $("set-thinkmodel"), visionModelIn = $("set-visionmodel");
+        function paintBrainSettings() {
+          $("set-autoroute").setAttribute("aria-checked", S.autoRoute !== false ? "true" : "false");
+          $("set-polish").setAttribute("aria-checked", S.voicePolish ? "true" : "false");
+          talkProvSel.value = S.provider;
+          if (doc.activeElement !== talkModelIn) talkModelIn.value = S.model || "";
+          talkModelIn.placeholder = (PROVIDERS[S.provider] || PROVIDERS.xai).model || "model-name";
+          thinkProvSel.value = S.thinkProv || "auto";
+          var pv = thinkProvider();
+          if (doc.activeElement !== thinkModelIn) thinkModelIn.value = S.thinkModel || "";
+          thinkModelIn.placeholder = pv === "openai" ? OAI_THINK : ((S.model || "").trim() || PROVIDERS.xai.model) + " (high effort)";
+          if (doc.activeElement !== visionModelIn) visionModelIn.value = S.visionModel || "";
+          visionModelIn.placeholder = "Same as Talk model";
+          var now = $("brain-now");
+          if (pv === "openai" && !oaiThinkKey()) now.textContent = "Needs an OpenAI key";
+          else if (pv === "xai" && S.provider !== "xai") now.textContent = provLabel(S.provider) + " (Talk brain)";
+          else now.textContent = provLabel(pv) + " · " + (pv === "openai" ? thinkModelFor("openai") : ((S.thinkProv === "xai" && (S.thinkModel || "").trim()) || (S.model || "").trim() || PROVIDERS.xai.model));
+        }
+        $("set-autoroute").addEventListener("click", function () { S.autoRoute = S.autoRoute === false; save(); paintBrainSettings(); toast(S.autoRoute ? "Auto-routing on." : "Auto-routing off. Talk brain only, unless Deep Think or Expert."); });
+        $("set-polish").addEventListener("click", function () { S.voicePolish = !S.voicePolish; save(); paintBrainSettings(); toast(S.voicePolish ? "Voice polish on. Costs one extra Grok call per OpenAI answer." : "Voice polish off."); });
+        talkProvSel.addEventListener("change", function () { prov.value = talkProvSel.value; prov.dispatchEvent(new Event("change")); paintBrainSettings(); });
+        talkModelIn.addEventListener("input", function () { modelIn.value = talkModelIn.value; modelIn.dispatchEvent(new Event("input")); });
+        talkModelIn.addEventListener("blur", paintBrainSettings);
+        thinkProvSel.addEventListener("change", function () { S.thinkProv = thinkProvSel.value; save(); paintBrainSettings(); });
+        thinkModelIn.addEventListener("input", function () { S.thinkModel = thinkModelIn.value.trim().slice(0, 80); save(); });
+        thinkModelIn.addEventListener("blur", paintBrainSettings);
+        visionModelIn.addEventListener("input", function () { S.visionModel = visionModelIn.value.trim().slice(0, 80); save(); });
+        prov.addEventListener("change", paintBrainSettings);
+        modelIn.addEventListener("input", paintBrainSettings);
+        keyIn.addEventListener("change", paintBrainSettings);
+        VKEYS.oaiKey.addEventListener("input", paintBrainSettings);
+        paintBrainSettings();
 
         /* Characters & Voices: one row per crew member, each opens its own sheet */
         var crewList = $("crew-list"), crewSheet = $("crew-sheet"), crewCur = null, crewTimer = null, crewOpener = null;
@@ -6079,11 +6283,14 @@
         /* IndexedDB answers late: restore any setting the other stores lost, then back-fill every store */
         KV.ready([SETKEY, STORE], function (got) {
           var fromIdb = parseJSON(got[SETKEY]) || parseJSON(got[STORE]) || {}, changed = false;
-          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch", "brain", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel"].forEach(function (f) {
+          ["name", "provider", "model", "customUrl", "apiKey", "agentId", "voice", "handsFree", "sysPrompt", "swear", "gaze", "streak", "streakDay", "outfit", "pokeBest", "liveSearch", "brain", "tools", "chars", "elevenKey", "oaiKey", "fishKey", "fishProxy", "crewHeavy", "crewAgents", "mcp", "localModel", "autoRoute", "voicePolish", "thinkProv", "thinkModel", "visionModel"].forEach(function (f) {
             if (saved[f] === undefined && fromIdb[f] !== undefined && fromIdb[f] !== "") { S[f] = fromIdb[f]; changed = true; }
           });
           S.chars = charsClean(S.chars);
           paintCrew(); paintVoiceKeys();
+          S.autoRoute = S.autoRoute !== false; S.voicePolish = !!S.voicePolish;
+          if (S.thinkProv !== "openai" && S.thinkProv !== "xai") S.thinkProv = "auto";
+          paintBrainSettings();
           if (!S.tools || typeof S.tools !== "object") S.tools = { studio: true, hustle: true };
           paintTools();
           if (modelMig()) changed = true;
@@ -6123,6 +6330,7 @@
             nameIn.value = S.name; prov.value = S.provider; modelIn.value = S.model; urlIn.value = S.customUrl;
             modelIn.placeholder = (PROVIDERS[S.provider] || PROVIDERS.xai).model || "model-name";
             $("row-url").hidden = S.provider !== "custom";
+            paintBrainSettings();
             voiceSel.value = S.voice.id; if (!voiceSel.value) voiceSel.value = "custom";
             voiceCustom.value = S.voice.custom || ""; $("row-voice-custom").hidden = voiceSel.value !== "custom";
             agentIn.value = S.agentId;
