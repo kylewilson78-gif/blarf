@@ -420,6 +420,22 @@
         transition: opacity var(--dur-quick) var(--ease-out), transform var(--dur-quick) var(--ease-out);
       }
       .x-send:disabled { opacity: 0.3; cursor: default; }
+      .x-cam {
+        flex: none; width: var(--tap); height: var(--tap); border-radius: 50%; border: 1px solid var(--stroke-primary);
+        background: none; color: var(--text-primary); display: grid; place-items: center; cursor: pointer;
+        transition: background var(--dur-quick) var(--ease-out);
+      }
+      .x-cam:active { background: var(--hover-wash); }
+      .x-cam svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+      .x-file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+      .x-pend { flex: none; display: flex; padding: 6px calc(12px + env(safe-area-inset-right)) 0 calc(12px + env(safe-area-inset-left)); }
+      .x-pend[hidden], #view-chat > .x-pend { display: none; }
+      .x-app.is-text #view-chat > .x-pend:not([hidden]) { display: flex; }
+      .x-pend__chip { position: relative; display: inline-flex; align-items: center; gap: 8px; padding: 4px 4px 4px 4px; border: 1px solid var(--stroke-primary); border-radius: var(--r-s); background: var(--fill-tertiary); }
+      .x-pend__chip img { display: block; width: 56px; height: 56px; object-fit: cover; border-radius: 8px; }
+      .x-pend__lbl { font: var(--type-small); color: var(--text-secondary); }
+      .x-pend__x { width: var(--tap); height: var(--tap); border: 0; border-radius: 50%; background: none; color: var(--text-primary); font: var(--weight-medium) 20px/1 var(--sans); display: grid; place-items: center; cursor: pointer; }
+      .x-bubimg { display: block; max-width: min(220px, 100%); height: auto; border-radius: var(--r-s); margin: 2px 0 8px; }
 
 
       /* tool cards */
@@ -2062,6 +2078,13 @@
           return all;
         }
         function save() {
+          /* keep photos only on the 6 newest messages that have one */
+          if (S.threads) {
+            var withImg = [];
+            Object.keys(S.threads).forEach(function (k) { (S.threads[k] || []).forEach(function (x) { if (x && x.img) withImg.push(x); }); });
+            withImg.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
+            withImg.slice(6).forEach(function (x) { delete x.img; x.pic = 1; });
+          }
           var set = {};
           SET_FIELDS.forEach(function (f) { set[f] = S[f]; });
           KV.set(SETKEY, JSON.stringify(set));
@@ -2220,6 +2243,8 @@
           }
         };
         var ORDER = ["chat", "studio", "hustle"];
+        var CAM_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5A2 2 0 0 1 6 6.5h1.8l1.4-2h5.6l1.4 2H18a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.5"/></svg>';
+        var VISION = " When Kyle sends a photo or screenshot (games, gear, tracks, screens, anything), look closely and react in character, then actually help (game strategy, gear advice, fixes).";
         var SEND_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
 
         /* ---------- build the three chat views ---------- */
@@ -2253,11 +2278,16 @@
           sec.innerHTML = threadHTML +
             '<div class="x-chips" role="group" aria-label="Quick replies">' +
             MODES[m].chips.map(function (c) { return '<button class="x-chip" type="button">' + esc(c) + "</button>"; }).join("") + "</div>" +
+            '<div class="x-pend" id="pend-' + m + '" hidden><span class="x-pend__chip"><span class="x-pend__lbl">Photo</span>' +
+            '<button class="x-pend__x" type="button" aria-label="Remove photo">×</button></span></div>' +
             '<form class="x-composer" autocomplete="off">' +
+            '<button class="x-cam" type="button" aria-label="Send a photo">' + CAM_ICON + '</button>' +
+            '<input class="x-file" type="file" accept="image/*" tabindex="-1" aria-hidden="true" />' +
             '<textarea class="x-input" id="input-' + m + '" aria-label="Message" rows="1" enterkeyhint="send" placeholder="' + (m === "chat" ? "Tap to talk" : "Message") + '"></textarea>' +
             '<button class="x-send" type="submit" aria-label="Send" disabled>' + SEND_ICON + "</button></form>";
           if (m === "chat") views.appendChild(sec); else $("ovl-views").insertBefore(sec, $("view-settings"));
-          V[m] = { sec: sec, scroll: $("scroll-" + m), thread: $("thread-" + m), input: $("input-" + m), send: sec.querySelector(".x-send"), form: sec.querySelector("form") };
+          V[m] = { sec: sec, scroll: $("scroll-" + m), thread: $("thread-" + m), input: $("input-" + m), send: sec.querySelector(".x-send"), form: sec.querySelector("form"),
+            cam: sec.querySelector(".x-cam"), file: sec.querySelector(".x-file"), pend: $("pend-" + m) };
         });
 
         function toolHTML(m) {
@@ -2299,7 +2329,8 @@
         function msgEl(msg) {
           var el = doc.createElement("div");
           el.className = "x-msg" + (msg.r === "me" ? " x-msg--me" : msg.r === "err" ? " x-msg--err" : " x-msg--bot");
-          var inner = '<div class="x-bub">' + fmt(msg.t) + '</div><p class="x-time">' + clock(msg.ts) + "</p>";
+          var pic = msg.r === "me" && typeof msg.img === "string" && /^data:image\//.test(msg.img) ? '<img class="x-bubimg" src="' + esc(msg.img) + '" alt="Photo you sent" />' : "";
+          var inner = '<div class="x-bub">' + pic + fmt(msg.t) + '</div><p class="x-time">' + clock(msg.ts) + "</p>";
           el.innerHTML = msg.r === "bot" ? '<span class="x-mini" aria-hidden="true">' + BL.MINI + '</span><div class="x-msg__body">' + inner + "</div>" : inner;
           return el;
         }
@@ -3266,16 +3297,20 @@
         window.addEventListener("offline", function () { toast(OFFLINE_MSG); });
         window.addEventListener("online", function () { toast("Back online"); });
         if (isOffline()) toast(OFFLINE_MSG);
-        function send(m, text) {
+        function send(m, text, img) {
           text = (text || "").trim();
-          if (!text) return;
-          if (S.apiKey && isOffline()) { toast(OFFLINE_MSG); return; }
+          if (!text && img) text = "What do you make of this?";
+          if (!text) return false;
+          if (S.apiKey && isOffline()) { toast(OFFLINE_MSG); return false; }
           if (m === "chat") { lastUser = text; setSheet(true); if (/^stop\b/i.test(text)) { S.roast = false; S.trivia = false; } }
           stopVoice();
           markSeen(); rememberCmd(text);
-          addMsg(m, { r: "me", t: text, ts: Date.now() });
+          var me = { r: "me", t: text, ts: Date.now() };
+          if (img) { me.img = img; me.pic = 1; }
+          addMsg(m, me);
           queue[m].push(text);
           if (!busy[m]) next(m);
+          return true;
         }
         function next(m) {
           var text = queue[m].shift();
@@ -3330,19 +3365,27 @@
           var model = (S.model || "").trim() || p.model;
           if (!url) return Promise.reject("Add a URL for your custom provider in Settings.");
           if (!model) return Promise.reject("Add a model name in Settings.");
-          var history = S.threads[m].filter(function (x) { return x.r !== "err"; }).slice(-20).map(function (x) {
-            return { role: x.r === "me" ? "user" : "assistant", content: x.t };
-          });
           var xr = S.provider === "xai";
+          var hist = S.threads[m].filter(function (x) { return x.r !== "err"; }).slice(-20), lastMe = -1;
+          hist.forEach(function (x, i) { if (x.r === "me") lastMe = i; });
+          var history = hist.map(function (x, i) {
+            var role = x.r === "me" ? "user" : "assistant";
+            if (role === "user" && i === lastMe && x.img) {
+              return { role: role, content: xr
+                ? [{ type: "input_text", text: x.t }, { type: "input_image", image_url: x.img, detail: "high" }]
+                : [{ type: "text", text: x.t }, { type: "image_url", image_url: { url: x.img } }] };
+            }
+            return { role: role, content: role === "user" && (x.img || x.pic) ? x.t + " [photo]" : x.t };
+          });
           var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
           var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, xr ? 90000 : 60000);
           var reqBody;
           if (xr) {
             url = XAI_RESPONSES;
-            reqBody = { model: model, input: [{ role: "system", content: MODES[m].system() + MEM_ASK + LIVE_HINT }].concat(history) };
+            reqBody = { model: model, input: [{ role: "system", content: MODES[m].system() + VISION + MEM_ASK + LIVE_HINT }].concat(history) };
             if (S.liveSearch !== false) reqBody.tools = [{ type: "web_search" }, { type: "x_search" }];
           } else {
-            reqBody = { model: model, messages: [{ role: "system", content: MODES[m].system() + MEM_ASK }].concat(history), temperature: 0.8 };
+            reqBody = { model: model, messages: [{ role: "system", content: MODES[m].system() + VISION + MEM_ASK }].concat(history), temperature: 0.8 };
           }
           return fetch(url, {
             method: "POST",
@@ -3385,14 +3428,50 @@
             var h = v.input.scrollHeight + 2;
             v.input.style.height = Math.min(h, max) + "px";
             v.input.style.overflowY = h > max ? "auto" : "hidden";
-            v.send.disabled = !v.input.value.trim();
+            v.send.disabled = !v.input.value.trim() && !v.img;
           };
           v.input.addEventListener("input", grow);
+          /* photo: pick, downscale to 1280px JPEG, hold as a chip until sent */
+          var setPend = function (url) {
+            v.img = url || null;
+            v.pend.hidden = !v.img;
+            var pi = v.pend.querySelector("img");
+            if (pi) pi.remove();
+            if (v.img) {
+              pi = doc.createElement("img"); pi.alt = "Photo to send"; pi.src = v.img;
+              v.pend.querySelector(".x-pend__chip").insertBefore(pi, v.pend.querySelector(".x-pend__lbl"));
+            }
+            grow(); if (v.img) { fit(); scrollDown(m, true); }
+          };
+          v.cam.addEventListener("click", function () { v.file.value = ""; v.file.click(); });
+          v.pend.querySelector(".x-pend__x").addEventListener("click", function () { setPend(null); v.input.focus(); });
+          v.file.addEventListener("change", function () {
+            var f = v.file.files && v.file.files[0];
+            if (!f) return;
+            var src = URL.createObjectURL(f), im = new Image();
+            im.onload = function () {
+              var w = im.naturalWidth, h = im.naturalHeight, k = Math.min(1, 1280 / Math.max(w, h || 1));
+              var cv = doc.createElement("canvas");
+              cv.width = Math.max(1, Math.round(w * k)); cv.height = Math.max(1, Math.round(h * k));
+              var cx = cv.getContext("2d");
+              cx.fillStyle = "#fff"; cx.fillRect(0, 0, cv.width, cv.height);
+              cx.drawImage(im, 0, 0, cv.width, cv.height);
+              URL.revokeObjectURL(src);
+              var out = ""; try { out = cv.toDataURL("image/jpeg", 0.8); } catch (e) {}
+              if (/^data:image\/jpeg/.test(out)) setPend(out); else toast("Couldn't read that photo.");
+            };
+            im.onerror = function () { URL.revokeObjectURL(src); toast("Couldn't read that photo."); };
+            im.src = src;
+          });
           v.input.addEventListener("focus", function () { setTimeout(function () { fit(); scrollDown(m, true); }, 300); });
           v.input.addEventListener("keydown", function (e) {
             if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); v.form.requestSubmit ? v.form.requestSubmit() : v.form.dispatchEvent(new Event("submit", { cancelable: true })); }
           });
-          v.form.addEventListener("submit", function (e) { e.preventDefault(); var t = v.input.value; if (!t.trim()) return; v.input.value = ""; grow(); send(m, t); });
+          v.form.addEventListener("submit", function (e) {
+            e.preventDefault(); var t = v.input.value; if (!t.trim() && !v.img) return;
+            if (v.img) { if (send(m, t, v.img)) { v.input.value = ""; setPend(null); } return; }
+            v.input.value = ""; grow(); send(m, t);
+          });
           v.sec.querySelector(".x-chips").addEventListener("click", function (e) { var b = e.target.closest(".x-chip"); if (b) send(m, b.textContent); });
           renderThread(m);
         });
